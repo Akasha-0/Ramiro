@@ -150,6 +150,76 @@ _BLOCKED_PATTERN: re.Pattern[str] = re.compile(
     re.IGNORECASE,
 )
 
+# Padrão pré-compilado para SENSITIVE_KEYWORDS (mesmo padrão de segurança)
+_SENSITIVE_PATTERN: re.Pattern[str] = re.compile(
+    "|".join(re.escape(kw.lower()) for kw in SENSITIVE_KEYWORDS),
+    re.IGNORECASE,
+)
+
+# ----------------------------------------------------------------------
+# Detecção de input sensível
+# ----------------------------------------------------------------------
+
+
+def detect_sensitive_input(text: str) -> tuple[bool, list[str]]:
+    """Detecta temas sensíveis no input do usuário.
+
+    Escaneia o texto de entrada em busca de palavras-chave que indicam
+    vulnerabilidade ou risco, incluindo:
+    - Saúde mental (depressão, ansiedade, ideação suicida)
+    - Saúde física (doença grave, diagnóstico)
+    - Risco financeiro (dívida, falência)
+    - Crise relacional (separação, abuso)
+    - Risco auto-lesivo
+
+    A busca é case-insensitive e normaliza caracteres especiais
+    (acentos, cedilha) para evitar bypass por variação ortográfica.
+
+    Args:
+        text: Texto de input do usuário a escanear.
+
+    Returns:
+        Tupla (is_sensitive, flags) onde:
+        - is_sensitive: True se pelo menos uma keyword sensível foi encontrada
+        - flags: Lista de keywords sensíveis detectadas (vazia se safe)
+
+    Examples:
+        >>> is_sensitive, flags = detect_sensitive_input("texto normal sobre trabalho")
+        >>> assert is_sensitive == False
+        >>> assert flags == []
+
+        >>> is_sensitive, flags = detect_sensitive_input("estou com depressão e problemas financeiros")
+        >>> assert is_sensitive == True
+        >>> assert "depressão" in flags
+    """
+    if not text:
+        return (False, [])
+
+    # Normalizar: lowercase + remover acentos para comparação robusta
+    normalized = _normalize_text(text)
+
+    flags: list[str] = []
+    for keyword in SENSITIVE_KEYWORDS:
+        kw_normalized = _normalize_text(keyword)
+        if kw_normalized in normalized:
+            flags.append(keyword)
+            logger.debug(
+                "Keyword sensível detectada: %r em input de %d chars",
+                keyword,
+                len(text),
+            )
+
+    is_sensitive = len(flags) > 0
+
+    if is_sensitive:
+        logger.info(
+            "Input sensível detectado: %d keywords encontradas",
+            len(flags),
+        )
+
+    return (is_sensitive, flags)
+
+
 # Disclaimer ético padrão (inserido quando needs_disclaimer=True)
 _ETHICAL_DISCLAIMER: str = """
 ---
