@@ -24,7 +24,9 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 
-dependencies = []
+dependencies = [
+    "pyyaml>=6.0.0",
+]
 
 [project.optional-dependencies]
 dev = [
