@@ -113,7 +113,7 @@ def run_analyze(raw_input: str, format: str, output_path: str | None, output_for
         # Fase 3: Geração do relatório Markdown
         logger.info("Gerando relatório")
         generator = ReportGenerator()
-        report_md = generator.generate(analysis_result)
+        report_md = generator.generate(analysis_result, output_format=output_format)
 
         # Fase 4: Aplicação de guardrails éticos
         logger.info("Aplicando guardrails éticos")
