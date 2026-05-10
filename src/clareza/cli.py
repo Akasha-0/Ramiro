@@ -7,6 +7,7 @@ from pathlib import Path
 import click
 
 from clareza.analyzer import TextAnalyzer
+from clareza.report import generate_report
 
 
 def get_cards_data() -> list[dict]:
@@ -77,7 +78,6 @@ def analyze_text_command(text: str | None) -> None:
         text: Texto de entrada para análise. Se não fornecido via --text,
               lê da entrada padrão (stdin).
     """
-    # Get text from --text option or stdin
     input_text = text if text else click.get_text_stream("stdin").read().strip()
 
     if not input_text:
@@ -85,11 +85,9 @@ def analyze_text_command(text: str | None) -> None:
         click.echo("Use --text ou forneça texto via stdin.", err=True)
         raise SystemExit(1)
 
-    # Analyze the text
     analyzer = TextAnalyzer()
     result = analyzer.analyze(input_text)
 
-    # Output as JSON
     output = {
         "card_ids": result["card_ids"],
         "themes": [card["keywords"] for card in result["cards"]],
@@ -97,6 +95,25 @@ def analyze_text_command(text: str | None) -> None:
         "intent": result["intent"],
     }
     click.echo(json.dumps(output, ensure_ascii=False, indent=2))
+
+
+@cli.command("report")
+@click.option("--cards", "-c", multiple=True, type=int, help="ID da carta para incluir no relatório")
+@click.option("--question", "-q", default="", help="Pergunta principal do usuário")
+def report_command(cards: tuple[int, ...], question: str) -> None:
+    """Gerar relatório de reflexão com cinco seções.
+
+    Gera um relatório estruturado com as seções:
+    Diagnóstico, Interpretação Simbólica, Riscos, Decisões e Plano Prático.
+    """
+    if not cards:
+        click.echo("Erro: É necessário especificar pelo menos uma carta.", err=True)
+        click.echo("Use 'clareza report --cards 1 --cards 7 --question \"Sua pergunta\"'", err=True)
+        raise SystemExit(1)
+
+    card_ids = list(cards)
+    report = generate_report(card_ids, question)
+    click.echo(report)
 
 
 if __name__ == "__main__":
