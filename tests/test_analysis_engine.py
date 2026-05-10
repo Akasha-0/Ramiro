@@ -24,6 +24,7 @@ from src.analysis_engine import (
     AnalysisEngine,
     _detect_themes,
     _generate_practical_plan,
+    _get_position_context_text,
     _identify_risks,
     _interpret_card_position,
     _map_decisions,
@@ -316,6 +317,241 @@ class TestSymbolToAction:
         )
         action = _symbol_to_action(unknown)
         assert "Desconhecido" in action or "tema" in action.lower()
+
+
+# ----------------------------------------------------------------------
+# Testes — _get_position_context_text()
+# ----------------------------------------------------------------------
+
+
+class TestGetPositionContextText:
+    def test_context_passado_generates_text(self) -> None:
+        """Contexto 'passado' gera texto contextual."""
+        symbol = get_symbol_by_name("a estrela")
+        assert symbol is not None
+        result = _get_position_context_text(1, "passado", symbol)
+        assert result is not None
+        assert "passado" in result.lower()
+        assert symbol.name in result
+
+    def test_context_presente_generates_text(self) -> None:
+        """Contexto 'presente' gera texto contextual."""
+        symbol = get_symbol_by_name("a casa")
+        assert symbol is not None
+        result = _get_position_context_text(1, "presente", symbol)
+        assert result is not None
+        assert "presente" in result.lower() or "atual" in result.lower()
+        assert symbol.name in result
+
+    def test_context_futuro_generates_text(self) -> None:
+        """Contexto 'futuro' gera texto contextual."""
+        symbol = get_symbol_by_name("a cegonha")
+        assert symbol is not None
+        result = _get_position_context_text(1, "futuro", symbol)
+        assert result is not None
+        assert "futuro" in result.lower()
+        assert symbol.name in result
+
+    def test_context_influencia_generates_text(self) -> None:
+        """Contexto 'influência' gera texto contextual."""
+        symbol = get_symbol_by_name("o cigano")
+        assert symbol is not None
+        result = _get_position_context_text(1, "influência", symbol)
+        assert result is not None
+        assert "influência" in result.lower() or "externa" in result.lower()
+        assert symbol.name in result
+
+    def test_context_base_generates_text(self) -> None:
+        """Contexto 'base' gera texto contextual."""
+        symbol = get_symbol_by_name("a âncora")
+        assert symbol is not None
+        result = _get_position_context_text(1, "base", symbol)
+        assert result is not None
+        assert "fundamento" in result.lower() or "base" in result.lower()
+        assert symbol.name in result
+
+    def test_context_acao_generates_text(self) -> None:
+        """Contexto 'ação' gera texto contextual."""
+        symbol = get_symbol_by_name("o mercado")
+        assert symbol is not None
+        result = _get_position_context_text(1, "ação", symbol)
+        assert result is not None
+        assert "ação" in result.lower()
+        assert symbol.name in result
+
+    def test_context_resultado_generates_text(self) -> None:
+        """Contexto 'resultado' gera texto contextual."""
+        symbol = get_symbol_by_name("a morte")
+        assert symbol is not None
+        result = _get_position_context_text(1, "resultado", symbol)
+        assert result is not None
+        assert "resultado" in result.lower()
+        assert symbol.name in result
+
+    def test_unknown_context_returns_none(self) -> None:
+        """Contexto desconhecido retorna None."""
+        symbol = get_symbol_by_name("a estrela")
+        assert symbol is not None
+        result = _get_position_context_text(1, "contexto_desconhecido_xyz", symbol)
+        assert result is None
+
+    def test_none_context_returns_none(self) -> None:
+        """Contexto None retorna None."""
+        symbol = get_symbol_by_name("a estrela")
+        assert symbol is not None
+        result = _get_position_context_text(1, None, symbol)
+        assert result is None
+
+    def test_empty_context_returns_none(self) -> None:
+        """Contexto vazio retorna None."""
+        symbol = get_symbol_by_name("a estrela")
+        assert symbol is not None
+        result = _get_position_context_text(1, "", symbol)
+        assert result is None
+
+
+# ----------------------------------------------------------------------
+# Testes — _interpret_card_position() com position_context
+# ----------------------------------------------------------------------
+
+
+class TestInterpretCardPositionWithContext:
+    def test_card_with_passado_context_includes_context(self) -> None:
+        """Carta com contexto 'passado' inclui interpretação contextual."""
+        card = CardPosition(position=1, card_name="Cruz", position_context="passado")
+        all_symbols = get_all_symbols()
+        result = _interpret_card_position(card, all_symbols)
+        assert "Cruz" in result
+        assert "📍" in result  # marker de contexto
+        assert "passado" in result.lower()
+
+    def test_card_with_presente_context_includes_context(self) -> None:
+        """Carta com contexto 'presente' inclui interpretação contextual."""
+        card = CardPosition(position=2, card_name="Estrela", position_context="presente")
+        all_symbols = get_all_symbols()
+        result = _interpret_card_position(card, all_symbols)
+        assert "Estrela" in result
+        assert "📍" in result
+        # presente usa "momento atual" no texto
+        assert "atual" in result.lower()
+
+    def test_card_with_futuro_context_includes_context(self) -> None:
+        """Carta com contexto 'futuro' inclui interpretação contextual."""
+        card = CardPosition(position=3, card_name="Casa", position_context="futuro")
+        all_symbols = get_all_symbols()
+        result = _interpret_card_position(card, all_symbols)
+        assert "Casa" in result
+        assert "📍" in result
+        assert "futuro" in result.lower()
+
+    def test_card_without_context_no_marker(self) -> None:
+        """Carta sem contexto não inclui marker de contexto."""
+        card = CardPosition(position=1, card_name="Cruz")
+        all_symbols = get_all_symbols()
+        result = _interpret_card_position(card, all_symbols)
+        assert "Cruz" in result
+        # Sem context, não deve ter marker de contexto
+        assert "📍" not in result
+
+    def test_card_with_unknown_context_no_marker(self) -> None:
+        """Carta com contexto desconhecido não inclui marker de contexto."""
+        card = CardPosition(position=1, card_name="Cruz", position_context="xyz_unknown")
+        all_symbols = get_all_symbols()
+        result = _interpret_card_position(card, all_symbols)
+        assert "Cruz" in result
+        # Contexto desconhecido não gera marker
+        assert "📍" not in result
+
+
+# ----------------------------------------------------------------------
+# Testes — AnalysisEngine.analyze() com position_context em spread
+# ----------------------------------------------------------------------
+
+
+class TestAnalyzeSpreadWithPositionContext:
+    def test_spread_with_contexts_generates_contextual_interpretations(
+        self, engine: AnalysisEngine
+    ) -> None:
+        """Spread com contextos posicionais gera interpretações contextuais."""
+        input_data = StructuredInput(
+            format="spread",
+            raw_content="1,Cruz\n2,Estrela\n3,Casa",
+            cards=[
+                CardPosition(position=1, card_name="Cruz", position_context="passado"),
+                CardPosition(position=2, card_name="Estrela", position_context="presente"),
+                CardPosition(position=3, card_name="Casa", position_context="futuro"),
+            ],
+        )
+        result = engine.analyze(input_data)
+        assert result.card_interpretations is not None
+        assert len(result.card_interpretations) == 3
+        # Todas devem ter marker de contexto
+        assert "📍" in result.card_interpretations[0]
+        assert "📍" in result.card_interpretations[1]
+        assert "📍" in result.card_interpretations[2]
+
+    def test_spread_mixed_contexts(self, engine: AnalysisEngine) -> None:
+        """Spread com contextos mistos (alguns com, outros sem)."""
+        input_data = StructuredInput(
+            format="spread",
+            raw_content="1,Cruz\n2,Estrela\n3,Casa\n4,Moeda",
+            cards=[
+                CardPosition(position=1, card_name="Cruz", position_context="passado"),
+                CardPosition(position=2, card_name="Estrela"),  # sem contexto
+                CardPosition(position=3, card_name="Casa", position_context="futuro"),
+                CardPosition(position=4, card_name="Cruz"),  # sem contexto
+            ],
+        )
+        result = engine.analyze(input_data)
+        assert result.card_interpretations is not None
+        # Posições 1 e 3 têm contexto, posições 2 e 4 não
+        assert "📍" in result.card_interpretations[0]
+        assert "📍" not in result.card_interpretations[1]
+        assert "📍" in result.card_interpretations[2]
+        assert "📍" not in result.card_interpretations[3]
+
+    def test_spread_tres_cartas_template_contexts(
+        self, engine: AnalysisEngine
+    ) -> None:
+        """Template 'tres-cartas' com contextos: passado, presente, futuro."""
+        input_data = StructuredInput(
+            format="spread",
+            raw_content="1,Cruz\n2,Estrela\n3,Casa",
+            cards=[
+                CardPosition(position=1, card_name="Cruz", position_context="passado"),
+                CardPosition(position=2, card_name="Estrela", position_context="presente"),
+                CardPosition(position=3, card_name="Casa", position_context="futuro"),
+            ],
+        )
+        result = engine.analyze(input_data)
+        assert result.card_interpretations is not None
+        # Verifica que cada interpretação tem o contexto correto
+        assert "passado" in result.card_interpretations[0].lower()
+        # presente usa "momento atual" no texto
+        assert "atual" in result.card_interpretations[1].lower()
+        assert "futuro" in result.card_interpretations[2].lower()
+
+    def test_spread_all_contexts_included(self, engine: AnalysisEngine) -> None:
+        """Todas as posições com todos os contextos disponíveis."""
+        all_contexts = ["passado", "presente", "futuro", "influência"]
+        cards = [
+            CardPosition(position=i + 1, card_name="Cruz", position_context=ctx)
+            for i, ctx in enumerate(all_contexts)
+        ]
+        input_data = StructuredInput(
+            format="spread",
+            raw_content=",".join([f"{c.position},{c.card_name}" for c in cards]),
+            cards=cards,
+        )
+        result = engine.analyze(input_data)
+        assert result.card_interpretations is not None
+        assert len(result.card_interpretations) == 4
+        # passado, futuro, influência são incluídos literalmente
+        # presente usa "momento atual" no texto
+        assert "passado" in result.card_interpretations[0].lower()
+        assert "atual" in result.card_interpretations[1].lower()  # presente
+        assert "futuro" in result.card_interpretations[2].lower()
+        assert "externa" in result.card_interpretations[3].lower()  # influência
 
 
 # ----------------------------------------------------------------------
