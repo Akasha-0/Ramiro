@@ -1,0 +1,218 @@
+[
+  {
+    "id": 1,
+    "name": "O Mago",
+    "keywords": ["ação", "habilidade", "magia"],
+    "meaning": "Habilidade, comunicação, vontade"
+  },
+  {
+    "id": 2,
+    "name": "A Papisa",
+    "keywords": ["intuição", "mistério", "sabedoria"],
+    "meaning": "Intuição, sabedoria interior"
+  },
+  {
+    "id": 3,
+    "name": "A Imperatriz",
+    "keywords": ["abundância", "fertilidade", "natureza"],
+    "meaning": "Abundância, fertlidade, natureza"
+  },
+  {
+    "id": 4,
+    "name": "O Imperador",
+    "keywords": ["autoridade", "estrutura", "poder"],
+    "meaning": "Autoridade, estrutura, estabilidade"
+  },
+  {
+    "id": 5,
+    "name": "O Papa",
+    "keywords": ["conselho", "orientação", "ética"],
+    "meaning": "Conselho, orientação espiritual"
+  },
+  {
+    "id": 6,
+    "name": "Os Enamorados",
+    "keywords": ["amor", "união", "escolha"],
+    "meaning": "Amor, união, escolhas importantes"
+  },
+  {
+    "id": 7,
+    "name": "O Carro",
+    "keywords": ["vitória", "determinação", "controle"],
+    "meaning": "Vitória, determinação, conquista"
+  },
+  {
+    "id": 8,
+    "name": "A Justiça",
+    "keywords": ["equilíbrio", "verdade", "causa e efeito"],
+    "meaning": "Justiça, verdade, equilíbrio"
+  },
+  {
+    "id": 9,
+    "name": "A Eremita",
+    "keywords": ["busca interior", "solidão", "orientação"],
+    "meaning": "Busca interior, solitude, introspecção"
+  },
+  {
+    "id": 10,
+    "name": "A Roda da Fortuna",
+    "keywords": ["mudança", "destino", "ciclos"],
+    "meaning": "Mudanças, destino, ciclos da vida"
+  },
+  {
+    "id": 11,
+    "name": "A Força",
+    "keywords": ["coragem", "poder", "paciência"],
+    "meaning": "Força interior, coragem, autocontrole"
+  },
+  {
+    "id": 12,
+    "name": "O Enforcado",
+    "keywords": ["sacrifício", "nova perspectiva", "pausa"],
+    "meaning": "Sacrifício, nova perspectiva, espera"
+  },
+  {
+    "id": 13,
+    "name": "A Morte",
+    "keywords": ["transformação", "mudança radical", "fim"],
+    "meaning": "Transformação, fim de ciclo, renovação"
+  },
+  {
+    "id": 14,
+    "name": "A Temperança",
+    "keywords": ["equilíbrio", "paciência", "harmonia"],
+    "meaning": "Equilíbrio, paciência, moderação"
+  },
+  {
+    "id": 15,
+    "name": "O Diabo",
+    "keywords": ["armadilha", "vício", "ilusão"],
+    "meaning": "Armadilhas, vícios, materialismo"
+  },
+  {
+    "id": 16,
+    "name": "A Torre",
+    "keywords": ["destruição", "revelação", "caos"],
+    "meaning": "Destruição, revelação súbita, caos"
+  },
+  {
+    "id": 17,
+    "name": "A Estrela",
+    "keywords": ["esperança", "inspiração", "luz"],
+    "meaning": "Esperança, inspiração, fé"
+  },
+  {
+    "id": 18,
+    "name": "A Lua",
+    "keywords": ["ilusão", "intuição", "inconsciente"],
+    "meaning": "Ilusão, intuição, mundo inconsciente"
+  },
+  {
+    "id": 19,
+    "name": "O Sol",
+    "keywords": ["alegria", "sucesso", "vitalidade"],
+    "meaning": "Alegria, sucesso, vitalidade"
+  },
+  {
+    "id": 20,
+    "name": "O Julgamento",
+    "keywords": ["julgamento", "renascimento", "avaliação"],
+    "meaning": "Julgamento, renascimento, redenção"
+  },
+  {
+    "id": 21,
+    "name": "O Mundo",
+    "keywords": ["completude", "realização", "integração"],
+    "meaning": "Completude, realização, integração"
+  },
+  {
+    "id": 22,
+    "name": "O Louco",
+    "keywords": ["liberdade", "inocência", "nova jornada"],
+    "meaning": "Liberdade, recomeço, inocência"
+  },
+  {
+    "id": 23,
+    "name": "A Fidellidade",
+    "keywords": ["lealdade", "confiança", "compromisso"],
+    "meaning": "Lealdade, confiança, parcerias"
+  },
+  {
+    "id": 24,
+    "name": "O Cavaleiro",
+    "keywords": ["ação rápida", "avanço", "mensagem"],
+    "meaning": "Movimento rápido, notícias, ação"
+  },
+  {
+    "id": 25,
+    "name": "O Cão",
+    "keywords": ["amizade", "lealdade", "proteção"],
+    "meaning": "Amizade, lealdade, confiança"
+  },
+  {
+    "id": 26,
+    "name": "As Árvores",
+    "keywords": ["crescimento", "estabilidade", "saúde"],
+    "meaning": "Crescimento, saúde, raízes"
+  },
+  {
+    "id": 27,
+    "name": "As Flores",
+    "keywords": ["beleza", "satisfação", "amor"],
+    "meaning": "Beleza, satisfação,芳香"
+  },
+  {
+    "id": 28,
+    "name": "A Serra",
+    "keywords": ["resistência", "esforço", "dificuldade"],
+    "meaning": "Obstáculos, esforço, superação"
+  },
+  {
+    "id": 29,
+    "name": "O Navio",
+    "keywords": ["viagem", "exploração", "novos rumos"],
+    "meaning": "Viagem, novos inícios, mudança"
+  },
+  {
+    "id": 30,
+    "name": "A Âncora",
+    "keywords": ["esperança", "estabilidade", "confiança"],
+    "meaning": "Esperança, estabilidade, segurança"
+  },
+  {
+    "id": 31,
+    "name": "As Águias",
+    "keywords": ["visão", "ascensão", "determinação"],
+    "meaning": "Ascensão, visão clara, sucesso"
+  },
+  {
+    "id": 32,
+    "name": "A Estrela Cadente",
+    "keywords": ["desejo", "realização", "magia"],
+    "meaning": "Desejos, esperança, realização rápida"
+  },
+  {
+    "id": 33,
+    "name": "A Cegonha",
+    "keywords": ["mudança", "renovação", "transformação"],
+    "meaning": "Mudanças, renovação, novos inícios"
+  },
+  {
+    "id": 34,
+    "name": "Os Cães",
+    "keywords": ["amizade", "companheirismo", "confiança"],
+    "meaning": "Amizades leais, comunidade"
+  },
+  {
+    "id": 35,
+    "name": "A Casa",
+    "keywords": ["lar", "segurança", "refúgio"],
+    "meaning": "Lar, família, segurança emocional"
+  },
+  {
+    "id": 36,
+    "name": "A Floresta",
+    "keywords": ["natureza", "mistério", "exploração"],
+    "meaning": "Natureza selvagem, mistério, jornada"
+  }
+]
