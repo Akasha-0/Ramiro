@@ -244,7 +244,7 @@ class SessionDB:
 
         query += " ORDER BY timestamp DESC"
 
-        if limit:
+        if limit is not None:
             query += f" LIMIT {limit}"
 
         logger.debug("Recuperando sessões: search=%r, since=%r, until=%r, limit=%r",
