@@ -21,6 +21,38 @@ logger = logging.getLogger(__name__)
 
 
 # ----------------------------------------------------------------------
+# Helper functions
+# ----------------------------------------------------------------------
+
+
+def _is_valid_file_path(path: str) -> bool:
+    """Verifica se uma string parece ser um caminho de arquivo válido.
+
+    Considera caminho válido se:
+    - O arquivo existe no filesystem
+    - A extensão é .csv ou .txt
+
+    Args:
+        path: String a verificar.
+
+    Returns:
+        True se parece ser um caminho de arquivo CSV/TXT válido.
+    """
+    import os
+
+    if not path:
+        return False
+
+    # Verificar se o arquivo existe
+    if os.path.isfile(path):
+        return True
+
+    # Verificar extensões comuns para arquivos de entrada
+    valid_extensions = (".csv", ".txt")
+    return any(path.lower().endswith(ext) for ext in valid_extensions)
+
+
+# ----------------------------------------------------------------------
 # CLI implementation
 # ----------------------------------------------------------------------
 
@@ -97,7 +129,12 @@ def run_analyze(
         # Fase 1: Parse e estruturação do input
         logger.info("Processando entrada: format=%s, length=%d", format, len(raw_input))
         processor = InputProcessor()
-        structured = processor.parse(raw_input, format)
+        # Verificar se raw_input é um caminho de arquivo válido
+        if _is_valid_file_path(raw_input):
+            structured = processor.parse_from_file(raw_input, template)
+            logger.info("Entrada lida de arquivo: %s", raw_input)
+        else:
+            structured = processor.parse(raw_input, format)
         logger.info(
             "Input processado: keywords=%s, cards=%d",
             len(structured.keywords) if structured.keywords else 0,
