@@ -13,7 +13,22 @@ Exceptions hierarchy:
     └── ConfigurationClarezaError
 """
 
+from dataclasses import dataclass
 from typing import Optional
+
+
+@dataclass
+class Suggestion:
+    """Representa uma sugestão para correção de erro.
+
+    Attributes:
+        text: Texto da sugestão em português.
+    """
+
+    text: str
+
+    def __str__(self) -> str:
+        return self.text
 
 
 class ClarezaError(Exception):
@@ -25,15 +40,20 @@ class ClarezaError(Exception):
     Attributes:
         message: Descrição legível do erro em português.
         details: Detalhes adicionais sobre a causa do erro (opcional).
+        suggestion: Sugestão de correção para o erro (opcional).
     """
 
     def __init__(
         self,
         message: str,
         details: Optional[str] = None,
+        suggestion: Optional[str] = None,
     ) -> None:
         self.message = message
         self.details = details
+        self.suggestions: list[Suggestion] = []
+        if suggestion:
+            self.suggestions.append(Suggestion(suggestion))
         full = message
         if details:
             full = f"{message}: {details}"
