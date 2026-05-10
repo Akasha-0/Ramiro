@@ -149,7 +149,8 @@ class ReportGenerator:
             )
         else:
             report = self._generate_default_output(
-                timestamp, diagnosis, symbolic_interp, risks, decisions, practical_plan, disclaimer
+                timestamp, diagnosis, symbolic_interp, risks, decisions,
+                cross_card_patterns, practical_plan, disclaimer
             )
 
         logger.info("Relatório gerado com %d caracteres", len(report))
@@ -162,6 +163,7 @@ class ReportGenerator:
         symbolic_interp: str,
         risks: str,
         decisions: str,
+        cross_card_patterns: str,
         practical_plan: str,
         disclaimer: Optional[str],
     ) -> str:

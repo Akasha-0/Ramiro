@@ -322,9 +322,18 @@ def run_analyze(
             progress.error("Erro no processamento")
         sys.exit(2)
     except OSError as e:
-        logger.error("Erro de sistema de arquivos: %s", e)
+        logger.error("Erro de sistema de arquivos ao salvar em %s: %s", output_path, e)
         colored = _get_error_output()
-        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['output_write_error']}"), file=sys.stderr)
+        error_detail = ERROR_MESSAGES["output_write_error"]
+        if output_path:
+            error_with_path = error_detail.replace(
+                "não foi possível salvar o relatório no caminho especificado",
+                f"não foi possível salvar o relatório em: {output_path}",
+            )
+            error_with_path += f"\nVerifique as permissões do diretório: {os.path.dirname(output_path) or '.'}"
+        else:
+            error_with_path = error_detail
+        print(colored.error(f"✗ Erro: {error_with_path}"), file=sys.stderr)
         if 'progress' in locals():
             progress.error("Erro no processamento")
         sys.exit(2)
