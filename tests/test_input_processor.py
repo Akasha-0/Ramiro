@@ -389,3 +389,224 @@ class TestParseError:
         err_str = str(err)
         assert "linha 3" in err_str
         assert "detalhes" in err_str
+
+    def test_parse_error_with_recovery(self) -> None:
+        """Testa que o campo recovery é exibido no erro com 'Dica:'."""
+        err = ParseError(
+            "Cartão desconhecido",
+            details="'Cas' não encontrada",
+            recovery="Cards válidos: Casa, Cobra, Forca",
+        )
+        err_str = str(err)
+        assert "Dica:" in err_str
+        assert "Casa, Cobra, Forca" in err_str
+
+    def test_parse_error_recovery_not_shown_when_none(self) -> None:
+        """Testa que Dica: não aparece quando não há recovery."""
+        err = ParseError("Erro simples")
+        err_str = str(err)
+        assert "Dica:" not in err_str
+
+
+# ----------------------------------------------------------------------
+# Testes — Error messages com sugestões
+# ----------------------------------------------------------------------
+
+
+class TestErrorMessagesWithSuggestions:
+    """Testes para mensagens de erro com sugestões 'Did you mean'."""
+
+    def test_unknown_card_name_includes_suggestions(self, processor: InputProcessor) -> None:
+        """Cartão desconhecido deve mostrar sugestão de nomes válidos."""
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse("1,Cas", "spread")
+        err_str = str(exc_info.value)
+        assert "Cartão desconhecido" in err_str
+        assert "Cas" in err_str
+        # Deve mostrar cards válidos como sugestão
+        assert "Cards válidos:" in err_str or "Dica:" in err_str
+
+    def test_typo_card_name_suggests_corrections(self, processor: InputProcessor) -> None:
+        """Nome de carta com typo deve sugerir correção."""
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse("1,Estrelaa", "spread")
+        err_str = str(exc_info.value)
+        assert "Estrelaa" in err_str
+        assert "Cards válidos:" in err_str or "Dica:" in err_str
+
+    def test_unknown_card_shows_similar_names(self, processor: InputProcessor) -> None:
+        """Cartão desconhecido deve listar nomes similares."""
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse("1,Cruzinha", "spread")
+        err_str = str(exc_info.value)
+        assert "Cruzinha" in err_str
+        # Deve mostrar sugestões de nomes válidos
+        assert "Cards válidos:" in err_str
+
+    def test_error_message_recovery_field_contains_card_list(
+        self, processor: InputProcessor
+    ) -> None:
+        """O campo recovery deve conter lista de cards válidos."""
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse("1,Xyz", "spread")
+        err = exc_info.value
+        assert err.recovery is not None
+        # Recovery deve ter sugestões de cards
+        assert "Cards válidos:" in err.recovery
+
+    def test_parse_error_shows_line_number_for_csv_errors(
+        self, processor: InputProcessor
+    ) -> None:
+        """Erros em CSV devem mostrar número da linha."""
+        csv_with_error = "1,Cruz\ndois,Estrela\n3,Café"
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse(csv_with_error, "spread")
+        err_str = str(exc_info.value)
+        # Deve indicar a linha com erro
+        assert "linha" in err_str.lower()
+
+    def test_invalid_csv_format_shows_expected_format(
+        self, processor: InputProcessor
+    ) -> None:
+        """CSV mal formatado deve mostrar o formato esperado."""
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse("abc\ndef", "spread")
+        err_str = str(exc_info.value)
+        # Deve mostrar formato esperado
+        assert "POSITION,CARD" in err_str or "Formato esperado" in err_str
+
+    def test_empty_csv_shows_recovery_hint(self, processor: InputProcessor) -> None:
+        """CSV vazio deve mostrar hint de recuperação."""
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse("", "spread")
+        err = exc_info.value
+        assert err.recovery is not None
+        # Deve ter sugestões de formato
+        assert "pos,carta" in err.recovery.lower() or "formato" in err.recovery.lower()
+
+    def test_csv_without_separator_shows_format_hint(self, processor: InputProcessor) -> None:
+        """Linha sem separador deve mostrar hint de formato."""
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse("1 Cruz", "spread")
+        err_str = str(exc_info.value)
+        # Deve sugerir o uso de separadores
+        assert "vírgula" in err_str.lower() or "separador" in err_str.lower() or "POSITION,CARD" in err_str
+
+    def test_negative_position_shows_recovery(self, processor: InputProcessor) -> None:
+        """Posição negativa deve mostrar hint de valores válidos."""
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse("-1,Cruz", "spread")
+        err = exc_info.value
+        assert err.recovery is not None
+        # Deve sugerir valores válidos
+        assert "1" in err.recovery or "positivo" in err.recovery.lower() or "maior" in err.recovery.lower()
+
+    def test_zero_position_shows_recovery(self, processor: InputProcessor) -> None:
+        """Posição zero deve mostrar hint de valores válidos."""
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse("0,Cruz", "spread")
+        err = exc_info.value
+        assert err.recovery is not None
+        # Deve indicar que posições começam em 1
+        assert "1" in err.recovery or "positivo" in err.recovery.lower() or "maior" in err.recovery.lower()
+
+    def test_missing_card_name_shows_example(self, processor: InputProcessor) -> None:
+        """Nome de carta ausente deve mostrar exemplo."""
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse("1,", "spread")
+        err_str = str(exc_info.value)
+        # Deve mostrar exemplo de formato
+        assert "exemplo" in err_str.lower() or "estrela" in err_str.lower()
+
+    def test_file_not_found_error_has_recovery(self, processor: InputProcessor) -> None:
+        """Erro de arquivo não encontrado deve ter hint de recuperação."""
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse_from_file("/caminho/inexistente.csv")
+        err = exc_info.value
+        assert err.recovery is not None
+        # Deve verificar o caminho ou extensão
+        assert ".csv" in err.recovery or ".txt" in err.recovery or "caminho" in err.recovery.lower()
+
+    def test_template_not_found_error_has_recovery(self, processor: InputProcessor) -> None:
+        """Erro de template não encontrado deve ter hint de valores válidos."""
+        csv_content = "pos,carta\n1,A Cruz\n2,A Estrela"
+        # Primeiro parsear o CSV para ter cards
+        result = processor.parse(csv_content, "spread")
+        assert result.cards is not None
+        # Agora tentar aplicar template inexistente
+        with pytest.raises(ParseError) as exc_info:
+            processor._apply_template_context(result, "template-inexistente")
+        err = exc_info.value
+        assert err.recovery is not None
+        # Deve listar templates válidos
+        assert "3-card" in err.recovery or "celtic-cross" in err.recovery or "simple" in err.recovery
+
+    def test_non_numeric_position_shows_format_hint(self, processor: InputProcessor) -> None:
+        """Posição não-numérica deve mostrar hint de formato."""
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse("abc,Cruz", "spread")
+        err_str = str(exc_info.value)
+        # Deve indicar que a primeira coluna deve ser numérica
+        assert "número" in err_str.lower() or "inteiro" in err_str.lower() or "POSITION" in err_str
+
+    def test_csv_without_data_after_header_shows_recovery(
+        self, processor: InputProcessor
+    ) -> None:
+        """CSV com apenas cabeçalho sem dados deve mostrar recovery."""
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse("pos,carta", "spread")
+        err = exc_info.value
+        assert err.recovery is not None
+        # Deve indicar que precisa de dados
+        assert "dados" in err.recovery.lower() or "linha" in err.recovery.lower()
+
+
+# ----------------------------------------------------------------------
+# Testes — Cross-validation de sugestões
+# ----------------------------------------------------------------------
+
+
+class TestSuggestionIntegration:
+    """Testes de integração para verificar que sugestões funcionam corretamente."""
+
+    def test_multiple_unknown_cards_each_get_suggestions(
+        self, processor: InputProcessor
+    ) -> None:
+        """Cada carta desconhecida deve ter suas próprias sugestões."""
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse("1,Xyz\n2,Abc\n3,Cruz", "spread")
+        err_str = str(exc_info.value)
+        # Primeira carta desconhecida é 'Xyz'
+        assert "Xyz" in err_str
+
+    def test_partial_match_card_name_suggests_similar(
+        self, processor: InputProcessor
+    ) -> None:
+        """Nome parcialmente correto deve sugerir matches similares."""
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse("1,Cor", "spread")
+        err_str = str(exc_info.value)
+        # Deve mostrar cards que contém "Cor" como sugestão
+        assert "Cards válidos:" in err_str
+
+    def test_exact_card_name_no_error(self, processor: InputProcessor) -> None:
+        """Nome de carta correto não deve gerar erro de desconhecido."""
+        result = processor.parse("1,A Cruz\n2,A Estrela\n3,A Casa", "spread")
+        assert len(result.cards) == 3
+        assert result.cards[0].card_name == "A Cruz"
+
+    def test_case_insensitive_card_name_gets_suggestion(
+        self, processor: InputProcessor
+    ) -> None:
+        """Nome de carta com case diferente deve encontrar match."""
+        result = processor.parse("1,A CRUZ\n2,a estrela\n3,a casa", "spread")
+        assert len(result.cards) == 3
+        assert result.cards[0].card_name == "A CRUZ"
+        assert result.cards[1].card_name == "a estrela"
+
+    def test_accented_card_name_works(self, processor: InputProcessor) -> None:
+        """Nomes de cartas com acentos devem funcionar."""
+        result = processor.parse("1,A Árvore\n2,A Casa\n3,A Estrela", "spread")
+        # Deve funcionar com acentos
+        assert len(result.cards) == 3
+        assert result.cards[0].card_name == "A Árvore"
