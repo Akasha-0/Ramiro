@@ -8,6 +8,7 @@ from src.input_processor import InputProcessor, ParseError
 from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
+from src.commands.history import run_history as history_run
 
 # ----------------------------------------------------------------------
 # Logging configuration
@@ -114,7 +115,7 @@ def main() -> None:
         run_analyze(args.input, args.format, args.output, args.template)
 
     if args.command == "history":
-        run_history(args.search, args.limit)
+        history_run(args.search, args.limit)
 
 
 def run_analyze(
@@ -205,20 +206,6 @@ def run_analyze(
         logger.exception("Erro inesperado durante análise")
         print(f"Erro interno: {e}", file=sys.stderr)
         sys.exit(1)
-
-
-def run_history(
-    search: str | None,
-    limit: int,
-) -> None:
-    """Lista sessões anteriores do histórico.
-
-    Args:
-        search: Palavra-chave opcional para filtrar sessões.
-        limit: Número máximo de sessões a exibir.
-    """
-    # Placeholder - will be implemented in subtask-2-2
-    pass
 
 
 def _save_report(path: str, content: str) -> None:
