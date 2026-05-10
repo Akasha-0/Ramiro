@@ -6,6 +6,7 @@ import sys
 
 from src.input_processor import InputProcessor, ParseError
 from src.analysis_engine import AnalysisEngine
+from src.arc_manager import ArcManager
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
 
@@ -57,6 +58,9 @@ def main() -> None:
         help="Identificador do arco/trajetória para rastreamento de milestones",
     )
 
+    # subcommand: arcs
+    arcs_parser = subparsers.add_parser("arcs", help="Listar todos os arcos de reflexão")
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -65,6 +69,8 @@ def main() -> None:
 
     if args.command == "analyze":
         run_analyze(args.input, args.format, args.output, args.arc)
+    elif args.command == "arcs":
+        run_arcs_list()
 
 
 def run_analyze(raw_input: str, format: str, output_path: str | None, arc: str | None = None) -> None:
@@ -152,6 +158,32 @@ def _save_report(path: str, content: str) -> None:
     except OSError as e:
         logger.error("Falha ao salvar relatório em %s: %s", path, e)
         raise
+
+
+def run_arcs_list() -> None:
+    """Lista todos os arcos de reflexão armazenados."""
+    try:
+        manager = ArcManager()
+        arcs = manager.list_arcs()
+
+        if not arcs:
+            print("Nenhum arco encontrado. Use 'clar.za analyze --arc <nome>' para criar um.")
+            sys.exit(0)
+
+        print(f"# Arcos de Reflexão ({len(arcs)} total)\n")
+        for arc in arcs:
+            session_count = len(arc.sessions)
+            print(f"## {arc.name}")
+            if arc.description:
+                print(f"   {arc.description}")
+            print(f"   Sessões: {session_count}")
+            print(f"   Atualizado em: {arc.updated_at.strftime('%Y-%m-%d %H:%M')}")
+            print()
+
+    except Exception as e:
+        logger.exception("Erro ao listar arcos")
+        print(f"Erro: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
