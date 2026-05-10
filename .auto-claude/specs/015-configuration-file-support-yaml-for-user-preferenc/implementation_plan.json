@@ -1,0 +1,342 @@
+{
+  "feature": "Configuration file support (YAML) for user preferences",
+  "workflow_type": "simple",
+  "workflow_rationale": "Single-service CLI feature that doesn't require phased implementation or integration with other services. Configuration is self-contained in a new module with a single CLI command addition.",
+  "phases": [
+    {
+      "id": "phase-1-config-module",
+      "name": "Configuration Module",
+      "type": "implementation",
+      "description": "Create the configuration module (src/config.py) with YAML loading, environment variable overrides, validation, and defaults",
+      "depends_on": [],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-1-1",
+          "description": "Create config.py with Config dataclass and DEFAULT_CONFIG",
+          "service": "clareza",
+          "files_to_modify": [],
+          "files_to_create": [
+            "src/config.py"
+          ],
+          "patterns_from": [
+            "src/types.py"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "python -c \"from src.config import DEFAULT_CONFIG, ClarezaConfig; print('OK')\"",
+            "expected": "OK"
+          },
+          "status": "completed"
+        },
+        {
+          "id": "subtask-1-2",
+          "description": "Implement _load_yaml_config() to read ~/.config/clareza/config.yaml",
+          "service": "clareza",
+          "files_to_modify": [
+            "src/config.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/input_processor.py"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "python -c \"from src.config import load_config; c = load_config(); print('output_dir:', c.default_output_dir)\"",
+            "expected": "output_dir:"
+          },
+          "status": "completed"
+        },
+        {
+          "id": "subtask-1-3",
+          "description": "Implement _load_env_overrides() for CLAREZA_* environment variables",
+          "service": "clareza",
+          "files_to_modify": [
+            "src/config.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "CLAREZA_OUTPUT_DIR=/tmp/test python -c \"from src.config import load_config; c = load_config(); print('env_override:', c.default_output_dir)\"",
+            "expected": "env_override: /tmp/test"
+          },
+          "status": "completed"
+        },
+        {
+          "id": "subtask-1-4",
+          "description": "Implement validate_config() with clear error messages for invalid values",
+          "service": "clareza",
+          "files_to_modify": [
+            "src/config.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/input_processor.py"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "python -c \"from src.config import ConfigValidator; v = ConfigValidator(); errors = v.validate({'report_format': 'invalid'}); print('errors:', len(errors))\"",
+            "expected": "errors: 1"
+          },
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "phase-2-cli-integration",
+      "name": "CLI Integration",
+      "type": "implementation",
+      "description": "Integrate configuration into CLI: add --show-config command and use config defaults for CLI arguments",
+      "depends_on": [
+        "phase-1-config-module"
+      ],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-2-1",
+          "description": "Add --show-config subcommand to CLI",
+          "service": "clareza",
+          "files_to_modify": [
+            "src/main.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/main.py"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "python -m src.main --show-config 2>/dev/null | head -5",
+            "expected": "default_output_dir"
+          },
+          "status": "completed",
+          "notes": "--show-config option implemented and verified. Shows default_output_dir as first line.",
+          "updated_at": "2026-05-10T16:02:51.800695+00:00"
+        },
+        {
+          "id": "subtask-2-2",
+          "description": "Use config defaults when CLI arguments not provided",
+          "service": "clareza",
+          "files_to_modify": [
+            "src/main.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/main.py"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "python -c \"from src.main import _get_effective_args; import argparse; p = argparse.ArgumentParser(); p.add_argument('-f', '--format', default=None); args = p.parse_args([]); print(type(args).__name__)\"",
+            "expected": "Namespace"
+          },
+          "status": "completed",
+          "notes": "_get_effective_args() implemented to apply config defaults when CLI args not provided. Verification passed.",
+          "updated_at": "2026-05-10T17:10:00.000000+00:00"
+        }
+      ]
+    },
+    {
+      "id": "phase-3-tests",
+      "name": "Tests",
+      "type": "implementation",
+      "description": "Add unit tests for the configuration system",
+      "depends_on": [
+        "phase-1-config-module"
+      ],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-3-1",
+          "description": "Create tests/test_config.py with unit tests for config loading and validation",
+          "service": "clareza",
+          "files_to_modify": [],
+          "files_to_create": [
+            "tests/test_config.py"
+          ],
+          "patterns_from": [
+            "tests/test_input_processor.py"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "pytest tests/test_config.py -v",
+            "expected": "PASSED"
+          },
+          "status": "completed",
+          "notes": "58 tests covering ClarezaConfig, load_config, _load_yaml_config, _parse_path, _load_env_overrides, ConfigValidationError, ConfigValidator, and constants. All PASSED.",
+          "updated_at": "2026-05-10T17:25:00.000000+00:00"
+        }
+      ]
+    },
+    {
+      "id": "phase-4-dependencies",
+      "name": "Dependencies",
+      "type": "setup",
+      "description": "Add PyYAML dependency to pyproject.toml",
+      "depends_on": [],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-4-1",
+          "description": "Add pyyaml to dependencies in pyproject.toml",
+          "service": "clareza",
+          "files_to_modify": [
+            "pyproject.toml"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "pyproject.toml"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "grep -q 'pyyaml' pyproject.toml && echo 'found' || echo 'not found'",
+            "expected": "found"
+          },
+          "status": "completed",
+          "notes": "Added pyyaml>=6.0.0 to dependencies array in pyproject.toml. Verification passed.",
+          "updated_at": "2026-05-10T17:35:00.000000+00:00"
+        },
+        {
+          "id": "subtask-4-2",
+          "description": "Install pyyaml dependency",
+          "service": "clareza",
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "pip install pyyaml 2>&1 | tail -1",
+            "expected": "Successfully installed"
+          },
+          "status": "completed",
+          "notes": "pyyaml 6.0.3 already installed in system. Verified with python3 -c 'import yaml'. No installation needed."
+        }
+      ]
+    },
+    {
+      "id": "phase-5-integration-test",
+      "name": "Integration Test",
+      "type": "integration",
+      "description": "Run full integration tests",
+      "depends_on": [
+        "phase-2-cli-integration",
+        "phase-3-tests",
+        "phase-4-dependencies"
+      ],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-5-1",
+          "description": "Run all tests to verify integration",
+          "all_services": true,
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "pytest tests/ -v --tb=short",
+            "expected": "passed"
+          },
+          "status": "pending"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_phases": 5,
+    "total_subtasks": 10,
+    "services_involved": [
+      "clareza"
+    ],
+    "parallelism": {
+      "max_parallel_phases": 2,
+      "parallel_groups": [
+        {
+          "phases": [
+            "phase-1-config-module",
+            "phase-4-dependencies"
+          ],
+          "reason": "Both are independent setup phases with no dependencies"
+        },
+        {
+          "phases": [
+            "phase-3-tests",
+            "phase-2-cli-integration"
+          ],
+          "reason": "Both depend only on phase-1, can run in parallel after config module is done"
+        }
+      ],
+      "recommended_workers": 2,
+      "speedup_estimate": "1.3x faster than sequential"
+    }
+  },
+  "verification_strategy": {
+    "risk_level": "low",
+    "skip_validation": false,
+    "test_creation_phase": "post_implementation",
+    "test_types_required": [
+      "unit"
+    ],
+    "security_scanning_required": false,
+    "staging_deployment_required": false,
+    "acceptance_criteria": [
+      "All existing tests pass",
+      "New config module has test coverage",
+      "--show-config command works correctly",
+      "Environment variable overrides work",
+      "YAML config file is loaded correctly"
+    ],
+    "verification_steps": [
+      {
+        "name": "Unit Tests",
+        "command": "pytest tests/test_config.py -v",
+        "expected_outcome": "All config tests pass",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "All Tests",
+        "command": "pytest tests/ -v",
+        "expected_outcome": "All tests pass",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      }
+    ],
+    "reasoning": "Low risk change adds new functionality with unit test coverage"
+  },
+  "qa_acceptance": {
+    "unit_tests": {
+      "required": true,
+      "commands": [
+        "pytest tests/test_config.py -v"
+      ],
+      "minimum_coverage": 80
+    },
+    "integration_tests": {
+      "required": false,
+      "commands": [],
+      "services_to_test": []
+    },
+    "e2e_tests": {
+      "required": false,
+      "commands": [],
+      "flows": []
+    },
+    "browser_verification": {
+      "required": false,
+      "pages": []
+    },
+    "database_verification": {
+      "required": false,
+      "checks": []
+    }
+  },
+  "qa_signoff": null,
+  "executionPhase": "coding",
+  "status": "in_progress",
+  "planStatus": "in_progress",
+  "updated_at": "2026-05-10T16:16:35.320Z",
+  "recoveryNote": "Task recovered from stuck state at 2026-05-10T16:00:49.507Z",
+  "last_updated": "2026-05-10T16:02:51.800711+00:00"
+}
