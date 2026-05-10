@@ -12,7 +12,7 @@ import logging
 import re
 from typing import Optional
 
-from src.types import AnalysisResult, ValidatedOutput
+from src.types import AnalysisResult, InputGuardrailsResult, ValidatedOutput
 
 logger = logging.getLogger(__name__)
 
@@ -218,6 +218,35 @@ def detect_sensitive_input(text: str) -> tuple[bool, list[str]]:
         )
 
     return (is_sensitive, flags)
+
+
+def apply_input_guardrails(text: str) -> InputGuardrailsResult:
+    """Aplica guardrails de input e retorna resultado estruturado.
+
+    Wrapper que converte o resultado de detect_sensitive_input
+    no dataclass InputGuardrailsResult para uso uniforme no pipeline.
+
+    Args:
+        text: Texto de input do usuário a escanear.
+
+    Returns:
+        InputGuardrailsResult com is_sensitive e flags.
+
+    Examples:
+        >>> result = apply_input_guardrails("texto normal sobre trabalho")
+        >>> assert result.is_sensitive == False
+        >>> assert result.flags == []
+
+        >>> result = apply_input_guardrails("estou com depressão")
+        >>> assert result.is_sensitive == True
+        >>> assert "depressão" in result.flags
+    """
+    is_sensitive, flags = detect_sensitive_input(text)
+
+    return InputGuardrailsResult(
+        is_sensitive=is_sensitive,
+        flags=flags,
+    )
 
 
 # Disclaimer ético padrão (inserido quando needs_disclaimer=True)

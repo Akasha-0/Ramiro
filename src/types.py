@@ -79,3 +79,16 @@ class ValidatedOutput:
     disclaimer_flags: list[str] = field(default_factory=list)
     needs_disclaimer: bool = False
     is_safe: bool = True
+
+
+@dataclass
+class InputGuardrailsResult:
+    """Resultado da detecção de sensibilidade no input do usuário.
+
+    Attributes:
+        is_sensitive: Indica se o input contém temas sensíveis.
+        flags: Lista de palavras-chave sensíveis detectadas.
+    """
+
+    is_sensitive: bool
+    flags: list[str] = field(default_factory=list)
