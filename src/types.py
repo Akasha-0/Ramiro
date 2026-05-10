@@ -81,3 +81,24 @@ class ValidatedOutput:
     disclaimer_flags: list[str] = field(default_factory=list)
     needs_disclaimer: bool = False
     is_safe: bool = True
+
+
+@dataclass
+class SessionRecord:
+    """Registro de uma sessão de análise persistida no banco de dados.
+
+    Attributes:
+        id: Identificador único da sessão (None ao criar, preenchido pelo banco).
+        timestamp: Data e hora da sessão no formato ISO.
+        input_text: Texto original da entrada do usuário.
+        cards: Lista de nomes das cartas drawn (serializada como string JSON).
+        format: Formato usado ("text", "spread", "symbols").
+        report_path: Caminho para o arquivo de relatório salvo (opcional).
+    """
+
+    id: Optional[int] = None
+    timestamp: Optional[str] = None
+    input_text: str = ""
+    cards: str = "[]"
+    format: str = "text"
+    report_path: Optional[str] = None
