@@ -301,9 +301,13 @@ class InputProcessor:
                 similar = get_similar_card_names(card_name, n=3)
                 details = f"'{card_name}' não encontrada no catálogo do Baralho Cigano"
                 if similar:
-                    recovery = f"Você quis dizer: {', '.join(similar)}"
+                    # Formato esperado: Cartão desconhecido: 'Cas'. Cards válidos: Casa, ...
+                    cards_list = ", ".join([name.replace("A ", "").replace("O ", "") for name in similar])
+                    recovery = f"Cartão desconhecido: '{card_name}'. Cards válidos: {cards_list}"
                 else:
-                    recovery = "Verifique o nome da carta. Use um dos 36 nomes válidos do Baralho Cigano."
+                    all_card_names = [s.name for s in get_all_symbols()]
+                    all_names_str = ", ".join([n.replace("A ", "").replace("O ", "") for n in all_card_names[:10]]) + "..."
+                    recovery = f"Cartão desconhecido: '{card_name}'. Cards válidos: {all_names_str}"
                 raise ParseError(
                     "Cartão desconhecido",
                     line=line_no,
