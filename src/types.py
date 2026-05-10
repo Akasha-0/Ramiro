@@ -65,6 +65,23 @@ class AnalysisResult:
 
 
 @dataclass
+class SessionContext:
+    """Contexto de sessão para rastreamento de histórico e evitar repetições.
+
+    Attributes:
+        session_id: Identificador único da sessão.
+        recommendations_history: Lista de recomendações já dadas nesta sessão (para evitar repetição).
+        analyzed_inputs: Lista de inputs já analisados nesta sessão.
+        timestamps: Lista de timestamps de análises realizadas (ordem cronológica).
+    """
+
+    session_id: str
+    recommendations_history: list[str] = field(default_factory=list)
+    analyzed_inputs: list[str] = field(default_factory=list)
+    timestamps: list[str] = field(default_factory=list)
+
+
+@dataclass
 class ValidatedOutput:
     """Output validado pelos guardrails éticos.
 
