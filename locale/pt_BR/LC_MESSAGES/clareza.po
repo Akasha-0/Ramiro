@@ -1,0 +1,160 @@
+# Portuguese (Brazil) translations for Clareza.
+# Copyright (C) 2026
+# This file is distributed under the same license as the clareza package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Clareza 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-10\n"
+"PO-Revision-Date: 2026-05-10\n"
+"Last-Translator: \n"
+"Language-Team: Portuguese\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+# CLI messages
+msgid " Clareza - Sistema de Clareza Simbólico-Estratégica"
+msgstr ""
+
+msgid "Análise simbólico-estratégica para clareza e decisão"
+msgstr ""
+
+msgid "Opções:"
+msgstr ""
+
+msgid "Mostrar esta mensagem de ajuda"
+msgstr ""
+
+msgid "Subcomando de análise"
+msgstr ""
+
+msgid "Formato do input"
+msgstr ""
+
+msgid "Formato de saída do relatório"
+msgstr ""
+
+msgid "Arquivo de saída para o relatório (opcional)"
+msgstr ""
+
+msgid "Locale para tradução (padrão: pt_BR)"
+msgstr ""
+
+# Report sections
+msgid "Diagnóstico"
+msgstr ""
+
+msgid "Interpretação Simbólica"
+msgstr ""
+
+msgid "Riscos Identificados"
+msgstr ""
+
+msgid "Caminhos de Decisão"
+msgstr ""
+
+msgid "Plano Prático"
+msgstr ""
+
+msgid "## Relatório de Análise\n\n"
+msgstr ""
+
+# Error messages
+msgid "Erro: Formato inválido '{format}'. Use: text, spread, symbols"
+msgstr ""
+
+msgid "Erro: Locale '{locale}' não suportado. Usando fallback pt_BR."
+msgstr ""
+
+msgid "Erro ao processar input: {error}"
+msgstr ""
+
+msgid "Erro ao gerar relatório: {error}"
+msgstr ""
+
+msgid "Erro ao analisar símbolos: {error}"
+msgstr ""
+
+# Disclaimer text
+msgid "AVISO ÉTICO"
+msgstr ""
+
+msgid "Este relatório é gerado por um sistema de IA e tem caráter informativo. Não substitui orientação profissional qualificada. Decisões basingadas neste relatório são de responsabilidade exclusiva do usuário."
+msgstr ""
+
+msgid "⚠️ AVISO: O sistema detectou palavras que podem indicar necessidade de apoio profissional. Considere consultar um especialista."
+msgstr ""
+
+msgid "Disclaimers"
+msgstr ""
+
+# Theme labels
+msgid "Trabalho"
+msgstr ""
+
+msgid "Relacionamento"
+msgstr ""
+
+msgid "Saúde"
+msgstr ""
+
+msgid "Finanças"
+msgstr ""
+
+msgid "Família"
+msgstr ""
+
+msgid "Espiritualidade"
+msgstr ""
+
+# Risk indicators
+msgid "Risco identificado"
+msgstr ""
+
+msgid "Alerta"
+msgstr ""
+
+msgid "Atenção"
+msgstr ""
+
+# Decision guidance
+msgid "Caminho recomendado"
+msgstr ""
+
+msgid "Considere"
+msgstr ""
+
+msgid "Reflita"
+msgstr ""
+
+# Common terms
+msgid "Sim"
+msgstr ""
+
+msgid "Não"
+msgstr ""
+
+msgid "Talvez"
+msgstr ""
+
+msgid "Incerto"
+msgstr ""
+
+msgid "Conflito interno"
+msgstr ""
+
+msgid "Clareza"
+msgstr ""
+
+msgid "Oportunidade"
+msgstr ""
+
+msgid "Desafio"
+msgstr ""
+
+msgid "Cuidado"
+msgstr ""
