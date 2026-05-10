@@ -348,5 +348,173 @@
         "resolution": "Busque a proteção do urso e afaste-se do lobo."
       }
     ]
+  },
+  "contextual_modifiers": {
+    "position_significance": {
+      "description": "Significado contextual baseado na posição da carta na tiragem. A mesma carta pode ter nuances diferentes dependendo de onde aparece no spread.",
+      "positions": [
+        {
+          "position": 1,
+          "name": "Passado",
+          "keywords": ["origem", "causa", "fundação", "memória", "início"],
+          "interpretation": "Representa a situação anterior, a causa raiz ou o ponto de partida da questão. Indica o que já aconteceu e que influencia o presente.",
+          "advice": "Reconheça de onde veio para entender onde está."
+        },
+        {
+          "position": 2,
+          "name": "Presente",
+          "keywords": ["atual", "agora", "momento", "situação", "contexto"],
+          "interpretation": "Representa a situação atual, o momento presente da história. É o ponto focal da questão analisada.",
+          "advice": "Esteja presente — o agora é seu ponto de poder."
+        },
+        {
+          "position": 3,
+          "name": "Futuro Próximo",
+          "keywords": ["iminente", "breve", "próximo", "curto prazo", "em breve"],
+          "interpretation": "Representa o que está por vir no curto prazo. É o próximo passo natural ou consequência imediata.",
+          "advice": "Prepare-se — o futuro imediato está se formando agora."
+        },
+        {
+          "position": 4,
+          "name": "Futuro Distante",
+          "keywords": ["longínquo", "maior", "horizonte", "长远", "destino"],
+          "interpretation": "Representa o resultado final ou o destino maior da situação. Pode indicar o que se crystallizará a longo prazo.",
+          "advice": "Mantenha o horizonte em mente — cada passo presente conecta ao futuro."
+        },
+        {
+          "position": 5,
+          "name": "Influência Externa",
+          "keywords": ["ambiente", "contexto", "externo", "circunstância", "outros"],
+          "interpretation": "Representa fatores externos que afetam a situação. Outras pessoas, ambiente ou circunstâncias além do controle direto.",
+          "advice": "Avalie o contexto — frequentemente o ambiente molda o resultado."
+        },
+        {
+          "position": 6,
+          "name": "Obstáculo",
+          "keywords": ["bloqueio", "desafio", "impedimento", "dificuldade", "barreira"],
+          "interpretation": "Representa o que está no caminho ou dificulta o progresso. Pode indicar medos internos ou obstáculos externos.",
+          "advice": "Identifique o bloqueio para poder transpô-lo ou contorná-lo."
+        },
+        {
+          "position": 7,
+          "name": "Conselho",
+          "keywords": ["orientação", "recomendação", "sugestão", "caminho", "guia"],
+          "interpretation": "Representa a sabedoria ou conselho que a tiragem oferece. O que as cartas sugerem como melhor caminho.",
+          "advice": "Ouça o conselho — há sabedoria acumulada nesta orientação."
+        },
+        {
+          "position": 8,
+          "name": "Oculto",
+          "keywords": ["escondido", "secreto", "desconhecido", "latente", "potencial"],
+          "interpretation": "Representa fatores desconhecidos ou forças latentes que afetam a situação. Pode indicar potencial não realizado ou verdades escondidas.",
+          "advice": "Explore o que está oculto — frequentemente a chave está no invisível."
+        },
+        {
+          "position": 9,
+          "name": "Esperança",
+          "keywords": ["desejo", "sonho", "aspiração", "possibilidade", "potencial"],
+          "interpretation": "Representa as aspirações, esperanças ou resultados desejados. O que a pessoa busca alcançar.",
+          "advice": "Mantenha a esperança viva — ela guia suas ações presente."
+        },
+        {
+          "position": 10,
+          "name": "Resultado Final",
+          "keywords": ["fim", "conclusão", "resultado", "destino", "desfecho"],
+          "interpretation": "Representa o resultado provável da situação. É a síntese de todas as outras posições.",
+          "advice": "Este é o destino provável — mas lembra: cartas mostram possibilidades, não certezas."
+        }
+      ],
+      "general_notes": [
+        "Posições 1-4 representam a linha do tempo da questão (passado → presente → futuro próximo → futuro distante)",
+        "Posições 5-8 representam fatores que influenciam a situação (externo, obstáculo, conselho, oculto)",
+        "Posições 9-10 representam aspiração e resultado (esperança, resultado final)",
+        "A interpretação de cada carta deve ser modulada pela posição que ocupa"
+      ]
+    },
+    "adjacent_card_influence": {
+      "description": "Regras para interpretar a influência entre cartas adjacentes na tiragem. A relação entre cartas vizinhas adiciona camadas de significado.",
+      "influence_types": [
+        {
+          "type": "amplification",
+          "keywords": ["reforço", "intensificação", "aumento", "fortalecimento"],
+          "description": "Quando uma carta intensifica ou reforça o significado da carta vizinha.",
+          "rule": "A carta vizinha amplifica aspectos da carta principal. Combine as interpretações de forma sinérgica.",
+          "example": "Estrela próxima a Casa amplia a esperança de segurança."
+        },
+        {
+          "type": "mitigation",
+          "keywords": ["moderação", "suavização", "redução", "equilíbrio"],
+          "description": "Quando uma carta suaviza ou modera o significado da carta vizinha.",
+          "rule": "A carta vizinha atenua extremos da carta principal, trazendo equilíbrio.",
+          "example": "Buquê próximo a Cruz traz momentos de alegria durante provações."
+        },
+        {
+          "type": "contrast",
+          "keywords": ["oposição", "conflito", "tensão", "contraste"],
+          "description": "Quando uma carta contrasta ou oposiciona o significado da carta vizinha.",
+          "rule": "As cartas em contraste indicam tensão ou necessidade de escolha entre forças opostas.",
+          "example": "Cruz próximo a Cegonha mostra provação que precede novo começo."
+        },
+        {
+          "type": "cause_effect",
+          "keywords": ["causa", "consequência", "efeito", "resultado direto"],
+          "description": "Quando uma carta funciona como causa da carta vizinha.",
+          "rule": "A carta anterior causa ou influencia diretamente o que a carta seguinte representa.",
+          "example": "Carta precede Livro — a mensagem recebida leva ao estudo."
+        },
+        {
+          "type": "completion",
+          "keywords": ["complemento", "acabamento", "conclusão", "completude"],
+          "description": "Quando uma carta completa ou complementa a carta vizinha.",
+          "rule": "Juntas, as cartas formam um significado mais completo do que individualmente.",
+          "example": "Cegonha + Florista = renascimento que requer cultivo paciente."
+        }
+      ],
+      "position_rules": {
+        "left_influence": {
+          "description": "Carta à esquerda influence como a carta atual vê seu passado ou origem",
+          "interpretation": "A carta da esquerda revela o contexto de onde veio a situação atual."
+        },
+        "right_influence": {
+          "description": "Carta à direita influence como a carta atual percebe seu futuro ou destino",
+          "interpretation": "A carta da direita revela para onde a situação atual está tendendo."
+        },
+        "vertical_above": {
+          "description": "Carta acima influencia como a situação é percebida conscientemente",
+          "interpretation": "A carta acima representa a influência consciente ou a percepção desperta."
+        },
+        "vertical_below": {
+          "description": "Carta abaixo influencia como a situação é percebida inconscientemente",
+          "interpretation": "A carta abaixo representa a influência inconsciente ou o que está enraizado."
+        }
+      },
+      "special_combinations": [
+        {
+          "cards": ["A Forca", "A Cruz"],
+          "influence": "cause_effect",
+          "combined_interpretation": "Paralisia forçada que resulta em provação espiritual profunda."
+        },
+        {
+          "cards": ["As Nuvens", "A Estrela"],
+          "influence": "completion",
+          "combined_interpretation": "Confusão que encontra sua resolução na esperança e clareza."
+        },
+        {
+          "cards": ["O Cão", "O Lobo"],
+          "influence": "contrast",
+          "combined_interpretation": "Tensão entre amizade leal e ameaça predatória no mesmo contexto."
+        },
+        {
+          "cards": ["A Morte", "A Cegonha"],
+          "influence": "completion",
+          "combined_interpretation": "Transformação completa que resulta em renascimento natural."
+        },
+        {
+          "cards": ["O Florista", "O Buquê"],
+          "influence": "amplification",
+          "combined_interpretation": "Cultivo paciente que resulta em recompensa florescente."
+        }
+      ]
+    }
   }
 }
