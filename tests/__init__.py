@@ -1,0 +1,1 @@
+"""Pacote de testes do Sistema de Clareza Simbólico-Estratégica."""
