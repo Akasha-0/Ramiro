@@ -46,5 +46,24 @@ def list_command() -> None:
         click.echo(f"{card['id']:2d}. {card['name']} - {card['meaning']}")
 
 
+@cli.command("analyze")
+@click.argument("card_id", type=int)
+def analyze_command(card_id: int) -> None:
+    """Analisar uma carta específica do Baralho Cigano.
+
+    Args:
+        card_id: ID numérico da carta (1-36).
+    """
+    cards = get_cards_data()
+    card = next((c for c in cards if c["id"] == card_id), None)
+    if card is None:
+        click.echo(f"Erro: Carta com ID {card_id} não encontrada.", err=True)
+        click.echo("Use 'clareza list' para ver todas as cartas disponíveis.", err=True)
+        raise SystemExit(1)
+    click.echo(f"Carta #{card['id']}: {card['name']}")
+    click.echo(f"Palavras-chave: {', '.join(card['keywords'])}")
+    click.echo(f"Significado: {card['meaning']}")
+
+
 if __name__ == "__main__":
     cli()
