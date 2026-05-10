@@ -74,7 +74,7 @@
     "name": "The Clouds",
     "name_pt": "As Nuvens",
     "alternate_names": ["Clouds", "Nuvens", "Cloud", "Storm Clouds"],
-    "themes": ["confusion", "uncertainty", "obscure", "mystery", "uncertainty", "fog"],
+    "themes": ["confusion", "uncertainty", "obscure", "mystery", "fog"],
     "meaning": "Confusion, uncertainty, lack of clarity. Things are not yet clear.",
     "directions": {
       "upright": "Uncertainty clearing, partial clarity, things becoming clearer",
@@ -284,7 +284,7 @@
     "name": "The Mountain",
     "name_pt": "A Montanha",
     "alternate_names": ["Mountain", "Montanha", "The Hill", "Obstacle"],
-    "themes": ["obstacle", "difficulty", "barrier", "challenge", "endurance", "obstacle"],
+    "themes": ["obstacle", "difficulty", "barrier", "challenge", "endurance"],
     "meaning": "Obstacles, barriers, difficulties. Represents challenges that must be overcome.",
     "directions": {
       "upright": "Obstacle in path, delay, someone blocking progress",
