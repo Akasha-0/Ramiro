@@ -96,6 +96,152 @@ def _map_keyword_to_symbol(keyword: str) -> list[CiganoSymbol]:
 
 
 # ----------------------------------------------------------------------
+# Interpretação contextual por posição na tiragem
+# ----------------------------------------------------------------------
+
+
+def _get_position_context_text(
+    position: int, context: Optional[str], symbol: CiganoSymbol
+) -> Optional[str]:
+    """Gera texto contextual para uma posição específica na tiragem.
+
+    Args:
+        position: Posição da carta (1-based).
+        context: Contexto posicional (ex: "passado", "presente", "futuro").
+        symbol: Símbolo da carta para adaptação contextual.
+
+    Returns:
+        String com interpretação contextual ou None se não aplicável.
+    """
+    if not context:
+        return None
+
+    normalized = context.lower().strip()
+    interpretations: dict[str, str] = {
+        "passado": "Esta carta representa o passado — uma situação que já aconteceu e "
+        "influencia o presente. A energia de {name} neste momento indica "
+        "que {past_hint}.",
+        "presente": "Esta carta representa o momento atual — a situação que está "
+        "acontecendo agora. A energia de {name} neste ponto indica "
+        "que {present_hint}.",
+        "futuro": "Esta carta representa o futuro — uma possibilidade que está "
+        "se desenhando. A energia de {name} aponta para "
+        "que {future_hint}.",
+        "influência": "Esta carta representa uma influência externa — algo que "
+        "afeta a situação de fora. A energia de {name} sugere "
+        "que {influence_hint}.",
+        "base": "Esta carta representa a base ou fundamento — o alicerce "
+        "da situação. A energia de {name} indica "
+        "que {base_hint}.",
+        "ação": "Esta carta representa a ação necessária — o que deve ser "
+        "feito. A energia de {name} aponta para "
+        "que {action_hint}.",
+        "resultado": "Esta carta representa o resultado provável — o desfecho "
+        "mais provável. A energia de {name} indica "
+        "que {result_hint}.",
+    }
+
+    if normalized not in interpretations:
+        return None
+
+    # Dicas contextuais baseadas no símbolo
+    past_hints = {
+        "espiritual": "um ciclo antigo está encerrando e influenciando o presente.",
+        "trabalho": "uma decisão profissional passada molda a situação atual.",
+        "relação": "um relacionamento anterior deixa marcas na situação presente.",
+        "família": "assuntos familiares do passado afetam o momento atual.",
+        "saúde": "uma condição passada influencia o bem-estar presente.",
+        "dinheiro": "decisões financeiras passadas impactam a situação atual.",
+        "viagem": "uma jornada anterior trouxe mudanças que afetam agora.",
+    }
+
+    present_hints = {
+        "espiritual": "transformação interior está em curso neste momento.",
+        "trabalho": "oportunidade ou desafio profissional se apresenta agora.",
+        "relação": "dinâmica relacional importante está em jogo agora.",
+        "família": "assuntos domésticos requerem atenção neste momento.",
+        "saúde": "cuidado com o bem-estar físico e emocional é necessário.",
+        "dinheiro": "decisão financeira importante está no momento presente.",
+        "viagem": "uma mudança de cenário pode trazer clareza agora.",
+    }
+
+    future_hints = {
+        "espiritual": "mudança profunda está se desenhando no horizonte.",
+        "trabalho": "nova oportunidade profissional está por vir.",
+        "relação": "desenvolvimento significativo no campo relacional está próximo.",
+        "família": "evento familiar importante está por acontecer.",
+        "saúde": "cuidado preventivo trará benefícios futuros.",
+        "dinheiro": "prospéridade está se desenhando no caminho.",
+        "viagem": "jornada transformadora está se aproximando.",
+    }
+
+    influence_hints = {
+        "espiritual": "energia externa está afetando sua situação de forma sutil.",
+        "trabalho": "influência externa está moldando o ambiente profissional.",
+        "relação": "terceira pessoa ou fator externo afeta a dinâmica relacional.",
+        "família": "influência familiar externa está em jogo.",
+        "saúde": "fatores externos podem estar afetando seu bem-estar.",
+        "dinheiro": "influência externa afeta sua situação financeira.",
+        "viagem": "fator externo pode desencadear uma mudança importante.",
+    }
+
+    base_hints = {
+        "espiritual": "suas bases espirituais são fortes e sustenta você.",
+        "trabalho": "fundamento profissional é sólido, use-o como base.",
+        "relação": "relacionamento baseia-se em pilares fortes.",
+        "família": "raízes familiares oferecem estabilidade importante.",
+        "saúde": "constituição básica oferece抵抗力.",
+        "dinheiro": "base financeira é a foundation atual.",
+        "viagem": "experiências passadas são a base para decisões.",
+    }
+
+    action_hints = {
+        "espiritual": "reflexão e autoconhecimento são as ações recomendadas.",
+        "trabalho": "comunicação clara e objetiva é necessária agora.",
+        "relação": "diálogo aberto e honesto é a ação recomendada.",
+        "família": "cuidado e atenção ao ambiente doméstico são necessários.",
+        "saúde": "busque cuidado preventivo e equilíbrio.",
+        "dinheiro": "avaliação cuidadosa antes de decisões financeiras.",
+        "viagem": "considere expandir horizontes e explorar novas possibilidades.",
+    }
+
+    result_hints = {
+        "espiritual": "crescimento espiritual e clareza são prováveis.",
+        "trabalho": "sucesso profissional e reconhecimento são prováveis.",
+        "relação": "aprofundamento ou transformação relacional é provável.",
+        "família": "fortalecimento dos vínculos familiares é provável.",
+        "saúde": "melhoria do bem-estar geral é provável.",
+        "dinheiro": "estabilidade ou crescimento financeiro é provável.",
+        "viagem": "experiência transformadora e novos aprendizados são prováveis.",
+    }
+
+    hint_maps = {
+        "passado": past_hints,
+        "presente": present_hints,
+        "futuro": future_hints,
+        "influência": influence_hints,
+        "base": base_hints,
+        "ação": action_hints,
+        "resultado": result_hints,
+    }
+
+    hints = hint_maps.get(normalized, {})
+    hint = hints.get(symbol.theme, f"a energia de {symbol.name} é significativa neste contexto.")
+
+    template = interpretations[normalized]
+    return template.format(
+        name=symbol.name,
+        past_hint=hints.get("espiritual", ""),
+        present_hint=hints.get("espiritual", ""),
+        future_hint=hints.get("espiritual", ""),
+        influence_hint=hints.get("espiritual", ""),
+        base_hint=hints.get("espiritual", ""),
+        action_hint=hints.get("espiritual", ""),
+        result_hint=hints.get("espiritual", ""),
+    ) + f" {hint}"
+
+
+# ----------------------------------------------------------------------
 # Geração de interpretações para cartas da tiragem
 # ----------------------------------------------------------------------
 
@@ -129,6 +275,15 @@ def _interpret_card_position(
         f"_{symbol.interpretation}_",
         "",
     ]
+
+    # Adicionar contexto posicional se disponível
+    if card.position_context:
+        context_interpretation = _get_position_context_text(
+            card.position, card.position_context, symbol
+        )
+        if context_interpretation:
+            lines.append(f"> 📍 {context_interpretation}")
+            lines.append("")
 
     if symbol.advice:
         lines.append(f"> 💡 {symbol.advice}")
