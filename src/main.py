@@ -8,6 +8,7 @@ from src.input_processor import InputProcessor, ParseError
 from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
+from src.database import SessionDB, DatabaseError
 from src.commands.history import run_history as history_run
 from src.commands.view import run_view as view_run
 
@@ -52,6 +53,20 @@ def _is_valid_file_path(path: str) -> bool:
     # Verificar extensões comuns para arquivos de entrada
     valid_extensions = (".csv", ".txt")
     return any(path.lower().endswith(ext) for ext in valid_extensions)
+
+
+def _extract_card_names(structured) -> list[str]:
+    """Extrai lista de nomes de cartas de um StructuredInput.
+
+    Args:
+        structured: Input processado do InputProcessor.
+
+    Returns:
+        Lista de nomes de cartas (vazia se não houver cartas).
+    """
+    if not structured.cards:
+        return []
+    return [card.card_name for card in structured.cards]
 
 
 # ----------------------------------------------------------------------
@@ -196,6 +211,20 @@ def run_analyze(
                 "Disclaimer ético aplicado — flags detectadas: %s",
                 validated.disclaimer_flags,
             )
+
+        # Salvar sessão no banco de dados
+        try:
+            db = SessionDB()
+            card_names = _extract_card_names(structured)
+            session_id = db.save_session(
+                input_text=raw_input,
+                cards=card_names,
+                format=format,
+                report_path=output_path,
+            )
+            logger.info("Sessão %d salva no banco de dados", session_id)
+        except DatabaseError as e:
+            logger.warning("Falha ao salvar sessão no banco: %s", e)
 
         # Fase 5: Output
         if output_path:
