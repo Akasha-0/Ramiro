@@ -55,12 +55,12 @@ def generate_interpretacao(analysis: SessionAnalysis) -> str:
         # Thematic connection
         if card.themes:
             theme_list = ", ".join(card.themes)
-            lines.append(f"**Conexão temática:** Este symbolismoconnecta-se com os temas de {theme_list}.")
+            lines.append(f"**Conexão temática:** Este simbolismo conecta-se com os temas de {theme_list}.")
             lines.append("")
 
         # Question relevance
         if analysis.primary_question:
-            lines.append(f"**Relevância para sua questão:** A energia de {card.name} traz um elemento de reflexão sobre \"{analysis.primary_question}\", sugerindo que este symbolismopode indicar uma direção ou influência em seu caminho atual.")
+            lines.append(f"**Relevância para sua questão:** A energia de {card.name} traz um elemento de reflexão sobre \"{analysis.primary_question}\", sugerindo que este simbolismo pode indicar uma direção ou influência em seu caminho atual.")
             lines.append("")
 
         # Separator between cards (except for the last one)
@@ -82,7 +82,7 @@ def generate_interpretacao(analysis: SessionAnalysis) -> str:
             lines.append(f"O tema dominante — {dominant} — oferece a chave principal para comprender sua situação atual.{reversed_context}")
         lines.append("")
         if analysis.primary_question:
-            lines.append("Esta interpretação convida você a refletir sobre como estas symbolismoses manifestam-se em sua vida atual e quais ações ou perspectivas podem emergir desta leitura.")
+            lines.append("Esta interpretação convida você a refletir sobre como estes simbolismos manifestam-se em sua vida atual e quais ações ou perspectivas podem emergir desta leitura.")
         lines.append("")
 
     return "\n".join(lines)
