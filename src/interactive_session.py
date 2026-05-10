@@ -14,7 +14,8 @@ import logging
 from typing import Optional, Protocol
 
 from src.types import CardPosition, StructuredInput
-from src.spread_templates import TEMPLATES, get_template, SpreadTemplate
+from src.spread_templates import TEMPLATES, get_template, SpreadTemplate, SpreadPosition
+from src.symbols import get_symbol_by_name, CiganoSymbol
 
 logger = logging.getLogger(__name__)
 
@@ -332,6 +333,7 @@ class InteractiveSession:
         """Coleta as cartas sorteadas para a tiragem.
 
         Percorre cada posição da tiragem solicitando o nome da carta.
+        Valida cada carta contra o catálogo do Baralho Cigano.
 
         Args:
             spread: Template da tiragem selecionada.
@@ -372,16 +374,73 @@ class InteractiveSession:
                     self._print_error("Por favor, informe o nome da carta.")
                     continue
 
-                cards.append(
-                    CardPosition(
-                        position=position.position,
-                        card_name=card_name,
-                        position_context=position.context,
+                # Validar carta contra o catálogo do Baralho Cigano
+                validation_result = self._validate_card_name(card_name)
+                if validation_result is not None:
+                    cards.append(
+                        CardPosition(
+                            position=position.position,
+                            card_name=validation_result.name,
+                            position_context=position.context,
+                        )
                     )
-                )
-                break
+                    break
+
+                # Cartão não encontrado - mostrar sugestões
+                suggestions = self._get_card_suggestions(card_name)
+                if suggestions:
+                    self._print_error(
+                        f"Carta '{card_name}' não encontrada no Baralho Cigano.\n"
+                        f"  Você quis dizer: {', '.join(suggestions)}?"
+                    )
+                else:
+                    self._print_error(
+                        f"Carta '{card_name}' não encontrada no Baralho Cigano."
+                    )
 
         return cards
+
+    # ------------------------------------------------------------------
+    # Validação de cartas
+    # ------------------------------------------------------------------
+
+    def _validate_card_name(self, card_name: str) -> Optional[CiganoSymbol]:
+        """Valida um nome de carta contra o catálogo do Baralho Cigano.
+
+        Args:
+            card_name: Nome da carta informado pelo usuário.
+
+        Returns:
+            CiganoSymbol válido ou None se não encontrado.
+        """
+        symbol = get_symbol_by_name(card_name)
+        if symbol is not None:
+            return symbol
+        return None
+
+    def _get_card_suggestions(self, partial_name: str) -> list[str]:
+        """Retorna sugestões de cartas para um nome parcial.
+
+        Args:
+            partial_name: Nome parcial digitado pelo usuário.
+
+        Returns:
+            Lista de nomes de cartas que contêm a string parcial.
+        """
+        from src.symbols import get_all_symbols
+
+        partial_lower = partial_name.lower()
+        suggestions: list[str] = []
+
+        for symbol in get_all_symbols():
+            if (partial_lower in symbol.name.lower() or
+                partial_lower in symbol.name_pt.lower()):
+                suggestions.append(symbol.name)
+
+            if len(suggestions) >= 5:
+                break
+
+        return suggestions[:5]
 
     # ------------------------------------------------------------------
     # Construção do StructuredInput
