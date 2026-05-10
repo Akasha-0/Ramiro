@@ -11,6 +11,7 @@ em um relatório estruturado em Markdown com 5 seções fixas:
 Recebe AnalysisResult (types.py) e retorna string com relatório em Markdown.
 """
 
+import json
 import logging
 from datetime import datetime
 from typing import Optional
@@ -174,6 +175,50 @@ class ReportGenerator:
 
         logger.info("Relatório compacto gerado com %d caracteres", len(report))
         return report
+
+    def generate_json(
+        self,
+        analysis: AnalysisResult,
+        disclaimer: Optional[str] = None,
+    ) -> str:
+        """Gera relatório em formato JSON a partir do resultado da análise.
+
+        Args:
+            analysis: AnalysisResult com diagnóstico, temas, riscos, decisões e plano.
+            disclaimer: Texto adicional a ser inserido no campo 'disclaimer' (opcional).
+
+        Returns:
+            String JSON com relatório estruturado.
+        """
+        logger.info("Gerando relatório JSON para análise com %d temas", len(analysis.themes))
+
+        # Montar campos do relatório
+        timestamp = self._get_timestamp()
+        diagnosis = self._format_diagnosis(analysis)
+        symbolic_interp = self._format_symbolic_interpretation(analysis)
+        risks = self._format_risks(analysis)
+        decisions = self._format_decisions(analysis)
+        practical_plan = self._format_practical_plan(analysis)
+
+        # Construir dicionário com as 5 seções
+        report_data: dict[str, object] = {
+            "timestamp": timestamp,
+            "diagnosis": diagnosis,
+            "symbolic_interpretation": symbolic_interp,
+            "risks": risks,
+            "decisions": decisions,
+            "practical_plan": practical_plan,
+        }
+
+        # Adicionar disclaimer se fornecido
+        if disclaimer:
+            report_data["disclaimer"] = disclaimer
+
+        # Serializar para JSON com indentação
+        report_json = json.dumps(report_data, ensure_ascii=False, indent=2)
+
+        logger.info("Relatório JSON gerado com %d caracteres", len(report_json))
+        return report_json
 
     # ------------------------------------------------------------------
     # Formatadores por seção
