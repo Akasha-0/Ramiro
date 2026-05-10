@@ -31,10 +31,6 @@ def italic(text: str) -> str:
 
 
 def format_list(items: list[str], bullet: str = "-") -> str:
-    return ReportGenerator.format_list(items, bullet)
-
-
-def format_list(items: list[str], bullet: str = "-") -> str:
     """Wrapper que delega para o método estático da classe."""
     return ReportGenerator.format_list(items, bullet)
 
@@ -459,3 +455,82 @@ class TestEdgeCases:
         report = generator.generate(analysis_full)
         # Deve conter pelo menos um H2 para cada seção
         assert report.count("## ") >= 5
+
+
+# ----------------------------------------------------------------------
+# Testes — output_format: compact
+# ----------------------------------------------------------------------
+
+
+class TestCompactOutput:
+    def test_generate_compact_format(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """output_format='compact' gera relatório compacto."""
+        report = generator.generate(analysis_full, output_format="compact")
+        assert "# Análise" in report
+        assert "## Diagnóstico" in report
+        assert "## Interpretação Simbólica" in report
+        assert "## Riscos Identificados" in report
+        assert "## Caminhos de Decisão" in report
+        assert "## Plano Prático" in report
+
+    def test_compact_title_differs_from_default(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Título compacto '# Análise' difere do padrão '# Relatório de Análise'."""
+        default_report = generator.generate(analysis_full, output_format="default")
+        compact_report = generator.generate(analysis_full, output_format="compact")
+        assert default_report.startswith("# Relatório de Análise")
+        assert compact_report.startswith("# Análise —")
+
+    def test_compact_contains_all_five_sections(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Relatório compacto contém todas as 5 seções."""
+        report = generator.generate(analysis_full, output_format="compact")
+        assert "## Diagnóstico" in report
+        assert "## Interpretação Simbólica" in report
+        assert "## Riscos Identificados" in report
+        assert "## Caminhos de Decisão" in report
+        assert "## Plano Prático" in report
+
+    def test_compact_includes_timestamp_by_default(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Relatório compacto inclui timestamp quando include_timestamp=True."""
+        import re
+
+        report = generator.generate(analysis_full, output_format="compact")
+        assert re.search(r"\d{2}/\d{2}/\d{4}", report) is not None
+
+    def test_compact_excludes_timestamp_when_disabled(
+        self, generator_no_timestamp: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Relatório compacto sem timestamp."""
+        report = generator_no_timestamp.generate(analysis_full, output_format="compact")
+        assert report.startswith("# Análise — \n\n## Diagnóstico")
+
+    def test_compact_has_footer_disclaimer(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Rodapé de relatório compacto contém disclaimer ético."""
+        report = generator.generate(analysis_full, output_format="compact")
+        assert "ferramenta de reflexão" in report
+        assert "previsão determinista" in report
+
+    def test_compact_with_disclaimer(
+        self, generator: ReportGenerator, analysis_minimal: AnalysisResult
+    ) -> None:
+        """Compact com disclaimer injetado."""
+        disclaimer = "⚠️ Aviso: isso é apenas uma reflexão orientadora."
+        report = generator.generate(analysis_minimal, output_format="compact", disclaimer=disclaimer)
+        assert disclaimer in report
+
+    def test_compact_generates_nonempty_string(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """generate() com output_format='compact' retorna string não-vazia."""
+        report = generator.generate(analysis_full, output_format="compact")
+        assert isinstance(report, str)
+        assert len(report) > 0
