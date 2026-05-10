@@ -534,3 +534,107 @@ class TestCompactOutput:
         report = generator.generate(analysis_full, output_format="compact")
         assert isinstance(report, str)
         assert len(report) > 0
+
+
+# ----------------------------------------------------------------------
+# Testes — output_format: json
+# ----------------------------------------------------------------------
+
+
+class TestJsonOutput:
+    def test_generate_json_format(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """output_format='json' gera JSON válido."""
+        import json
+
+        report = generator.generate(analysis_full, output_format="json")
+        data = json.loads(report)
+        assert "timestamp" in data
+        assert "diagnosis" in data
+        assert "symbolic_interpretation" in data
+        assert "risks" in data
+        assert "decisions" in data
+        assert "practical_plan" in data
+
+    def test_json_contains_analysis_data(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """JSON contém dados da análise."""
+        import json
+
+        report = generator.generate(analysis_full, output_format="json")
+        data = json.loads(report)
+        assert "Você está num momento de transição profissional" in data["diagnosis"]
+        assert "trabalho" in data["symbolic_interpretation"]
+        assert "incerteza prolongada" in data["risks"]
+        assert "Explorar oportunidades" in data["decisions"]
+
+    def test_json_has_timestamp_when_enabled(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """JSON inclui timestamp quando include_timestamp=True."""
+        import json
+
+        report = generator.generate(analysis_full, output_format="json")
+        data = json.loads(report)
+        assert data["timestamp"] != ""
+        assert "/" in data["timestamp"]  # formato dd/mm/yyyy
+
+    def test_json_excludes_timestamp_when_disabled(
+        self, generator_no_timestamp: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """JSON sem timestamp quando include_timestamp=False."""
+        import json
+
+        report = generator_no_timestamp.generate(analysis_full, output_format="json")
+        data = json.loads(report)
+        assert data["timestamp"] == ""
+
+    def test_json_with_disclaimer(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """JSON inclui disclaimer quando fornecido."""
+        import json
+
+        disclaimer = "⚠️ Aviso: isso é apenas uma reflexão orientadora."
+        report = generator.generate(analysis_full, output_format="json", disclaimer=disclaimer)
+        data = json.loads(report)
+        assert data["disclaimer"] == disclaimer
+
+    def test_json_without_disclaimer(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """JSON não inclui campo disclaimer quando não fornecido."""
+        import json
+
+        report = generator.generate(analysis_full, output_format="json")
+        data = json.loads(report)
+        assert "disclaimer" not in data
+
+    def test_json_minimal_analysis(
+        self, generator: ReportGenerator, analysis_minimal: AnalysisResult
+    ) -> None:
+        """JSON funciona com análise mínima."""
+        import json
+
+        report = generator.generate(analysis_minimal, output_format="json")
+        data = json.loads(report)
+        assert "timestamp" in data
+        assert "diagnosis" in data
+        assert "symbolic_interpretation" in data
+        assert "risks" in data
+        assert "decisions" in data
+        assert "practical_plan" in data
+
+    def test_json_returns_valid_json_string(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """generate() com output_format='json' retorna JSON válido."""
+        import json
+
+        report = generator.generate(analysis_full, output_format="json")
+        # Deve ser possível fazer parse do JSON sem erros
+        data = json.loads(report)
+        assert isinstance(data, dict)
+        assert len(data) > 0
