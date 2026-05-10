@@ -2,12 +2,62 @@
 
 import argparse
 import logging
+import os
 import sys
 
 from src.input_processor import InputProcessor, ParseError
 from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
+from src.exceptions import (
+    ClarezaError,
+    FileNotFoundClarezaError,
+    ParseClarezaError,
+    TemplateClarezaError,
+    ValidationClarezaError,
+)
+
+# ----------------------------------------------------------------------
+# Error messages — mensagens de erro em português com orientação
+# ----------------------------------------------------------------------
+
+ERROR_MESSAGES = {
+    "no_command": (
+        "Nenhum comando especificado. Use 'clareza analyze' para começar.\n"
+        "Execute 'clareza --help' para ver os comandos disponíveis."
+    ),
+    "template_requires_spread": (
+        "O argumento --template só é válido com --format spread.\n"
+        "Solução: Use --format spread junto com --template, ou omita --template.\n"
+        "Exemplo: clareza analyze -i 'trabalho família' -f spread -t 3-card"
+    ),
+    "file_not_found": (
+        "Arquivo não encontrado. Verifique se o caminho está correto.\n"
+        "Dica: Caminhos válidos devem ter extensão .csv ou .txt\n"
+        "Exemplo: clareza analyze -i dados/tiragem.csv -f spread"
+    ),
+    "parse_error": (
+        "Não foi possível processar a entrada. Verifique o formato.\n"
+        "Para texto livre: clareza analyze -i 'sua pergunta aqui' -f text\n"
+        "Para símbolos: clareza analyze -i 'Casa, Estrela, Sol' -f symbols\n"
+        "Para tiragem CSV:clareza analyze -i arquivo.csv -f spread"
+    ),
+    "validation_error": (
+        "A entrada contém dados inválidos que não puderam ser processados.\n"
+        "Verifique se os símbolos ou formato estão corretos.\n"
+        "Use --verbose para ver detalhes técnicos do erro."
+    ),
+    "unexpected_error": (
+        "Ocorreu um erro inesperado durante a análise.\n"
+        "Tente novamente com uma entrada diferente.\n"
+        "Se o problema persistir, use --verbose para ver detalhes técnicos."
+    ),
+    "output_write_error": (
+        "Não foi possível salvar o relatório no caminho especificado.\n"
+        "Verifique se você tem permissão de escrita no diretório.\n"
+        "Dica: Tente usar um caminho absoluto ou um diretório diferente."
+    ),
+}
 
 # ----------------------------------------------------------------------
 # Logging configuration
@@ -94,6 +144,7 @@ def main() -> None:
 
     if args.command is None:
         parser.print_help()
+        print(ERROR_MESSAGES["no_command"], file=sys.stderr)
         sys.exit(1)
 
     if args.command == "analyze":
@@ -119,10 +170,7 @@ def run_analyze(
     # Validação: --template só é válido com --format spread
     if template is not None and format != "spread":
         logger.error("O argumento --template só é válido com --format spread")
-        print(
-            "Erro: --template requer --format spread",
-            file=sys.stderr,
-        )
+        print(ERROR_MESSAGES["template_requires_spread"], file=sys.stderr)
         sys.exit(2)
 
     try:
@@ -176,17 +224,40 @@ def run_analyze(
             print(validated.content)
             sys.exit(0)
 
+    except FileNotFoundClarezaError as e:
+        logger.error("Arquivo não encontrado: %s", e.file_path)
+        print(f"Erro: {ERROR_MESSAGES['file_not_found']}", file=sys.stderr)
+        sys.exit(2)
     except ParseError as e:
         logger.error("Erro no parse da entrada: %s", e)
-        print(f"Erro: {e}", file=sys.stderr)
+        print(f"Erro: {ERROR_MESSAGES['parse_error']}", file=sys.stderr)
+        sys.exit(2)
+    except TemplateClarezaError as e:
+        logger.error("Template inválido: %s", e.template_name)
+        available_hint = ""
+        if e.available:
+            available_hint = f"\nTemplates disponíveis: {', '.join(e.available)}"
+        print(f"Erro: Template não encontrado: {e.template_name}{available_hint}", file=sys.stderr)
+        sys.exit(2)
+    except ValidationClarezaError as e:
+        logger.error("Validação falhou: %s", e)
+        print(f"Erro: {ERROR_MESSAGES['validation_error']}", file=sys.stderr)
+        sys.exit(2)
+    except ClarezaError as e:
+        logger.error("Erro do sistema: %s", e)
+        print(f"Erro: {e.message}", file=sys.stderr)
         sys.exit(2)
     except ValueError as e:
         logger.error("Valor inválido: %s", e)
-        print(f"Erro: {e}", file=sys.stderr)
+        print(f"Erro: {ERROR_MESSAGES['validation_error']}", file=sys.stderr)
+        sys.exit(2)
+    except OSError as e:
+        logger.error("Erro de sistema de arquivos: %s", e)
+        print(f"Erro: {ERROR_MESSAGES['output_write_error']}", file=sys.stderr)
         sys.exit(2)
     except Exception as e:
         logger.exception("Erro inesperado durante análise")
-        print(f"Erro interno: {e}", file=sys.stderr)
+        print(f"Erro: {ERROR_MESSAGES['unexpected_error']}", file=sys.stderr)
         sys.exit(1)
 
 
@@ -197,12 +268,37 @@ def _save_report(path: str, content: str) -> None:
         path: Caminho do arquivo de destino.
         content: Conteúdo Markdown a salvar.
     """
+    import os
+
+    # Verificar se o diretório existe ou pode ser criado
+    dir_path = os.path.dirname(path)
+    if dir_path and not os.path.isdir(dir_path):
+        try:
+            os.makedirs(dir_path, exist_ok=True)
+        except OSError as e:
+            logger.error("Não foi possível criar o diretório %s: %s", dir_path, e)
+            print(
+                f"Erro: Não foi possível criar o diretório {dir_path!r}.\n"
+                "Verifique se o caminho está correto e se você tem permissão.",
+                file=sys.stderr,
+            )
+            raise
+
     try:
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
         logger.info("Relatório salvo em %s (%d bytes)", path, len(content))
+    except PermissionError as e:
+        logger.error("Sem permissão para escrever em %s: %s", path, e)
+        print(
+            f"Erro: Sem permissão para salvar em {path!r}.\n"
+            "Verifique as permissões do diretório.",
+            file=sys.stderr,
+        )
+        raise
     except OSError as e:
         logger.error("Falha ao salvar relatório em %s: %s", path, e)
+        print(ERROR_MESSAGES["output_write_error"], file=sys.stderr)
         raise
 
 
