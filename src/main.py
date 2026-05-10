@@ -57,6 +57,11 @@ def main() -> None:
         default="verbose",
         help="Formato de saída do relatório (compact, verbose, json)",
     )
+    analyze_parser.add_argument(
+        "--quiet", "-q",
+        action="store_true",
+        help="Suprime mensagens de progresso (apenas erros)",
+    )
 
     args = parser.parse_args()
 
@@ -65,10 +70,10 @@ def main() -> None:
         sys.exit(1)
 
     if args.command == "analyze":
-        run_analyze(args.input, args.format, args.output, args.output_format)
+        run_analyze(args.input, args.format, args.output, args.output_format, args.quiet)
 
 
-def run_analyze(raw_input: str, format: str, output_path: str | None, output_format: str = "verbose") -> None:
+def run_analyze(raw_input: str, format: str, output_path: str | None, output_format: str = "verbose", quiet: bool = False) -> None:
     """Executa o pipeline completo de análise.
 
     Pipeline: input_processor → analysis_engine → boundaries → report_generator
@@ -78,7 +83,10 @@ def run_analyze(raw_input: str, format: str, output_path: str | None, output_for
         format: Formato de entrada ("text", "spread", "symbols").
         output_path: Caminho opcional para salvar o relatório em .md.
         output_format: Formato de saída ("compact", "verbose", "json").
+        quiet: Se True, suprime mensagens de progresso (apenas erros).
     """
+    if quiet:
+        logging.getLogger().setLevel(logging.WARNING)
     try:
         # Fase 1: Parse e estruturação do input
         logger.info("Processando entrada: format=%s, length=%d", format, len(raw_input))
