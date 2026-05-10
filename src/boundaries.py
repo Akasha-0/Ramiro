@@ -17,6 +17,78 @@ from src.types import AnalysisResult, ValidatedOutput
 logger = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------
+# Mensagens de erro detalhadas em português com orientação de ação
+# ----------------------------------------------------------------------
+
+# Mensagens por categoria de erro (fornecem contexto e orientação)
+VALIDATION_MESSAGES: dict[str, dict[str, str]] = {
+    "blocked_keyword": {
+        "title": "⚠️ Conteúdo Bloqueado pelos Guardrails Éticos",
+        "message": (
+            "O relatório contém palavras ou frases que violam nossas "
+            "diretrizes éticas e não podem ser exibidas."
+        ),
+        "action": (
+            "O sistema gerou automaticamente um aviso ético. "
+            "Analise o conteúdo com perspectiva reflexiva, não determinista."
+        ),
+        "recovery": (
+            "Dica: Reformule sua pergunta para focar em reflexão e organização "
+            "em vez de previsões específicas."
+        ),
+    },
+    "multiple_flags": {
+        "title": "⚠️ Múltiplas Restrições Detectadas",
+        "message": (
+            "Várias palavras-chave restritas foram identificadas no relatório. "
+            "O conteúdo foi sinalizado para revisão ética."
+        ),
+        "action": (
+            "Um aviso ético foi adicionado automaticamente. "
+            "Use o relatório como ferramenta de reflexão, não de previsão."
+        ),
+        "recovery": (
+            "Dica: Tente perguntas mais abertas como 'como posso refletir sobre...' "
+            "em vez de 'o que vai acontecer com...'"
+        ),
+    },
+    "disclaimer_injected": {
+        "title": "ℹ️ Aviso Ético Adicionado",
+        "message": (
+            "Um aviso ético foi inserido automaticamente no final do relatório."
+        ),
+        "action": (
+            "Este aviso garante que a análise seja usada como ferramenta "
+            "de reflexão, não como verdade absoluta."
+        ),
+        "recovery": None,
+    },
+    "empty_report": {
+        "title": "ℹ️ Relatório Vazio",
+        "message": (
+            "Não foi possível processar o relatório ou ele está vazio."
+        ),
+        "action": (
+            "Verifique se o texto de entrada contém informações suficientes "
+            "para análise."
+        ),
+        "recovery": (
+            "Dica: Forneça uma descrição mais detalhada do contexto ou "
+            "escolha símbolos específicos do Baralho Cigano."
+        ),
+    },
+}
+
+# Códigos de erro para identificação programática
+ERROR_CODES: dict[str, str] = {
+    "ETH001": "Palavra-chave bloqueada detectada",
+    "ETH002": "Múltiplas restrições identificadas",
+    "ETH003": "Disclaimer ético injetado",
+    "ETH004": "Relatório vazio ou inválido",
+    "ETH005": "Validação concluída - conteúdo seguro",
+}
+
+# ----------------------------------------------------------------------
 # Palavras-chave bloqueadas (case-insensitive, normalização aplicada)
 # ----------------------------------------------------------------------
 
@@ -96,7 +168,7 @@ ajuda especializada.
 # ----------------------------------------------------------------------
 
 
-def validate_output(text: str) -> tuple[bool, list[str]]:
+def validate_output(text: str) -> tuple[bool, list[str], Optional[dict[str, str]]]:
     """Valida texto do relatório contra guardrails éticos.
 
     Detecta palavras-chave bloqueadas que indicam:
@@ -111,21 +183,23 @@ def validate_output(text: str) -> tuple[bool, list[str]]:
         text: Texto do relatório a validar.
 
     Returns:
-        Tupla (is_valid, flags) onde:
+        Tupla (is_valid, flags, error_message) onde:
         - is_valid: True se nenhuma keyword bloqueada foi encontrada
         - flags: Lista de keywords detectadas (vazia se safe)
+        - error_message: Mensagem detalhada em português se bloqueado (None se válido)
 
     Examples:
-        >>> is_valid, flags = validate_output("Texto normal sobre trabalho")
+        >>> is_valid, flags, _ = validate_output("Texto normal sobre trabalho")
         >>> assert is_valid == True
         >>> assert flags == []
 
-        >>> is_valid, flags = validate_output("Isso indica morte iminente")
+        >>> is_valid, flags, msg = validate_output("Isso indica morte iminente")
         >>> assert is_valid == False
         >>> assert "morte" in flags
+        >>> assert msg is not None
     """
     if not text:
-        return (True, [])
+        return (True, [], None)
 
     # Normalizar: lowercase + remover acentos para comparação robusta
     normalized = _normalize_text(text)
@@ -148,8 +222,15 @@ def validate_output(text: str) -> tuple[bool, list[str]]:
             "Output bloqueado por guardrails: %d keywords detectadas",
             len(flags),
         )
+        # Construir mensagem de erro detalhada em português
+        if len(flags) == 1:
+            error_msg = _build_blocked_keyword_message(flags[0])
+        else:
+            error_msg = _build_multiple_flags_message(flags)
+    else:
+        error_msg = None
 
-    return (is_valid, flags)
+    return (is_valid, flags, error_msg)
 
 
 def _normalize_text(text: str) -> str:
@@ -168,6 +249,38 @@ def _normalize_text(text: str) -> str:
     normalized = unicodedata.normalize("NFD", text.lower())
     ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
     return ascii_text
+
+
+def _build_blocked_keyword_message(keyword: str) -> dict[str, str]:
+    """Constrói mensagem de erro detalhada para uma keyword bloqueada.
+
+    Args:
+        keyword: A palavra-chave bloqueada detectada.
+
+    Returns:
+        Dicionário com título, mensagem, ação e recuperação.
+    """
+    templates = VALIDATION_MESSAGES["blocked_keyword"].copy()
+    templates["detail"] = f"Palavra detectada: '{keyword}'"
+    templates["code"] = ERROR_CODES["ETH001"]
+    return templates
+
+
+def _build_multiple_flags_message(flags: list[str]) -> dict[str, str]:
+    """Constrói mensagem de erro para múltiplas keywords bloqueadas.
+
+    Args:
+        flags: Lista de palavras-chave bloqueadas detectadas.
+
+    Returns:
+        Dicionário com título, mensagem, ação e recuperação.
+    """
+    templates = VALIDATION_MESSAGES["multiple_flags"].copy()
+    templates["detail"] = f"Palavras detectadas: {', '.join(flags[:5])}"
+    if len(flags) > 5:
+        templates["detail"] += f" (e mais {len(flags) - 5} outras)"
+    templates["code"] = ERROR_CODES["ETH002"]
+    return templates
 
 
 # ----------------------------------------------------------------------
@@ -246,8 +359,8 @@ def apply_guardrails(
     """
     logger.info("Aplicando guardrails éticos a relatório de %d chars", len(report_md))
 
-    # Validar
-    is_safe, flags = validate_output(report_md)
+    # Validar (agora com mensagem de erro detalhada)
+    is_safe, flags, error_msg = validate_output(report_md)
     needs_disclaimer = not is_safe
 
     # Injetar disclaimer se necessário
@@ -306,17 +419,18 @@ class BoundariesValidator:
             len(self._all_blocked),
         )
 
-    def validate(self, text: str) -> tuple[bool, list[str]]:
+    def validate(self, text: str) -> tuple[bool, list[str], Optional[dict[str, str]]]:
         """Valida texto usando configuração customizada.
 
         Args:
             text: Texto a validar.
 
         Returns:
-            Tupla (is_valid, flags) com keywords bloqueadas detectadas.
+            Tupla (is_valid, flags, error_msg) com keywords bloqueadas detectadas
+            e mensagem de erro detalhada em português.
         """
         if not text:
-            return (True, [])
+            return (True, [], None)
 
         normalized = _normalize_text(text)
 
@@ -328,7 +442,17 @@ class BoundariesValidator:
             if kw_norm in normalized:
                 flags.append(keyword)
 
-        return (len(flags) == 0, flags)
+        is_valid = len(flags) == 0
+
+        if not is_valid:
+            if len(flags) == 1:
+                error_msg = _build_blocked_keyword_message(flags[0])
+            else:
+                error_msg = _build_multiple_flags_message(flags)
+        else:
+            error_msg = None
+
+        return (is_valid, flags, error_msg)
 
     def inject(self, report_md: str) -> str:
         """Injeta disclaimer ético (mesmo comportamento de inject_disclaimer).
@@ -350,7 +474,7 @@ class BoundariesValidator:
         Returns:
             ValidatedOutput com content, flags e status.
         """
-        is_safe, flags = self.validate(report_md)
+        is_safe, flags, _ = self.validate(report_md)
         needs_disclaimer = not is_safe
         final_content = self.inject(report_md) if needs_disclaimer else report_md
 
