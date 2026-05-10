@@ -8,6 +8,7 @@ from src.input_processor import InputProcessor, ParseError
 from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
+from src.interactive_session import InteractiveSession, SessionAborted
 
 # ----------------------------------------------------------------------
 # Logging configuration
@@ -110,10 +111,55 @@ def run_interactive() -> None:
     """Executa o modo interativo de leitura guiada.
 
     Oferece um fluxo interativo para explorar símbolos e padrões
-    de forma progressiva e reflexiva.
+    de forma progressiva e reflexiva. Após coletar os dados da sessão,
+    executa o pipeline completo de análise.
     """
-    print("Modo interativo de leitura guiada")
-    print("Este comando ainda não foi implementado.")
+    logger.info("Iniciando sessão interativa")
+    session = InteractiveSession()
+
+    try:
+        # Coletar entrada via sessão interativa
+        structured = session.run()
+        logger.info("Sessão interativa concluída, iniciando análise")
+
+        # Executar pipeline de análise (mesmo fluxo do run_analyze)
+        engine = AnalysisEngine()
+        analysis_result = engine.analyze(structured)
+        logger.info(
+            "Análise concluída: %d temas, %d riscos, %d decisões",
+            len(analysis_result.themes),
+            len(analysis_result.risks),
+            len(analysis_result.decisions),
+        )
+
+        # Geração do relatório Markdown
+        generator = ReportGenerator()
+        report_md = generator.generate(analysis_result)
+
+        # Aplicação de guardrails éticos
+        validated = apply_guardrails(report_md, analysis_result)
+
+        if validated.disclaimer_flags:
+            logger.warning(
+                "Disclaimer ético aplicado — flags detectadas: %s",
+                validated.disclaimer_flags,
+            )
+
+        # Output do relatório
+        print("\n" + "=" * 60)
+        print("       Relatório da Leitura")
+        print("=" * 60 + "\n")
+        print(validated.content)
+        sys.exit(0)
+
+    except SessionAborted:
+        logger.info("Sessão interativa encerrada pelo usuário")
+        print("\nSessão encerrada. Até a próxima!")
+        sys.exit(0)
+    except Exception as e:
+        logger.exception("Erro inesperado durante sessão interativa")
+        print(f"Erro interno: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def run_analyze(
