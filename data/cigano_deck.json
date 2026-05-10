@@ -1,0 +1,506 @@
+[
+  {
+    "id": 1,
+    "name": "The Rider",
+    "name_pt": "O Cavaleiro",
+    "alternate_names": ["The Horseman", "Cavaleiro", "O Cavaleiro", "El Caballo"],
+    "themes": ["movement", "arrival", "news", "speed", "travel", "journey", "progress"],
+    "meaning": "Movement, travel, messages, news. Represents arrival or departure.",
+    "directions": {
+      "upright": "News arriving, a visitor coming, travel plans materializing",
+      "reversed": "Postponement, canceled plans, unexpected delays"
+    },
+    "emotional_associations": ["anticipation", "excitement", "eagerness"],
+    "contextual_notes": "Often indicates that something is in motion - literally or metaphorically."
+  },
+  {
+    "id": 2,
+    "name": "The Clover",
+    "name_pt": "O Trevo",
+    "alternate_names": ["The Clover", "Trevo", "Trefoil", "Lucky Clover"],
+    "themes": ["luck", "opportunity", "fortune", "small gains", "chance", "nature"],
+    "meaning": "Small luck, opportunities, minor fortune. A little bit of good luck.",
+    "directions": {
+      "upright": "A small opportunity, luck in minor matters, a chance encounter",
+      "reversed": "Bad luck, missed opportunity, risk of loss"
+    },
+    "emotional_associations": ["hope", "optimism", "fortune"],
+    "contextual_notes": "Represents small fortunate events rather than major windfalls."
+  },
+  {
+    "id": 3,
+    "name": "The Ship",
+    "name_pt": "O Navio",
+    "alternate_names": ["The Ship", "Navio", "Vessel", "Ship"],
+    "themes": ["travel", "journey", "foreign", "distance", "trade", "adventure", "overseas"],
+    "meaning": "Travel, journey, distance. Often relates to foreign matters or long trips.",
+    "directions": {
+      "upright": "Travel abroad, international matters, successful journey",
+      "reversed": "Storms at sea, delays, danger in travel, homesickness"
+    },
+    "emotional_associations": ["wanderlust", "adventure", "nostalgia"],
+    "contextual_notes": "Connected to water, oceans, and long-distance travel or communication."
+  },
+  {
+    "id": 4,
+    "name": "The House",
+    "name_pt": "A Casa",
+    "alternate_names": ["House", "Home", "Casa", "The House", "Little House"],
+    "themes": ["home", "family", "security", "foundation", "stability", "domestic"],
+    "meaning": "Home, family, security. Represents the domestic sphere and foundation.",
+    "directions": {
+      "upright": "Family harmony, domestic stability, a safe haven",
+      "reversed": "Domestic conflicts, instability, feeling unsafe at home"
+    },
+    "emotional_associations": ["comfort", "belonging", "safety", "nostalgia"],
+    "contextual_notes": "The foundation of one's life - can represent family business as well."
+  },
+  {
+    "id": 5,
+    "name": "The Tree",
+    "name_pt": "A Árvore",
+    "alternate_names": ["Tree", "The Tree", "Árvore", "Life Tree"],
+    "themes": ["health", "growth", "roots", "nature", "vitality", "heredity", "family"],
+    "meaning": "Health, growth, family roots. Represents vitality and one's ancestry.",
+    "directions": {
+      "upright": "Good health, personal growth, strong family ties",
+      "reversed": "Illness, stagnation, family conflicts, exhaustion"
+    },
+    "emotional_associations": ["vitality", "groundedness", "connection"],
+    "contextual_notes": "Connects past (roots) with future (branches), health of mind and body."
+  },
+  {
+    "id": 6,
+    "name": "The Clouds",
+    "name_pt": "As Nuvens",
+    "alternate_names": ["Clouds", "Nuvens", "Cloud", "Storm Clouds"],
+    "themes": ["confusion", "uncertainty", "obscure", "mystery", "uncertainty", "fog"],
+    "meaning": "Confusion, uncertainty, lack of clarity. Things are not yet clear.",
+    "directions": {
+      "upright": "Uncertainty clearing, partial clarity, things becoming clearer",
+      "reversed": "Deep confusion, hidden threats, deception, anxiety"
+    },
+    "emotional_associations": ["confusion", "anxiety", "unease", "doubt"],
+    "contextual_notes": "May indicate mental confusion or that something is being hidden."
+  },
+  {
+    "id": 7,
+    "name": "The Snake",
+    "name_pt": "A Cobra",
+    "alternate_names": ["Snake", "Cobra", "Serpent", "Viper"],
+    "themes": ["deception", "hidden enemy", "wisdom", "temptation", "danger", "hidden threat"],
+    "meaning": "Deception, hidden enemies, temptation. Often indicates someone is not what they seem.",
+    "directions": {
+      "upright": "Hidden danger, deception in business, a cunning person nearby",
+      "reversed": "Betrayal revealed, honesty overcoming deception, free from danger"
+    },
+    "emotional_associations": ["wariness", "distrust", "seduction"],
+    "contextual_notes": "Represents both danger (deception) and wisdom (transformation)."
+  },
+  {
+    "id": 8,
+    "name": "The Coffin",
+    "name_pt": "O Caixão",
+    "alternate_names": ["Coffin", "Caixão", "The Casket", "The Box"],
+    "themes": ["endings", "death", "transformation", "change", "grief", "burial"],
+    "meaning": "Endings, transformation, death of something. Represents deep transformation.",
+    "directions": {
+      "upright": "End of a cycle, necessary ending, transformation complete",
+      "reversed": "Fear of change, resistance to endings, prolongation of suffering"
+    },
+    "emotional_associations": ["grief", "acceptance", "release", "sorrow"],
+    "contextual_notes": "Rarely literal death - usually transformation and new beginnings."
+  },
+  {
+    "id": 9,
+    "name": "The Bouquet",
+    "name_pt": "O Bouquet",
+    "alternate_names": ["Bouquet", "Buquê", "Flowers", "The Flowers", "Flower Bouquet"],
+    "themes": ["happiness", "beauty", "gift", "celebration", "nature", "appreciation"],
+    "meaning": "Joy, beauty, gifts, celebration. Represents simple pleasures and appreciation.",
+    "directions": {
+      "upright": "A gift received, joyful event, appreciation shown",
+      "reversed": "Missed appreciation, false compliments, disappointment in gifts"
+    },
+    "emotional_associations": ["joy", "gratitude", "beauty", "pleasure"],
+    "contextual_notes": "Often represents an unexpected gift or recognition of beauty."
+  },
+  {
+    "id": 10,
+    "name": "The Scythe",
+    "name_pt": "A Foice",
+    "alternate_names": ["Scythe", "Foice", "The Sickle", "Reaping"],
+    "themes": ["harvest", "ending", "sudden change", "cutting", "transition", "completion"],
+    "meaning": "Harvest, ending, sudden change. Represents decisions that cannot be undone.",
+    "directions": {
+      "upright": "Sudden ending, a necessary cut, harvest time",
+      "reversed": "Prolonging the inevitable, fear of endings, hesitation"
+    },
+    "emotional_associations": ["urgency", "finality", "determination"],
+    "contextual_notes": "Suggests that time is ripe for action - don't delay."
+  },
+  {
+    "id": 11,
+    "name": "The Whip",
+    "name_pt": "O Chicote",
+    "alternate_names": ["Whip", "Chicote", "The Riding Crop", "Baton"],
+    "themes": ["conflict", "arguments", "authority", "discipline", "struggle", "tension"],
+    "meaning": "Conflict, arguments, tension. Represents verbal sparring or disputes.",
+    "directions": {
+      "upright": "Verbal conflict, heated arguments, power struggle",
+      "reversed": "Slander, gossips, bullying, physical violence threatened"
+    },
+    "emotional_associations": ["frustration", "anger", "restlessness"],
+    "contextual_notes": "Often indicates a need to stand one's ground or defend position."
+  },
+  {
+    "id": 12,
+    "name": "The Birds",
+    "name_pt": "Os Pássaros",
+    "alternate_names": ["Birds", "Pássaros", "The Birds", "Owls", "Chatter"],
+    "themes": ["communication", "anxiety", "chatter", "worries", "social", "noise"],
+    "meaning": "Worries, anxiety, constant chatter. Represents mental noise and overthinking.",
+    "directions": {
+      "upright": "Gossip, anxious thoughts, too many voices, nervous energy",
+      "reversed": "Slander, false rumors, arguments over trifles, relief from worry"
+    },
+    "emotional_associations": ["anxiety", "worry", "agitation", "concern"],
+    "contextual_notes": "The mind cannot rest - often indicates overthinking a situation."
+  },
+  {
+    "id": 13,
+    "name": "The Son",
+    "name_pt": "O Filho",
+    "alternate_names": ["Boy", "Son", "Garoto", "The Child", "Young Man"],
+    "themes": ["youth", "son", "beginning", "innocence", "new project", "messenger"],
+    "meaning": "Youth, new beginnings, a messenger. Represents someone young or something new.",
+    "directions": {
+      "upright": "Good news, a young person helping, new project starting",
+      "reversed": "Bad news, an untrustworthy messenger, delayed plans"
+    },
+    "emotional_associations": ["hope", "innocence", "eagerness"],
+    "contextual_notes": "A helper or messenger bringing important information."
+  },
+  {
+    "id": 14,
+    "name": "The Fox",
+    "name_pt": "A Raposa",
+    "alternate_names": ["Fox", "Raposa", "The Sly One"],
+    "themes": ["cunning", "opportunity", "strategy", "shrewdness", "independence", "opportunism"],
+    "meaning": "Opportunity, cunning, strategy. Represents someone clever or an opportunity.",
+    "directions": {
+      "upright": "A clever opportunity, using wit to succeed, strategic thinking",
+      "reversed": "Deception, being taken advantage of, cunning backfiring"
+    },
+    "emotional_associations": ["wariness", "admiration", "distrust"],
+    "contextual_notes": "Neither purely good nor bad - success through cleverness."
+  },
+  {
+    "id": 15,
+    "name": "The Bear",
+    "name_pt": "O Urso",
+    "alternate_names": ["Bear", "Urso", "The Strong One"],
+    "themes": ["strength", "power", "authority", "nature", "protection", "dominance"],
+    "meaning": "Strength, power, authority. Represents either protection or domination.",
+    "directions": {
+      "upright": "Natural strength, protective force, taking control",
+      "reversed": "Abuse of power, overwhelming force, need for gentleness"
+    },
+    "emotional_associations": ["strength", "protectiveness", "dominance"],
+    "contextual_notes": "Can represent a powerful protector or someone trying to dominate."
+  },
+  {
+    "id": 16,
+    "name": "The Stars",
+    "name_pt": "As Estrelas",
+    "alternate_names": ["Stars", "Estrelas", "The Star", "Hope"],
+    "themes": ["hope", "inspiration", "guidance", "dreams", "spirituality", "aspiration"],
+    "meaning": "Hope, inspiration, dreams. Represents spiritual guidance and aspirations.",
+    "directions": {
+      "upright": "Inspiration, hope for the future, spiritual guidance received",
+      "reversed": "False hope, broken dreams, disillusionment, arrogance"
+    },
+    "emotional_associations": ["hope", "wonder", "inspiration", "aspiration"],
+    "contextual_notes": "A beacon in darkness - hope and divine guidance."
+  },
+  {
+    "id": 17,
+    "name": "The Stork",
+    "name_pt": "A Cegonha",
+    "alternate_names": ["Stork", "Cegonha", "The Bird of Passage", "Migration"],
+    "themes": ["change", "move", "transformation", "home", "birth", "relocation"],
+    "meaning": "Change, relocation, transformation. Often indicates a move or birth.",
+    "directions": {
+      "upright": "Positive change of residence, birth, positive transformation",
+      "reversed": "Reluctant move, difficult change, complications with birth"
+    },
+    "emotional_associations": ["anticipation", "change", "transformation"],
+    "contextual_notes": "Major life changes - either physical moves or personal transformations."
+  },
+  {
+    "id": 18,
+    "name": "The Dog",
+    "name_pt": "O Cachorro",
+    "alternate_names": ["Dog", "Cachorro", "The Dog", "Fido", "Loyal Friend"],
+    "themes": ["loyalty", "friendship", "trust", "fidelity", "companion", "devotion"],
+    "meaning": "Loyalty, friendship, trust. Represents a faithful friend or companion.",
+    "directions": {
+      "upright": "A loyal friend, trustworthy companion, fidelity",
+      "reversed": "Unreliable friend, betrayal, loneliness, distrust"
+    },
+    "emotional_associations": ["loyalty", "companionship", "devotion", "trust"],
+    "contextual_notes": "Pure friendship and unconditional loyalty - can also be about being a faithful friend."
+  },
+  {
+    "id": 19,
+    "name": "The Tower",
+    "name_pt": "A Torre",
+    "alternate_names": ["Tower", "Torre", "The Tower", "Lightning"],
+    "themes": ["structure", "authority", "isolation", "tower", "power", "collapse"],
+    "meaning": "Sudden change, disruption of structure. Represents upheaval and revelation.",
+    "directions": {
+      "upright": "Sudden revelation, breaking from structure, liberation",
+      "reversed": "Avoiding disaster, fear of change, structures crumbling"
+    },
+    "emotional_associations": ["shock", "revelation", "liberation"],
+    "contextual_notes": "Lightning strike - reveals truth, destroys false structures."
+  },
+  {
+    "id": 20,
+    "name": "The Garden",
+    "name_pt": "O Jardim",
+    "alternate_names": ["Garden", "Jardim", "The Garden", "Public Space"],
+    "themes": ["social", "community", "growth", "nature", "public life", "society"],
+    "meaning": "Social life, community, public spaces. Represents social gatherings.",
+    "directions": {
+      "upright": "Social gathering, public events, community involvement",
+      "reversed": "Loneliness, isolation from society, exclusion from events"
+    },
+    "emotional_associations": ["belonging", "community", "connection"],
+    "contextual_notes": "A place for meeting others and being part of something larger."
+  },
+  {
+    "id": 21,
+    "name": "The Mountain",
+    "name_pt": "A Montanha",
+    "alternate_names": ["Mountain", "Montanha", "The Hill", "Obstacle"],
+    "themes": ["obstacle", "difficulty", "barrier", "challenge", "endurance", "obstacle"],
+    "meaning": "Obstacles, barriers, difficulties. Represents challenges that must be overcome.",
+    "directions": {
+      "upright": "Obstacle in path, delay, someone blocking progress",
+      "reversed": "Obstacle removed, path clearing, perseverance rewarded"
+    },
+    "emotional_associations": ["frustration", "determination", "perseverance"],
+    "contextual_notes": "An immovable obstacle requiring creative approaches."
+  },
+  {
+    "id": 22,
+    "name": "The Way",
+    "name_pt": "O Caminho",
+    "alternate_names": ["The Way", "Crossroads", "Caminho", "Fork", "Paths"],
+    "themes": ["choice", "decision", "crossroads", "direction", "journey", "options"],
+    "meaning": "Crossroads, choices, decisions. Represents a point of divergence.",
+    "directions": {
+      "upright": "A choice must be made, diverging paths, decision point",
+      "reversed": "No clear choice, fear of decision, wrong direction"
+    },
+    "emotional_associations": ["uncertainty", "determination", "hope"],
+    "contextual_notes": "Multiple paths available - wisdom needed to choose correctly."
+  },
+  {
+    "id": 23,
+    "name": "The Mice",
+    "name_pt": "Os Ratos",
+    "alternate_names": ["Mice", "Ratos", "The Rats", "Rodents"],
+    "themes": ["loss", "decay", "theft", "worry", "erosion", "small troubles"],
+    "meaning": "Loss, decay, erosion. Represents gradual loss or theft.",
+    "directions": {
+      "upright": "Gradual loss, things slipping away, theft, worry",
+      "reversed": "End of losses, things stabilizing, recovery from theft"
+    },
+    "emotional_associations": ["anxiety", "worry", "loss", "insecurity"],
+    "contextual_notes": "Small losses that compound over time - a warning of erosion."
+  },
+  {
+    "id": 24,
+    "name": "The Heart",
+    "name_pt": "O Coração",
+    "alternate_names": ["Heart", "Coração", "The Heart", "Love"],
+    "themes": ["love", "passion", "emotions", "joy", "heart", "devotion", "sentiment"],
+    "meaning": "Love, joy, emotions. Represents matters of the heart.",
+    "directions": {
+      "upright": "Love, joy, deep emotion, happy relationship",
+      "reversed": "Broken heart, sorrow, unbalanced emotions, heartbreak"
+    },
+    "emotional_associations": ["love", "joy", "passion", "sorrow", "devotion"],
+    "contextual_notes": "Pure emotion - can be love, joy, or deep sorrow depending on context."
+  },
+  {
+    "id": 25,
+    "name": "The Ring",
+    "name_pt": "O Anel",
+    "alternate_names": ["Ring", "Anel", "The Ring", "Marriage", "Bond"],
+    "themes": ["commitment", "contract", "marriage", "partnership", "binding", "promise"],
+    "meaning": "Commitment, contracts, partnerships. Represents binding agreements.",
+    "directions": {
+      "upright": "Commitment, engagement, contract, partnership forming",
+      "reversed": "Broken contract, divorce, broken promises, disagreement"
+    },
+    "emotional_associations": ["commitment", "promise", "tension"],
+    "contextual_notes": "A bond that connects two parties - business or romantic."
+  },
+  {
+    "id": 26,
+    "name": "The Letter",
+    "name_pt": "A Carta",
+    "alternate_names": ["Letter", "Carta", "The Letter", "Message", "Document"],
+    "themes": ["message", "communication", "news", "document", "information", "correspondence"],
+    "meaning": "Messages, news, documents. Represents communication and information.",
+    "directions": {
+      "upright": "Good news in writing, official document, important letter",
+      "reversed": "Bad news, unpaid bills, forgotten messages, silence"
+    },
+    "emotional_associations": ["anticipation", "anxiety", "curiosity"],
+    "contextual_notes": "Written communication - the nature of the card shows the nature of the news."
+  },
+  {
+    "id": 27,
+    "name": "The Lady",
+    "name_pt": "A Senhora",
+    "alternate_names": ["Lady", "Senhora", "The Woman", "Woman", "Miss"],
+    "themes": ["woman", "feminine", "love interest", "mother", "elegance", "influence"],
+    "meaning": "A woman, often love interest or mother. Represents feminine influence.",
+    "directions": {
+      "upright": "A kind woman, love interest, mother figure",
+      "reversed": "A jealous woman, gossip, unfriendly female"
+    },
+    "emotional_associations": ["affection", "infatuation", "envy"],
+    "contextual_notes": "Often represents a specific woman in the querent's life."
+  },
+  {
+    "id": 28,
+    "name": "The Gentleman",
+    "name_pt": "O Senhor",
+    "alternate_names": ["Gentleman", "Senhor", "The Man", "Man", "Sir"],
+    "themes": ["man", "masculine", "love interest", "father", "authority", "influence"],
+    "meaning": "A man, often love interest or father. Represents masculine influence.",
+    "directions": {
+      "upright": "A kind man, love interest, father figure",
+      "reversed": "An aggressive man, jealousy, unfriendly male"
+    },
+    "emotional_associations": ["attraction", "respect", "envy"],
+    "contextual_notes": "Often represents a specific man in the querent's life."
+  },
+  {
+    "id": 29,
+    "name": "The Lily",
+    "name_pt": "O Lírio",
+    "alternate_names": ["Lily", "Lírio", "The Flower", "Purity", "Peace"],
+    "themes": ["peace", "purity", "old age", "wisdom", "tranquility", "longevity"],
+    "meaning": "Peace, tranquility, longevity. Represents harmony and old age.",
+    "directions": {
+      "upright": "Inner peace, tranquility, happy old age, good health",
+      "reversed": "Inner turmoil, dishonesty, hypocrisy, lack of peace"
+    },
+    "emotional_associations": ["peace", "purity", "serenity", "wisdom"],
+    "contextual_notes": "White lily symbolizes purity and peace of mind."
+  },
+  {
+    "id": 30,
+    "name": "The Sun",
+    "name_pt": "O Sol",
+    "alternate_names": ["Sun", "Sol", "The Sun", "Success"],
+    "themes": ["success", "joy", "prosperity", "vitality", "celebration", "warmth"],
+    "meaning": "Success, joy, prosperity. Represents abundance and vitality.",
+    "directions": {
+      "upright": "Great success, joy, prosperity, vitality, celebration",
+      "reversed": "Temporary setbacks, diminished success, isolation"
+    },
+    "emotional_associations": ["joy", "optimism", "vitality", "warmth"],
+    "contextual_notes": "The most positive card - success in all endeavors."
+  },
+  {
+    "id": 31,
+    "name": "The Moon",
+    "name_pt": "A Lua",
+    "alternate_names": ["Moon", "Lua", "The Moon", "Intuition"],
+    "themes": ["intuition", "mystery", "night", "dreams", "subconscious", "illusion"],
+    "meaning": "Intuition, mystery, the unconscious. Represents things hidden from view.",
+    "directions": {
+      "upright": "Intuition active, hidden things revealed, dreams",
+      "reversed": "Deception, illusion, danger from the unconscious, nightmares"
+    },
+    "emotional_associations": ["mystery", "intuition", "fear", "dreams"],
+    "contextual_notes": "What we see in moonlight may not be real - trust your intuition."
+  },
+  {
+    "id": 32,
+    "name": "The Key",
+    "name_pt": "A Chave",
+    "alternate_names": ["Key", "Chave", "The Key", "Solution"],
+    "themes": ["solution", "unlocking", "opportunity", "secret", "answer", "success"],
+    "meaning": "Solutions, answers, opportunities. Represents what opens doors.",
+    "directions": {
+      "upright": "Success, solution found, unlocking potential, good opportunities",
+      "reversed": "Missed opportunity, wrong key, no solution yet, locked doors"
+    },
+    "emotional_associations": ["hope", "relief", "anticipation"],
+    "contextual_notes": "The answer to the question - success in achieving goals."
+  },
+  {
+    "id": 33,
+    "name": "The Fish",
+    "name_pt": "Os Peixes",
+    "alternate_names": ["Fish", "Peixes", "The Fish", "Wealth"],
+    "themes": ["wealth", "prosperity", "business", "success", "abundance", "commerce"],
+    "meaning": "Wealth, prosperity, business. Represents financial matters.",
+    "directions": {
+      "upright": "Financial success, prosperity in business, wealth",
+      "reversed": "Financial troubles, poor business decisions, loss"
+    },
+    "emotional_associations": ["prosperity", "security", "concern"],
+    "contextual_notes": "Success in commercial matters - money flowing like fish in water."
+  },
+  {
+    "id": 34,
+    "name": "The Anchor",
+    "name_pt": "A Âncora",
+    "alternate_names": ["Anchor", "Âncora", "The Anchor", "Stability"],
+    "themes": ["stability", "security", "grounding", "perseverance", "hope", "reliability"],
+    "meaning": "Stability, security, perseverance. Represents what grounds us.",
+    "directions": {
+      "upright": "Stability, hope, security, steady course",
+      "reversed": "Instability, chaos, ungrounded, drifting"
+    },
+    "emotional_associations": ["security", "hope", "restlessness"],
+    "contextual_notes": "Hope springs eternal - even in rough waters, we have hope."
+  },
+  {
+    "id": 35,
+    "name": "The Cross",
+    "name_pt": "A Cruz",
+    "alternate_names": ["Cross", "Cruz", "The Cross", "Burden", "Sacrifice"],
+    "themes": ["burden", "suffering", "faith", "sacrifice", "trial", "endurance", "religion"],
+    "meaning": "Burden, suffering, trials. Represents challenges and faith.",
+    "directions": {
+      "upright": "Heavy burden, suffering, trial, religious faith",
+      "reversed": "Relief from burden, freedom from suffering, spiritual crisis"
+    },
+    "emotional_associations": ["sorrow", "faith", "endurance", "relief"],
+    "contextual_notes": "The weight of the cross - but also the strength to bear it."
+  },
+  {
+    "id": 36,
+    "name": "The Kiss",
+    "name_pt": "O Beijo",
+    "alternate_names": ["Kiss", "Beijo", "The Kiss", "Beso", "Intimacy"],
+    "themes": ["love", "intimacy", "connection", "passion", "joy", "union", "happiness"],
+    "meaning": "Love, intimacy, union. Represents connection and passion.",
+    "directions": {
+      "upright": "Joy, union, love affair, happy event, good news",
+      "reversed": "Broken engagement, gossip, betrayal of trust"
+    },
+    "emotional_associations": ["joy", "passion", "love", "anticipation"],
+    "contextual_notes": "The union of two - intimate connection and shared happiness."
+  }
+]
