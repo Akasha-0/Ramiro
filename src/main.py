@@ -61,6 +61,17 @@ def main() -> None:
     # subcommand: arcs
     arcs_parser = subparsers.add_parser("arcs", help="Listar todos os arcos de reflexão")
 
+    # subcommand: arc
+    arc_parser = subparsers.add_parser("arc", help="Operações em um arco específico")
+    arc_subparsers = arc_parser.add_subparsers(dest="subcommand", help="Subcomandos do arco")
+
+    # arc summary
+    arc_summary_parser = arc_subparsers.add_parser("summary", help="Mostrar sumário de um arco")
+    arc_summary_parser.add_argument(
+        "name",
+        help="Nome do arco",
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -71,6 +82,12 @@ def main() -> None:
         run_analyze(args.input, args.format, args.output, args.arc)
     elif args.command == "arcs":
         run_arcs_list()
+    elif args.command == "arc":
+        if args.subcommand == "summary":
+            run_arc_summary(args.name)
+        else:
+            arc_parser.print_help()
+            sys.exit(1)
 
 
 def run_analyze(raw_input: str, format: str, output_path: str | None, arc: str | None = None) -> None:
@@ -182,6 +199,36 @@ def run_arcs_list() -> None:
 
     except Exception as e:
         logger.exception("Erro ao listar arcos")
+        print(f"Erro: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def run_arc_summary(name: str) -> None:
+    """Mostra o sumário de um arco de reflexão específico."""
+    try:
+        manager = ArcManager()
+        summary = manager.generate_arc_summary(name)
+
+        if summary is None:
+            print(f"Arco não encontrado: {name}", file=sys.stderr)
+            sys.exit(1)
+
+        print(f"# Sumário do Arco: {name}\n")
+        print(f"Total de sessões: {summary.total_sessions}")
+
+        if summary.date_range:
+            start = summary.date_range[0].strftime("%Y-%m-%d")
+            end = summary.date_range[1].strftime("%Y-%m-%d")
+            print(f"Período: {start} a {end}")
+
+        if summary.top_themes:
+            print(f"\nTemas principais: {', '.join(summary.top_themes)}")
+
+        if summary.top_cards:
+            print(f"Cartas principais: {', '.join(summary.top_cards)}")
+
+    except Exception as e:
+        logger.exception("Erro ao gerar sumário do arco")
         print(f"Erro: {e}", file=sys.stderr)
         sys.exit(1)
 
