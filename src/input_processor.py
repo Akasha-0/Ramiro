@@ -31,6 +31,7 @@ class ParseError(Exception):
         message: Descrição legível do erro.
         line: Número da linha onde ocorreu o erro (para CSV, opcional).
         details: Detalhes adicionais sobre a natureza do erro.
+        recovery: Orientação de recuperação em português (opcional).
     """
 
     def __init__(
@@ -38,15 +39,19 @@ class ParseError(Exception):
         message: str,
         line: Optional[int] = None,
         details: Optional[str] = None,
+        recovery: Optional[str] = None,
     ) -> None:
         self.message = message
         self.line = line
         self.details = details
+        self.recovery = recovery
         full = message
         if line is not None:
             full = f"{message} (linha {line})"
         if details:
             full = f"{full}: {details}"
+        if recovery:
+            full = f"{full}\nDica: {recovery}"
         super().__init__(full)
 
 
@@ -215,7 +220,11 @@ class InputProcessor:
             ParseError: Se o CSV estiver mal formatado ou vazio.
         """
         if not content.strip():
-            raise ParseError("Conteúdo CSV vazio", details="Nenhuma linha para parsear")
+            raise ParseError(
+                "Conteúdo CSV vazio",
+                details="Nenhuma linha para parsear",
+                recovery="Verifique se o arquivo contém dados. Use formato: pos,carta (uma carta por linha)",
+            )
 
         # Detectar se tem cabeçalho
         lines = content.strip().splitlines()
@@ -238,6 +247,7 @@ class InputProcessor:
             raise ParseError(
                 "CSV sem dados após cabeçalho",
                 details="O arquivo contém apenas o cabeçalho",
+                recovery="Remova a linha de cabeçalho ou adicione linhas de dados no formato: pos,carta",
             )
 
         cards: list[CardPosition] = []
@@ -255,6 +265,7 @@ class InputProcessor:
                     "Linha com formato CSV inválido",
                     line=line_no,
                     details=f"Não foi possível interpretar: {raw_line!r}",
+                    recovery="Use vírgula, ponto-e-vírgula ou tabulação para separar posição e nome da carta. Exemplo: 1,estrela",
                 )
 
             try:
@@ -264,6 +275,7 @@ class InputProcessor:
                     "Posição inválida",
                     line=line_no,
                     details=f"Esperado número, encontrado: {parsed[0]!r}",
+                    recovery="Use apenas números inteiros para a posição. Exemplo: 1,estrela ou 2,casa",
                 )
 
             if position < 1:
@@ -271,6 +283,7 @@ class InputProcessor:
                     "Posição deve ser maior que zero",
                     line=line_no,
                     details=f"Posição: {position}",
+                    recovery="Posições válidas começam em 1. Use números positivos: 1, 2, 3, etc.",
                 )
 
             card_name = " ".join(parsed[1:]).strip()
@@ -279,6 +292,7 @@ class InputProcessor:
                     "Nome da carta ausente",
                     line=line_no,
                     details="A posição existe mas o nome da carta está vazio",
+                    recovery="Informe o nome da carta após a posição. Exemplo: 1,estrela",
                 )
 
             cards.append(CardPosition(position=position, card_name=card_name))
@@ -287,6 +301,7 @@ class InputProcessor:
             raise ParseError(
                 "Nenhuma carta válida encontrada no CSV",
                 details="Verifique o formato: pos,carta (uma carta por linha)",
+                recovery="Use o formato: posição,nome_da_carta (uma carta por linha). Exemplo: 1,estrela\\n2,casa",
             )
 
         return StructuredInput(
@@ -389,16 +404,19 @@ class InputProcessor:
             raise ParseError(
                 "Arquivo não encontrado",
                 details=f"Caminho: {file_path!r}",
+                recovery="Verifique se o caminho está correto e se o arquivo existe. Caminhos válidos devem ter extensão .csv ou .txt",
             )
         except PermissionError:
             raise ParseError(
                 "Sem permissão para ler o arquivo",
                 details=f"Caminho: {file_path!r}",
+                recovery="Verifique as permissões do arquivo. Tente executar com permissões adequadas.",
             )
         except OSError as e:
             raise ParseError(
                 "Erro ao ler arquivo",
                 details=str(e),
+                recovery="Verifique se o arquivo não está corrompido ou em uso por outro processo.",
             )
 
         result = self.parse(content, "spread")
@@ -436,7 +454,8 @@ class InputProcessor:
         if template is None:
             raise ParseError(
                 "Template não encontrado",
-                details=f"Template: {template_name!r}. Templates disponíveis: {list(get_template.__self__.TEMPLATES.keys()) if hasattr(get_template, '__self__') else 'consulte a documentação'}",
+                details=f"Template: {template_name!r}",
+                recovery="Verifique se o nome do template está correto. Use --template com valores como: 3-card, celtic-cross, simple",
             )
 
         # Mapear contextos do template para as posições
