@@ -98,17 +98,33 @@ class ReportGenerator:
         self,
         analysis: AnalysisResult,
         disclaimer: Optional[str] = None,
+        output_format: str = "default",
     ) -> str:
-        """Gera relatório Markdown a partir do resultado da análise.
+        """Gera relatório em Markdown (ou outro formato) a partir do resultado da análise.
 
         Args:
             analysis: AnalysisResult com diagnóstico, temas, riscos, decisões e plano.
             disclaimer: Texto adicional a ser inserido antes do rodapé (opcional).
+            output_format: Formato do relatório — "default" (completo), "compact"
+                (resumido), ou "json" (estruturado). Default: "default".
 
         Returns:
-            String com relatório completo em Markdown.
+            String com relatório no formato solicitado.
+
+        Raises:
+            ValueError: Se output_format não for um dos valores suportados.
         """
-        logger.info("Gerando relatório para análise com %d temas", len(analysis.themes))
+        logger.info(
+            "Gerando relatório para análise com %d temas (formato=%s)",
+            len(analysis.themes),
+            output_format,
+        )
+
+        # Validar formato
+        valid_formats = {"default", "compact", "json"}
+        if output_format not in valid_formats:
+            logger.warning("Formato desconhecido '%s', usando 'default'", output_format)
+            output_format = "default"
 
         # Montar campos do template
         timestamp = self._get_timestamp()
@@ -118,7 +134,34 @@ class ReportGenerator:
         decisions = self._format_decisions(analysis)
         practical_plan = self._format_practical_plan(analysis)
 
-        # Preencher template
+        # Selecionar template ou formato conforme solicitado
+        if output_format == "json":
+            report = self._generate_json_output(
+                timestamp, diagnosis, symbolic_interp, risks, decisions, practical_plan, disclaimer
+            )
+        elif output_format == "compact":
+            report = self._generate_compact_output(
+                timestamp, diagnosis, symbolic_interp, risks, decisions, practical_plan, disclaimer
+            )
+        else:
+            report = self._generate_default_output(
+                timestamp, diagnosis, symbolic_interp, risks, decisions, practical_plan, disclaimer
+            )
+
+        logger.info("Relatório gerado com %d caracteres", len(report))
+        return report
+
+    def _generate_default_output(
+        self,
+        timestamp: str,
+        diagnosis: str,
+        symbolic_interp: str,
+        risks: str,
+        decisions: str,
+        practical_plan: str,
+        disclaimer: Optional[str],
+    ) -> str:
+        """Gera relatório no formato padrão (completo)."""
         report = REPORT_TEMPLATE.format(
             timestamp=timestamp,
             diagnosis=diagnosis,
@@ -127,39 +170,21 @@ class ReportGenerator:
             decisions=decisions,
             practical_plan=practical_plan,
         )
-
-        # Inserir disclaimer adicional se fornecido
         if disclaimer:
             report = report.rstrip() + "\n\n" + disclaimer + "\n"
-
-        logger.info("Relatório gerado com %d caracteres", len(report))
         return report
 
-    def generate_compact(
+    def _generate_compact_output(
         self,
-        analysis: AnalysisResult,
-        disclaimer: Optional[str] = None,
+        timestamp: str,
+        diagnosis: str,
+        symbolic_interp: str,
+        risks: str,
+        decisions: str,
+        practical_plan: str,
+        disclaimer: Optional[str],
     ) -> str:
-        """Gera relatório compacto em Markdown a partir do resultado da análise.
-
-        Args:
-            analysis: AnalysisResult com diagnóstico, temas, riscos, decisões e plano.
-            disclaimer: Texto adicional a ser inserido antes do rodapé (opcional).
-
-        Returns:
-            String com relatório compacto em Markdown.
-        """
-        logger.info("Gerando relatório compacto para análise com %d temas", len(analysis.themes))
-
-        # Montar campos do template
-        timestamp = self._get_timestamp()
-        diagnosis = self._format_diagnosis(analysis)
-        symbolic_interp = self._format_symbolic_interpretation(analysis)
-        risks = self._format_risks(analysis)
-        decisions = self._format_decisions(analysis)
-        practical_plan = self._format_practical_plan(analysis)
-
-        # Preencher template compacto
+        """Gera relatório no formato compacto."""
         report = COMPACT_TEMPLATE.format(
             timestamp=timestamp,
             diagnosis=diagnosis,
@@ -168,39 +193,21 @@ class ReportGenerator:
             decisions=decisions,
             practical_plan=practical_plan,
         )
-
-        # Inserir disclaimer adicional se fornecido
         if disclaimer:
             report = report.rstrip() + "\n\n" + disclaimer + "\n"
-
-        logger.info("Relatório compacto gerado com %d caracteres", len(report))
         return report
 
-    def generate_json(
+    def _generate_json_output(
         self,
-        analysis: AnalysisResult,
-        disclaimer: Optional[str] = None,
+        timestamp: str,
+        diagnosis: str,
+        symbolic_interp: str,
+        risks: str,
+        decisions: str,
+        practical_plan: str,
+        disclaimer: Optional[str],
     ) -> str:
-        """Gera relatório em formato JSON a partir do resultado da análise.
-
-        Args:
-            analysis: AnalysisResult com diagnóstico, temas, riscos, decisões e plano.
-            disclaimer: Texto adicional a ser inserido no campo 'disclaimer' (opcional).
-
-        Returns:
-            String JSON com relatório estruturado.
-        """
-        logger.info("Gerando relatório JSON para análise com %d temas", len(analysis.themes))
-
-        # Montar campos do relatório
-        timestamp = self._get_timestamp()
-        diagnosis = self._format_diagnosis(analysis)
-        symbolic_interp = self._format_symbolic_interpretation(analysis)
-        risks = self._format_risks(analysis)
-        decisions = self._format_decisions(analysis)
-        practical_plan = self._format_practical_plan(analysis)
-
-        # Construir dicionário com as 5 seções
+        """Gera relatório em formato JSON."""
         report_data: dict[str, object] = {
             "timestamp": timestamp,
             "diagnosis": diagnosis,
@@ -209,16 +216,9 @@ class ReportGenerator:
             "decisions": decisions,
             "practical_plan": practical_plan,
         }
-
-        # Adicionar disclaimer se fornecido
         if disclaimer:
             report_data["disclaimer"] = disclaimer
-
-        # Serializar para JSON com indentação
-        report_json = json.dumps(report_data, ensure_ascii=False, indent=2)
-
-        logger.info("Relatório JSON gerado com %d caracteres", len(report_json))
-        return report_json
+        return json.dumps(report_data, ensure_ascii=False, indent=2)
 
     # ------------------------------------------------------------------
     # Formatadores por seção
