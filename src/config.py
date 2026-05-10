@@ -219,3 +219,88 @@ def load_config() -> ClarezaConfig:
     config = ClarezaConfig(**kwargs)
     logger.debug("Configuração carregada com sucesso: %s", config)
     return config
+
+
+# ----------------------------------------------------------------------
+# Validador de configuração
+# ----------------------------------------------------------------------
+
+
+class ConfigValidationError:
+    """Erro de validação de configuração.
+
+    Attributes:
+        field: Nome do campo que falhou na validação.
+        message: Descrição legível do erro.
+        value: Valor inválido fornecido (opcional).
+    """
+
+    def __init__(
+        self,
+        field: str,
+        message: str,
+        value: Optional[str] = None,
+    ) -> None:
+        self.field = field
+        self.message = message
+        self.value = value
+
+    def __repr__(self) -> str:
+        return f"ConfigValidationError(field={self.field!r}, message={self.message!r}, value={self.value!r})"
+
+    def __str__(self) -> str:
+        if self.value is not None:
+            return f"{self.field}: {self.message} (valor recebido: {self.value!r})"
+        return f"{self.field}: {self.message}"
+
+
+class ConfigValidator:
+    """Validador de configuração do sistema Clareza.
+
+    Valida dicionários de configuração antes de aplicar,
+    gerando mensagens de erro claras para valores inválidos.
+
+    Attributes:
+        valid_report_formats: Lista de formatos de relatório aceitos.
+        valid_languages: Lista de idiomas aceitos.
+    """
+
+    def __init__(
+        self,
+        valid_report_formats: Optional[list[str]] = None,
+        valid_languages: Optional[list[str]] = None,
+    ) -> None:
+        self.valid_report_formats = valid_report_formats or VALID_REPORT_FORMATS
+        self.valid_languages = valid_languages or VALID_LANGUAGES
+
+    def validate(self, config: dict) -> list[str]:
+        """Valida um dicionário de configuração.
+
+        Args:
+            config: Dicionário com campos de configuração a validar.
+
+        Returns:
+            Lista de mensagens de erro para cada campo inválido.
+            Lista vazia significa que a configuração é válida.
+        """
+        errors: list[str] = []
+
+        # Validar default_report_format
+        if "default_report_format" in config:
+            fmt = config["default_report_format"]
+            if fmt not in self.valid_report_formats:
+                errors.append(
+                    f"Formato de relatório inválido: {fmt!r}. "
+                    f"Valores válidos: {self.valid_report_formats}"
+                )
+
+        # Validar default_language
+        if "default_language" in config:
+            lang = config["default_language"]
+            if lang not in self.valid_languages:
+                errors.append(
+                    f"Idioma inválido: {lang!r}. "
+                    f"Idiomas válidos: {self.valid_languages}"
+                )
+
+        return errors
