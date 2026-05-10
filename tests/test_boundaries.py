@@ -335,21 +335,28 @@ class TestInjectDisclaimerHeader:
 
 
 class TestApplyGuardrails:
-    def test_safe_report_is_unchanged(self) -> None:
+    def test_safe_report_gets_header_disclaimer(self) -> None:
+        """Relatórios seguros recebem disclaimer de cabeçalho (sempre injetado)."""
         report = "# Relatório\n\nTexto normal de trabalho"
         result = apply_guardrails(report)
         assert isinstance(result, ValidatedOutput)
         assert result.is_safe is True
         assert result.needs_disclaimer is False
-        assert result.content == report
-        assert result.disclaimer_flags == []
+        # Disclaimer de cabeçalho é sempre injetado (feature: header injection)
+        assert result.content.startswith("---")
+        assert "AVISO IMPORTANTE" in result.content
+        assert "CVV" in result.content
+        assert "188" in result.content
 
-    def test_unsafe_report_gets_disclaimer(self) -> None:
+    def test_unsafe_report_gets_header_disclaimer(self) -> None:
+        """Relatórios inseguros também recebem disclaimer de cabeçalho."""
         report = "# Relatório\n\nTexto com morte iminente"
         result = apply_guardrails(report)
         assert result.is_safe is False
         assert result.needs_disclaimer is True
-        assert "Aviso Ético" in result.content
+        # Disclaimer aparece no topo com AVISO IMPORTANTE
+        assert "AVISO IMPORTANTE" in result.content
+        assert "CVV" in result.content
 
     def test_disclaimer_flags_populated(self) -> None:
         report = "Texto com morte e profecia"
