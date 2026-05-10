@@ -1,6 +1,16 @@
 """Command-line interface for Clareza."""
 
+import json
+from pathlib import Path
+
 import click
+
+
+def get_cards_data() -> list[dict]:
+    """Load cards data from the JSON file."""
+    cards_path = Path(__file__).parent / "data" / "cards.json"
+    with open(cards_path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def format_portuguese_help(ctx: click.Context, formatter: click.HelpFormatter) -> None:
@@ -26,6 +36,14 @@ class PortugueseHelpGroup(click.Group):
 def cli() -> None:
     """Clareza - Ferramenta CLI para Baralho Cigano."""
     pass
+
+
+@cli.command("list")
+def list_command() -> None:
+    """Listar todas as 36 cartas do Baralho Cigano."""
+    cards = get_cards_data()
+    for card in cards:
+        click.echo(f"{card['id']:2d}. {card['name']} - {card['meaning']}")
 
 
 if __name__ == "__main__":
