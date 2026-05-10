@@ -3,33 +3,50 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "clareza"
-version = "0.1.0"
-description = "Ferramenta CLI para Baralho Cigano"
-readme = "README.md"
-requires-python = ">=3.10"
+name = "clareza-core"
+version = "0.0.1"
+description = "Sistema de Clareza Simbólico-Estratégica — análise estruturada via Baralho Cigano"
+readme = "CLAUDE.md"
+requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
-    {name = "Clareza Team"}
+    {name = "Clareza Project"}
 ]
+keywords = ["clarity", "symbolic", "cigano", "analysis", "cli"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Information Analysis",
 ]
-dependencies = [
-    "click>=8.0.0",
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
 ]
 
 [project.scripts]
-clareza = "clareza.cli:cli"
+clareza = "src.main:main"
 
 [project.urls]
-Homepage = "https://github.com/clareza/clareza"
+Homepage = "https://github.com/clareza/clareza-core"
+Repository = "https://github.com/clareza/clareza-core"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
+include = ["src*"]
+
+[tool.setuptools.package-data]
+src = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v"
