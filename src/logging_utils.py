@@ -197,3 +197,215 @@ def get_colored_output() -> ColoredOutput:
         ColoredOutput configurado com base no ambiente atual.
     """
     return ColoredOutput()
+
+
+class ProgressIndicator:
+    """Indicador de progresso animado para operações de longa duração.
+
+    Exibe um spinner animado ou barra de progresso com porcentagem.
+    Suporta output colorido com fallback para ambiente sem cores.
+
+    Usage:
+        # Spinner animado (para operações indeterminadas)
+        progress = ProgressIndicator(total=0, description="Processando...")
+        progress.start()
+        # ... trabalho ...
+        progress.complete("Concluído com sucesso!")
+
+        # Barra de progresso (para operações determinísticas)
+        progress = ProgressIndicator(total=100, description="Baixando")
+        for i in range(100):
+            progress.update(i + 1)
+        progress.complete("Download concluído!")
+
+        # Com cores desativadas (fallback automático)
+        progress = ProgressIndicator(total=100, use_colors=False)
+        progress.update(50)  # Mostra "50/100 (50%)"
+    """
+
+    SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+
+    def __init__(
+        self,
+        total: int = 0,
+        description: str = "Processando",
+        use_colors: Optional[bool] = None,
+        width: int = 40,
+    ) -> None:
+        """Inicializa o ProgressIndicator.
+
+        Args:
+            total: Total de unidades (0 para modo spinner indeterminado).
+            description: Texto descritivo da operação.
+            use_colors: Override para uso de cores. Se None, usa should_use_colors().
+            width: Largura da barra de progresso em caracteres (mode determinístico).
+        """
+        self._total = total
+        self._current = 0
+        self._description = description
+        self._use_colors = use_colors if use_colors is not None else should_use_colors()
+        self._width = width
+        self._started = False
+        self._completed = False
+        self._frame_index = 0
+        self._last_output_len = 0
+
+    @property
+    def total(self) -> int:
+        """Retorna o total de unidades."""
+        return self._total
+
+    @property
+    def current(self) -> int:
+        """Retorna o progresso atual."""
+        return self._current
+
+    @property
+    def is_deterministic(self) -> bool:
+        """Retorna True se o progresso é determinístico (tem total > 0)."""
+        return self._total > 0
+
+    def _get_spinner_frame(self) -> str:
+        """Retorna o próximo frame do spinner animado."""
+        frame = self.SPINNER_FRAMES[self._frame_index]
+        self._frame_index = (self._frame_index + 1) % len(self.SPINNER_FRAMES)
+        return frame
+
+    def _format_output(self, message: str) -> str:
+        """Formata a mensagem com cores (se habilitado).
+
+        Args:
+            message: Mensagem a ser formatada.
+
+        Returns:
+            Mensagem formatada com códigos ANSI (se cores habilitadas).
+        """
+        if self._use_colors:
+            return f"{Color.CYAN.value}{message}{Color.RESET.value}"
+        return message
+
+    def _clear_line(self) -> None:
+        """Limpa a linha anterior do terminal."""
+        if self._last_output_len > 0:
+            sys.stdout.write("\r" + " " * self._last_output_len + "\r")
+            sys.stdout.flush()
+            self._last_output_len = 0
+
+    def _get_progress_bar(self) -> str:
+        """Retorna a barra de progresso formatada.
+
+        Returns:
+            Barra de progresso em formato de string.
+        """
+        if self._total == 0:
+            return ""
+
+        filled = int(self._width * self._current / self._total) if self._total > 0 else 0
+        bar_width = self._width - 2  # Espaço para brackets
+        filled = min(filled, bar_width)
+        empty = bar_width - filled
+
+        bar = f"[{'#' * filled}{'-' * empty}]"
+        percent = int(100 * self._current / self._total) if self._total > 0 else 0
+        return f"{bar} {self._current}/{self._total} ({percent}%)"
+
+    def start(self) -> None:
+        """Inicia o indicador de progresso.
+
+        Exibe a mensagem inicial de progresso.
+        """
+        self._started = True
+        self._current = 0
+        self._completed = False
+        self._frame_index = 0
+
+        if self.is_deterministic:
+            message = f"{self._description}: {self._get_progress_bar()}"
+        else:
+            message = f"{self._get_spinner_frame()} {self._description}"
+
+        output = self._format_output(message)
+        sys.stdout.write(output)
+        sys.stdout.flush()
+        self._last_output_len = len(message)
+
+    def update(self, current: int) -> None:
+        """Atualiza o progresso para o valor especificado.
+
+        Args:
+            current: Valor atual do progresso.
+        """
+        if not self._started or self._completed:
+            return
+
+        self._current = max(0, min(current, self._total)) if self._total > 0 else current
+
+        self._clear_line()
+
+        if self.is_deterministic:
+            message = f"{self._description}: {self._get_progress_bar()}"
+        else:
+            message = f"{self._get_spinner_frame()} {self._description}"
+
+        output = self._format_output(message)
+        sys.stdout.write(output)
+        sys.stdout.flush()
+        self._last_output_len = len(message)
+
+    def complete(self, message: str = "Concluído!") -> None:
+        """Finaliza o indicador de progresso.
+
+        Args:
+            message: Mensagem de conclusão.
+        """
+        self._completed = True
+        self._clear_line()
+
+        if self._use_colors:
+            output = f"{Color.BRIGHT_GREEN.value}✓{Color.RESET.value} {message}"
+        else:
+            output = f"[OK] {message}"
+
+        sys.stdout.write(output + "\n")
+        sys.stdout.flush()
+        self._last_output_len = 0
+
+    def error(self, message: str = "Erro!") -> None:
+        """Finaliza o indicador com mensagem de erro.
+
+        Args:
+            message: Mensagem de erro.
+        """
+        self._completed = True
+        self._clear_line()
+
+        if self._use_colors:
+            output = f"{Color.BRIGHT_RED.value}✗{Color.RESET.value} {message}"
+        else:
+            output = f"[ERRO] {message}"
+
+        sys.stdout.write(output + "\n")
+        sys.stdout.flush()
+        self._last_output_len = 0
+
+
+def create_progress(
+    total: int = 0,
+    description: str = "Processando",
+    use_colors: Optional[bool] = None,
+) -> ProgressIndicator:
+    """Factory function para criar um ProgressIndicator.
+
+    Args:
+        total: Total de unidades (0 para modo spinner indeterminado).
+        description: Texto descritivo da operação.
+        use_colors: Override para uso de cores. Se None, usa should_use_colors().
+
+    Returns:
+        Nova instância de ProgressIndicator configurada.
+    """
+    return ProgressIndicator(
+        total=total,
+        description=description,
+        use_colors=use_colors,
+    )
