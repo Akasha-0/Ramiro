@@ -6,7 +6,9 @@ deve circular entre módulos.
 """
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Optional
+from typing import Any
 
 
 @dataclass
@@ -117,3 +119,47 @@ class InputGuardrailsResult:
 
     is_sensitive: bool
     flags: list[str] = field(default_factory=list)
+
+
+@dataclass
+class SessionSummary:
+    """Resumo de uma sessão para listagem no histórico.
+
+    Attributes:
+        session_id: ID único da sessão (formato UUID).
+        created_at: Data e hora de criação da sessão.
+        input_format: Formato do input original ("text", "spread", "symbols").
+        summary: Resumo da sessão (diagnóstico ou palavras-chave).
+        themes: Lista de temas identificados.
+    """
+
+    session_id: str
+    created_at: datetime
+    input_format: str
+    summary: str
+    themes: list[str] = field(default_factory=list)
+
+
+@dataclass
+class SessionData:
+    """Dados completos de uma sessão armazenada.
+
+    Attributes:
+        session_id: ID único da sessão (formato UUID).
+        created_at: Data e hora de criação da sessão.
+        input_format: Formato do input original ("text", "spread", "symbols").
+        raw_input: Input bruto fornecido pelo usuário.
+        structured_input: Input estruturado após parsing.
+        analysis_result: Resultado da análise simbólico-estratégica.
+        validated_output: Output validado pelos guardrails.
+        metadata: Metadados adicionais da sessão.
+    """
+
+    session_id: str
+    created_at: datetime
+    input_format: str
+    raw_input: str
+    structured_input: Optional[dict[str, Any]] = None
+    analysis_result: Optional[dict[str, Any]] = None
+    validated_output: Optional[dict[str, Any]] = None
+    metadata: dict[str, Any] = field(default_factory=dict)
