@@ -51,6 +51,12 @@ def main() -> None:
         default=None,
         help="Caminho do arquivo .md para salvar o relatório",
     )
+    analyze_parser.add_argument(
+        "--template", "-t",
+        default=None,
+        help="Template de tiragem predefinido (3-card, celtic-cross). "
+             "Disponível apenas para --format spread.",
+    )
 
     args = parser.parse_args()
 
@@ -59,10 +65,15 @@ def main() -> None:
         sys.exit(1)
 
     if args.command == "analyze":
-        run_analyze(args.input, args.format, args.output)
+        run_analyze(args.input, args.format, args.output, args.template)
 
 
-def run_analyze(raw_input: str, format: str, output_path: str | None) -> None:
+def run_analyze(
+    raw_input: str,
+    format: str,
+    output_path: str | None,
+    template: str | None,
+) -> None:
     """Executa o pipeline completo de análise.
 
     Pipeline: input_processor → analysis_engine → boundaries → report_generator
@@ -71,7 +82,17 @@ def run_analyze(raw_input: str, format: str, output_path: str | None) -> None:
         raw_input: Conteúdo bruto de entrada.
         format: Formato de entrada ("text", "spread", "symbols").
         output_path: Caminho opcional para salvar o relatório em .md.
+        template: Template de tiragem predefinido (apenas para format="spread").
     """
+    # Validação: --template só é válido com --format spread
+    if template is not None and format != "spread":
+        logger.error("O argumento --template só é válido com --format spread")
+        print(
+            "Erro: --template requer --format spread",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
     try:
         # Fase 1: Parse e estruturação do input
         logger.info("Processando entrada: format=%s, length=%d", format, len(raw_input))
