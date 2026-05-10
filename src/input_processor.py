@@ -16,6 +16,7 @@ from typing import Optional
 
 from src.types import CardPosition, StructuredInput
 from src.spread_templates import get_template, SpreadTemplate
+from src.symbols import get_symbol_by_name, get_similar_card_names
 
 logger = logging.getLogger(__name__)
 
@@ -293,6 +294,21 @@ class InputProcessor:
                     line=line_no,
                     details="A posição existe mas o nome da carta está vazio",
                     recovery="Informe o nome da carta após a posição. Exemplo: 1,estrela",
+                )
+
+            # Validar se a carta existe no catálogo
+            if get_symbol_by_name(card_name) is None:
+                similar = get_similar_card_names(card_name, n=3)
+                details = f"'{card_name}' não encontrada no catálogo do Baralho Cigano"
+                if similar:
+                    recovery = f"Você quis dizer: {', '.join(similar)}"
+                else:
+                    recovery = "Verifique o nome da carta. Use um dos 36 nomes válidos do Baralho Cigano."
+                raise ParseError(
+                    "Cartão desconhecido",
+                    line=line_no,
+                    details=details,
+                    recovery=recovery,
                 )
 
             cards.append(CardPosition(position=position, card_name=card_name))
