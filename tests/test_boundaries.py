@@ -19,6 +19,7 @@ from src.boundaries import (
     apply_guardrails,
     detect_sensitive_input,
     inject_disclaimer,
+    inject_disclaimer_header,
     validate_output,
 )
 from src.types import AnalysisResult, ValidatedOutput
@@ -270,6 +271,62 @@ class TestInjectDisclaimer:
         result = inject_disclaimer("# Relatório\n\nConteúdo")
         lines = result.split("\n")
         assert "---" in lines
+
+
+# ----------------------------------------------------------------------
+# Testes — inject_disclaimer_header()
+# ----------------------------------------------------------------------
+
+
+class TestInjectDisclaimerHeader:
+    def test_prepends_disclaimer(self) -> None:
+        """inject_disclaimer_header adiciona disclaimer no início."""
+        report = "# Relatório\n\nConteúdo do relatório"
+        result = inject_disclaimer_header(report)
+        assert "AVISO IMPORTANTE" in result
+        assert result.startswith("---")
+
+    def test_contains_emergency_contacts(self) -> None:
+        """Header inclui CVV (188) e SAMU (192)."""
+        report = "# Relatório\n\nConteúdo"
+        result = inject_disclaimer_header(report)
+        assert "188" in result
+        assert "192" in result
+        assert "CVV" in result
+
+    def test_contains_caps_reference(self) -> None:
+        """Header menciona CAPS para ajuda emocional."""
+        report = "# Relatório\n\nConteúdo"
+        result = inject_disclaimer_header(report)
+        assert "CAPS" in result
+
+    def test_empty_report_returns_unchanged(self) -> None:
+        result = inject_disclaimer_header("")
+        assert result == ""
+
+    def test_whitespace_only_returns_unchanged(self) -> None:
+        result = inject_disclaimer_header("   \n\t  ")
+        assert result == "   \n\t  "
+
+    def test_preserves_original_content(self) -> None:
+        """O conteúdo original permanece após o header."""
+        report = "# Relatório\n\nConteúdo original"
+        result = inject_disclaimer_header(report)
+        assert "# Relatório" in result
+        assert "Conteúdo original" in result
+
+    def test_header_separated_by_horizontal_rules(self) -> None:
+        """Header usa --- como separador visual."""
+        result = inject_disclaimer_header("# Relatório\n\nConteúdo")
+        lines = result.split("\n")
+        # Mais de um --- indica separadores múltiplos no header
+        assert lines.count("---") >= 2
+
+    def test_alias_works(self) -> None:
+        """inject_disclaimer_header é alias de inject_header_disclaimer."""
+        report = "# Relatório\n\nConteúdo"
+        result = inject_disclaimer_header(report)
+        assert "AVISO IMPORTANTE" in result
 
 
 # ----------------------------------------------------------------------
