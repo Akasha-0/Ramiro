@@ -134,6 +134,47 @@ class ReportGenerator:
         logger.info("Relatório gerado com %d caracteres", len(report))
         return report
 
+    def generate_compact(
+        self,
+        analysis: AnalysisResult,
+        disclaimer: Optional[str] = None,
+    ) -> str:
+        """Gera relatório compacto em Markdown a partir do resultado da análise.
+
+        Args:
+            analysis: AnalysisResult com diagnóstico, temas, riscos, decisões e plano.
+            disclaimer: Texto adicional a ser inserido antes do rodapé (opcional).
+
+        Returns:
+            String com relatório compacto em Markdown.
+        """
+        logger.info("Gerando relatório compacto para análise com %d temas", len(analysis.themes))
+
+        # Montar campos do template
+        timestamp = self._get_timestamp()
+        diagnosis = self._format_diagnosis(analysis)
+        symbolic_interp = self._format_symbolic_interpretation(analysis)
+        risks = self._format_risks(analysis)
+        decisions = self._format_decisions(analysis)
+        practical_plan = self._format_practical_plan(analysis)
+
+        # Preencher template compacto
+        report = COMPACT_TEMPLATE.format(
+            timestamp=timestamp,
+            diagnosis=diagnosis,
+            symbolic_interpretation=symbolic_interp,
+            risks=risks,
+            decisions=decisions,
+            practical_plan=practical_plan,
+        )
+
+        # Inserir disclaimer adicional se fornecido
+        if disclaimer:
+            report = report.rstrip() + "\n\n" + disclaimer + "\n"
+
+        logger.info("Relatório compacto gerado com %d caracteres", len(report))
+        return report
+
     # ------------------------------------------------------------------
     # Formatadores por seção
     # ------------------------------------------------------------------
