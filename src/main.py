@@ -9,6 +9,7 @@ from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
 from src.commands.history import run_history as history_run
+from src.commands.view import run_view as view_run
 
 # ----------------------------------------------------------------------
 # Logging configuration
@@ -105,6 +106,14 @@ def main() -> None:
         help="Número máximo de sessões a exibir (padrão: 10)",
     )
 
+    # subcommand: view
+    view_parser = subparsers.add_parser("view", help="Exibir relatório de uma sessão salva")
+    view_parser.add_argument(
+        "session_id",
+        type=int,
+        help="ID da sessão cujo relatório será exibido",
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -116,6 +125,9 @@ def main() -> None:
 
     if args.command == "history":
         history_run(args.search, args.limit)
+
+    if args.command == "view":
+        view_run(args.session_id)
 
 
 def run_analyze(
