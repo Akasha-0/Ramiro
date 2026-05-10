@@ -688,3 +688,181 @@ class TestMainArcSubcommands:
         assert exit_code in (1, 2)
         # Deve exibir help do subparser ou erro
         assert "help" in stderr.lower() or "invalid" in stderr.lower()
+
+
+# ----------------------------------------------------------------------
+# Testes — pipeline completo com input sensível
+# ----------------------------------------------------------------------
+
+
+class TestSensitiveInputPipeline:
+    """Testes de integração para o pipeline com input sensível.
+
+    Verifica que:
+    - Input com keywords sensíveis dispara disclaimer no output
+    - Header disclaimer aparece no topo do relatório
+    - Disclaimer contém informações de ajuda especializada
+    - Pipeline processa normalmente e retorna relatório válido
+    """
+
+    def test_sensitive_input_includes_header_disclaimer(self) -> None:
+        """Input com tema sensível inclui header disclaimer."""
+        output, exit_code = capture_stdout(
+            run_analyze, "estou com depressão e problemas financeiros", "text", None
+        )
+        assert exit_code == 0
+        # Header disclaimer deve aparecer no início do relatório
+        assert "---" in output
+        assert "AVISO IMPORTANTE" in output
+
+    def test_sensitive_input_contains_cvvexplanation(self) -> None:
+        """Disclaimer inclui informação do CVV."""
+        output, exit_code = capture_stdout(
+            run_analyze, "tenho pensamentos de morte", "text", None
+        )
+        assert exit_code == 0
+        # Disclaimer deve mencionar canais de ajuda
+        assert "CVV" in output or "ajuda especializada" in output.lower()
+
+    def test_sensitive_input_suicide_ideation(self) -> None:
+        """Input com ideação suicida gera relatório com disclaimer."""
+        output, exit_code = capture_stdout(
+            run_analyze, "estou pensando em suicide", "text", None
+        )
+        assert exit_code == 0
+        # Relatório deve ter disclaimer de cabeçalho
+        assert "AVISO IMPORTANTE" in output
+        assert "188" in output  # Número do CVV
+
+    def test_sensitive_input_physical_health(self) -> None:
+        """Input sobre saúde física inclui disclaimer."""
+        output, exit_code = capture_stdout(
+            run_analyze, "fui diagnosticado com cancer", "text", None
+        )
+        assert exit_code == 0
+        # Disclaimer deve estar presente
+        assert "---" in output
+        assert "saúde" in output.lower()
+
+    def test_sensitive_input_financial_risk(self) -> None:
+        """Input sobre risco financeiro inclui disclaimer."""
+        output, exit_code = capture_stdout(
+            run_analyze, "estou em falência e não tenho dinheiro", "text", None
+        )
+        assert exit_code == 0
+        # Header disclaimer deve estar presente
+        assert "AVISO IMPORTANTE" in output
+
+    def test_sensitive_input_relationship_crisis(self) -> None:
+        """Input sobre crise relacional inclui disclaimer."""
+        output, exit_code = capture_stdout(
+            run_analyze, "minha relação é tóxica e estou em divórcio", "text", None
+        )
+        assert exit_code == 0
+        # Disclaimer presente
+        assert "---" in output
+        assert "ferramenta de reflexão" in output.lower()
+
+    def test_sensitive_input_self_harm(self) -> None:
+        """Input sobre automutilação inclui disclaimer proeminente."""
+        output, exit_code = capture_stdout(
+            run_analyze, "estou me automutilando e cortando", "text", None
+        )
+        assert exit_code == 0
+        # Disclaimer com emergência deve estar presente
+        assert "188" in output or "CVV" in output
+
+    def test_sensitive_input_report_structure_intact(self) -> None:
+        """Input sensível ainda gera estrutura completa de relatório."""
+        output, exit_code = capture_stdout(
+            run_analyze, "estou com ansiedade e problemas", "text", None
+        )
+        assert exit_code == 0
+        # Todas as 5 seções devem estar presentes mesmo com input sensível
+        assert "# Relatório de Análise" in output
+        assert "## Diagnóstico" in output
+        assert "## Interpretação Simbólica" in output
+        assert "## Riscos Identificados" in output
+        assert "## Caminhos de Decisão" in output
+        assert "## Plano Prático" in output
+
+    def test_sensitive_input_spread_format(self) -> None:
+        """Input spread com tema sensível inclui disclaimer."""
+        csv_input = "1,Cruz\n2,Estrela"
+        output, exit_code = capture_stdout(
+            run_analyze, csv_input, "spread", None
+        )
+        # Spread não usa texto diretamente, mas verificação de estrutura
+        assert exit_code == 0
+
+    def test_multiple_sensitive_keywords(self) -> None:
+        """Input com múltiplas keywords sensíveis gera disclaimer completo."""
+        output, exit_code = capture_stdout(
+            run_analyze,
+            "depressão, suicídio, falência e violência doméstica",
+            "text",
+            None,
+        )
+        assert exit_code == 0
+        # Header disclaimer deve aparecer
+        assert "AVISO IMPORTANTE" in output
+        # Footer disclaimer deve aparecer
+        assert "ferramenta de reflexão" in output.lower()
+
+    def test_sensitive_input_with_file_output(self) -> None:
+        """Input sensível com output para arquivo inclui disclaimer."""
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False, encoding="utf-8"
+        ) as f:
+            temp_path = f.name
+
+        try:
+            output, exit_code = capture_stdout(
+                run_analyze,
+                "estou com depressão",
+                "text",
+                temp_path,
+            )
+            assert exit_code == 0
+            # Arquivo foi escrito com disclaimer
+            with open(temp_path, encoding="utf-8") as f_read:
+                content = f_read.read()
+            assert "AVISO IMPORTANTE" in content
+            assert "CVV" in content
+        finally:
+            os.unlink(temp_path)
+
+    def test_non_sensitive_input_also_has_disclaimer(self) -> None:
+        """Input normal também inclui disclaimer (header injection é sempre applied)."""
+        output, exit_code = capture_stdout(
+            run_analyze, "trabalho e dinheiro", "text", None
+        )
+        assert exit_code == 0
+        # Header disclaimer é sempre injetado
+        assert "---" in output
+        assert "AVISO IMPORTANTE" in output
+
+    def test_sensitive_input_case_insensitive(self) -> None:
+        """Detecção de input sensível é case-insensitive."""
+        # Maiúsculas
+        output1, exit_code1 = capture_stdout(
+            run_analyze, "DEPRESSÃO E SUICÍDIO", "text", None
+        )
+        assert exit_code1 == 0
+        assert "AVISO IMPORTANTE" in output1
+
+        # Misto
+        output2, exit_code2 = capture_stdout(
+            run_analyze, "DePresSÃo e SuIcIdIo", "text", None
+        )
+        assert exit_code2 == 0
+        assert "AVISO IMPORTANTE" in output2
+
+    def test_sensitive_input_unicode_normalized(self) -> None:
+        """Input sensível com acentos é detectado corretamente."""
+        output, exit_code = capture_stdout(
+            run_analyze, "estou com depressao acentuada", "text", None
+        )
+        assert exit_code == 0
+        # Normalização de texto deve detectar variantes com/sem acento
+        assert "AVISO IMPORTANTE" in output

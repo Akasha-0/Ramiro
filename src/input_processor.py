@@ -15,6 +15,7 @@ import re
 from typing import Optional
 
 from src.types import CardPosition, StructuredInput
+from src.spread_templates import get_template, SpreadTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ class ParseError(Exception):
         message: Descrição legível do erro.
         line: Número da linha onde ocorreu o erro (para CSV, opcional).
         details: Detalhes adicionais sobre a natureza do erro.
+        recovery: Orientação de recuperação em português (opcional).
     """
 
     def __init__(
@@ -37,15 +39,19 @@ class ParseError(Exception):
         message: str,
         line: Optional[int] = None,
         details: Optional[str] = None,
+        recovery: Optional[str] = None,
     ) -> None:
         self.message = message
         self.line = line
         self.details = details
+        self.recovery = recovery
         full = message
         if line is not None:
             full = f"{message} (linha {line})"
         if details:
             full = f"{full}: {details}"
+        if recovery:
+            full = f"{full}\nDica: {recovery}"
         super().__init__(full)
 
 
@@ -214,7 +220,11 @@ class InputProcessor:
             ParseError: Se o CSV estiver mal formatado ou vazio.
         """
         if not content.strip():
-            raise ParseError("Conteúdo CSV vazio", details="Nenhuma linha para parsear")
+            raise ParseError(
+                "Conteúdo CSV vazio",
+                details="Nenhuma linha para parsear",
+                recovery="Verifique se o arquivo contém dados. Use formato: pos,carta (uma carta por linha)",
+            )
 
         # Detectar se tem cabeçalho
         lines = content.strip().splitlines()
@@ -237,6 +247,7 @@ class InputProcessor:
             raise ParseError(
                 "CSV sem dados após cabeçalho",
                 details="O arquivo contém apenas o cabeçalho",
+                recovery="Remova a linha de cabeçalho ou adicione linhas de dados no formato: pos,carta",
             )
 
         cards: list[CardPosition] = []
@@ -254,6 +265,7 @@ class InputProcessor:
                     "Linha com formato CSV inválido",
                     line=line_no,
                     details=f"Não foi possível interpretar: {raw_line!r}",
+                    recovery="Use vírgula, ponto-e-vírgula ou tabulação para separar posição e nome da carta. Exemplo: 1,estrela",
                 )
 
             try:
@@ -263,6 +275,7 @@ class InputProcessor:
                     "Posição inválida",
                     line=line_no,
                     details=f"Esperado número, encontrado: {parsed[0]!r}",
+                    recovery="Use apenas números inteiros para a posição. Exemplo: 1,estrela ou 2,casa",
                 )
 
             if position < 1:
@@ -270,6 +283,7 @@ class InputProcessor:
                     "Posição deve ser maior que zero",
                     line=line_no,
                     details=f"Posição: {position}",
+                    recovery="Posições válidas começam em 1. Use números positivos: 1, 2, 3, etc.",
                 )
 
             card_name = " ".join(parsed[1:]).strip()
@@ -278,6 +292,7 @@ class InputProcessor:
                     "Nome da carta ausente",
                     line=line_no,
                     details="A posição existe mas o nome da carta está vazio",
+                    recovery="Informe o nome da carta após a posição. Exemplo: 1,estrela",
                 )
 
             cards.append(CardPosition(position=position, card_name=card_name))
@@ -286,6 +301,7 @@ class InputProcessor:
             raise ParseError(
                 "Nenhuma carta válida encontrada no CSV",
                 details="Verifique o formato: pos,carta (uma carta por linha)",
+                recovery="Use o formato: posição,nome_da_carta (uma carta por linha). Exemplo: 1,estrela\\n2,casa",
             )
 
         return StructuredInput(
@@ -353,3 +369,140 @@ class InputProcessor:
         if len(content) <= self.max_length:
             return content, False
         return content[: self.max_length], True
+
+    # ------------------------------------------------------------------
+    # File path e template support
+    # ------------------------------------------------------------------
+
+    def parse_from_file(
+        self,
+        file_path: str,
+        template_name: Optional[str] = None,
+    ) -> StructuredInput:
+        """Lê e parseia conteúdo de um arquivo CSV.
+
+        Suporta leitura de arquivos com caminho absoluto ou relativo.
+        Opcionalmente aplica um template de tiragem para inferir contexto.
+
+        Args:
+            file_path: Caminho para o arquivo CSV.
+            template_name: Nome do template opcional para contexto de posições.
+
+        Returns:
+            StructuredInput com dados parseados do arquivo.
+
+        Raises:
+            ParseError: Se o arquivo não puder ser lido ou parseado.
+            FileNotFoundError: Se o arquivo não existir.
+        """
+        logger.debug("Lendo arquivo CSV: %s", file_path)
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+        except FileNotFoundError:
+            raise ParseError(
+                "Arquivo não encontrado",
+                details=f"Caminho: {file_path!r}",
+                recovery="Verifique se o caminho está correto e se o arquivo existe. Caminhos válidos devem ter extensão .csv ou .txt",
+            )
+        except PermissionError:
+            raise ParseError(
+                "Sem permissão para ler o arquivo",
+                details=f"Caminho: {file_path!r}",
+                recovery="Verifique as permissões do arquivo. Tente executar com permissões adequadas.",
+            )
+        except OSError as e:
+            raise ParseError(
+                "Erro ao ler arquivo",
+                details=str(e),
+                recovery="Verifique se o arquivo não está corrompido ou em uso por outro processo.",
+            )
+
+        result = self.parse(content, "spread")
+
+        # Se template foi fornecido, aplicar contexto às posições
+        if template_name and result.cards:
+            result = self._apply_template_context(result, template_name)
+
+        return result
+
+    def _apply_template_context(
+        self,
+        structured_input: StructuredInput,
+        template_name: str,
+    ) -> StructuredInput:
+        """Aplica contexto de um template às posições de uma tiragem.
+
+        Usa o template para determinar o position_context de cada carta
+        baseada na sua posição.
+
+        Args:
+            structured_input: StructuredInput com cartas parseadas.
+            template_name: Nome do template a aplicar.
+
+        Returns:
+            StructuredInput com position_context preenchido em cada carta.
+
+        Raises:
+            ParseError: Se o template não existir.
+        """
+        if not structured_input.cards:
+            return structured_input
+
+        template = get_template(template_name)
+        if template is None:
+            raise ParseError(
+                "Template não encontrado",
+                details=f"Template: {template_name!r}",
+                recovery="Verifique se o nome do template está correto. Use --template com valores como: 3-card, celtic-cross, simple",
+            )
+
+        # Mapear contextos do template para as posições
+        context_by_position: dict[int, str] = {}
+        for pos in template.positions:
+            context_by_position[pos.position] = pos.context
+
+        # Aplicar contexto às cartas
+        updated_cards: list[CardPosition] = []
+        for card in structured_input.cards:
+            context = context_by_position.get(card.position)
+            if context:
+                updated_cards.append(
+                    CardPosition(
+                        position=card.position,
+                        card_name=card.card_name,
+                        interpretation=card.interpretation,
+                        position_context=context,
+                    )
+                )
+            else:
+                updated_cards.append(card)
+
+        return StructuredInput(
+            format=structured_input.format,
+            raw_content=structured_input.raw_content,
+            cards=updated_cards,
+            keywords=structured_input.keywords,
+        )
+
+    def parse_with_context(
+        self,
+        content: str,
+        template_name: Optional[str] = None,
+    ) -> StructuredInput:
+        """Parseia conteúdo CSV com contexto de template opcional.
+
+        Wrapper conveniente que combina parse() e _apply_template_context().
+
+        Args:
+            content: Conteúdo CSV ou texto.
+            template_name: Nome do template opcional.
+
+        Returns:
+            StructuredInput com contexto de template aplicado se fornecido.
+        """
+        result = self.parse(content, "spread")
+        if template_name:
+            result = self._apply_template_context(result, template_name)
+        return result

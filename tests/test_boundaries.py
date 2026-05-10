@@ -13,10 +13,13 @@ import pytest
 from src.boundaries import (
     BLOCKED_KEYWORDS,
     BoundariesValidator,
+    SENSITIVE_KEYWORDS,
     _normalize_text,
     _ETHICAL_DISCLAIMER,
     apply_guardrails,
+    detect_sensitive_input,
     inject_disclaimer,
+    inject_disclaimer_header,
     validate_output,
 )
 from src.types import AnalysisResult, ValidatedOutput
@@ -142,6 +145,92 @@ class TestValidateOutput:
 
 
 # ----------------------------------------------------------------------
+# Testes — detect_sensitive_input()
+# ----------------------------------------------------------------------
+
+
+class TestDetectSensitiveInput:
+    def test_safe_text_returns_false(self) -> None:
+        is_sensitive, flags = detect_sensitive_input("Texto normal sobre trabalho e família")
+        assert is_sensitive is False
+        assert flags == []
+
+    def test_detects_single_sensitive_keyword(self) -> None:
+        is_sensitive, flags = detect_sensitive_input("Estou com depressão há semanas")
+        assert is_sensitive is True
+        assert "depressão" in flags
+
+    def test_detects_multiple_sensitive_keywords(self) -> None:
+        is_sensitive, flags = detect_sensitive_input("Tenho ansiedade e não tenho dinheiro para pagar as contas")
+        assert is_sensitive is True
+        assert "ansiedade" in flags
+        assert "não tenho dinheiro" in flags
+
+    def test_case_insensitive_detection(self) -> None:
+        is_sensitive, flags = detect_sensitive_input("DEPRESSÃO ANSIEDADE deprimido")
+        assert is_sensitive is True
+        assert "depressão" in flags
+        assert "ansiedade" in flags
+        assert "deprimido" in flags
+
+    def test_accent_insensitive_detection(self) -> None:
+        """Keywords com acento são detectadas mesmo sem acento no texto."""
+        is_sensitive, flags = detect_sensitive_input("estou deprimido")
+        assert is_sensitive is True
+        assert "deprimido" in flags
+
+    def test_empty_text_returns_false(self) -> None:
+        is_sensitive, flags = detect_sensitive_input("")
+        assert is_sensitive is False
+        assert flags == []
+
+    def test_whitespace_only_returns_false(self) -> None:
+        is_sensitive, flags = detect_sensitive_input("   \n\t  ")
+        assert is_sensitive is False
+        assert flags == []
+
+    def test_detects_suicide_ideation(self) -> None:
+        text = "Tenho pensamentos de morte eхо me matar"
+        is_sensitive, flags = detect_sensitive_input(text)
+        assert is_sensitive is True
+        assert "pensamentos de morte" in flags
+
+    def test_detects_self_harm(self) -> None:
+        text = "Pratico automutilação"
+        is_sensitive, flags = detect_sensitive_input(text)
+        assert is_sensitive is True
+        assert "automutilação" in flags
+
+    def test_detects_financial_risk(self) -> None:
+        text = "Estou em falência pessoal e perdi tudo"
+        is_sensitive, flags = detect_sensitive_input(text)
+        assert is_sensitive is True
+        assert "falência" in flags
+        assert "perdi tudo" in flags
+
+    def test_detects_relationship_crisis(self) -> None:
+        text = "Estou em separação e sofro abuso emocional"
+        is_sensitive, flags = detect_sensitive_input(text)
+        assert is_sensitive is True
+        assert "separação" in flags
+        assert "abuso emocional" in flags
+
+    def test_detects_physical_health(self) -> None:
+        text = "Fui diagnosticado com cancer terminal"
+        is_sensitive, flags = detect_sensitive_input(text)
+        assert is_sensitive is True
+        assert "câncer" in flags
+        assert "terminal" in flags
+
+    def test_returns_flags_in_original_form(self) -> None:
+        """Flags retornam o texto original da keyword (não normalizado)."""
+        is_sensitive, flags = detect_sensitive_input("TENHO ANSIEDADE")
+        assert is_sensitive is True
+        # Flag deve ser a keyword original, não a normalizada
+        assert "ansiedade" in flags
+
+
+# ----------------------------------------------------------------------
 # Testes — inject_disclaimer()
 # ----------------------------------------------------------------------
 
@@ -185,26 +274,89 @@ class TestInjectDisclaimer:
 
 
 # ----------------------------------------------------------------------
+# Testes — inject_disclaimer_header()
+# ----------------------------------------------------------------------
+
+
+class TestInjectDisclaimerHeader:
+    def test_prepends_disclaimer(self) -> None:
+        """inject_disclaimer_header adiciona disclaimer no início."""
+        report = "# Relatório\n\nConteúdo do relatório"
+        result = inject_disclaimer_header(report)
+        assert "AVISO IMPORTANTE" in result
+        assert result.startswith("---")
+
+    def test_contains_emergency_contacts(self) -> None:
+        """Header inclui CVV (188) e SAMU (192)."""
+        report = "# Relatório\n\nConteúdo"
+        result = inject_disclaimer_header(report)
+        assert "188" in result
+        assert "192" in result
+        assert "CVV" in result
+
+    def test_contains_caps_reference(self) -> None:
+        """Header menciona CAPS para ajuda emocional."""
+        report = "# Relatório\n\nConteúdo"
+        result = inject_disclaimer_header(report)
+        assert "CAPS" in result
+
+    def test_empty_report_returns_unchanged(self) -> None:
+        result = inject_disclaimer_header("")
+        assert result == ""
+
+    def test_whitespace_only_returns_unchanged(self) -> None:
+        result = inject_disclaimer_header("   \n\t  ")
+        assert result == "   \n\t  "
+
+    def test_preserves_original_content(self) -> None:
+        """O conteúdo original permanece após o header."""
+        report = "# Relatório\n\nConteúdo original"
+        result = inject_disclaimer_header(report)
+        assert "# Relatório" in result
+        assert "Conteúdo original" in result
+
+    def test_header_separated_by_horizontal_rules(self) -> None:
+        """Header usa --- como separador visual."""
+        result = inject_disclaimer_header("# Relatório\n\nConteúdo")
+        lines = result.split("\n")
+        # Mais de um --- indica separadores múltiplos no header
+        assert lines.count("---") >= 2
+
+    def test_alias_works(self) -> None:
+        """inject_disclaimer_header é alias de inject_header_disclaimer."""
+        report = "# Relatório\n\nConteúdo"
+        result = inject_disclaimer_header(report)
+        assert "AVISO IMPORTANTE" in result
+
+
+# ----------------------------------------------------------------------
 # Testes — apply_guardrails()
 # ----------------------------------------------------------------------
 
 
 class TestApplyGuardrails:
-    def test_safe_report_is_unchanged(self) -> None:
+    def test_safe_report_gets_header_disclaimer(self) -> None:
+        """Relatórios seguros recebem disclaimer de cabeçalho (sempre injetado)."""
         report = "# Relatório\n\nTexto normal de trabalho"
         result = apply_guardrails(report)
         assert isinstance(result, ValidatedOutput)
         assert result.is_safe is True
         assert result.needs_disclaimer is False
-        assert result.content == report
-        assert result.disclaimer_flags == []
+        # Disclaimer de cabeçalho é sempre injetado (feature: header injection)
+        assert result.content.startswith("---")
+        assert "AVISO IMPORTANTE" in result.content
+        assert "CVV" in result.content
+        assert "188" in result.content
 
-    def test_unsafe_report_gets_disclaimer(self) -> None:
+    def test_unsafe_report_gets_header_disclaimer(self) -> None:
+        """Relatórios inseguros também recebem disclaimer de cabeçalho."""
         report = "# Relatório\n\nTexto com morte iminente"
         result = apply_guardrails(report)
         assert result.is_safe is False
         assert result.needs_disclaimer is True
-        assert "Aviso Ético" in result.content
+        # Disclaimer aparece no topo com AVISO IMPORTANTE
+        assert "AVISO IMPORTANTE" in result.content
+        assert "CVV" in result.content
 
     def test_disclaimer_flags_populated(self) -> None:
         report = "Texto com morte e profecia"

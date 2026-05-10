@@ -12,9 +12,81 @@ import logging
 import re
 from typing import Optional
 
-from src.types import AnalysisResult, ValidatedOutput
+from src.types import AnalysisResult, InputGuardrailsResult, ValidatedOutput
 
 logger = logging.getLogger(__name__)
+
+# ----------------------------------------------------------------------
+# Mensagens de erro detalhadas em português com orientação de ação
+# ----------------------------------------------------------------------
+
+# Mensagens por categoria de erro (fornecem contexto e orientação)
+VALIDATION_MESSAGES: dict[str, dict[str, str]] = {
+    "blocked_keyword": {
+        "title": "⚠️ Conteúdo Bloqueado pelos Guardrails Éticos",
+        "message": (
+            "O relatório contém palavras ou frases que violam nossas "
+            "diretrizes éticas e não podem ser exibidas."
+        ),
+        "action": (
+            "O sistema gerou automaticamente um aviso ético. "
+            "Analise o conteúdo com perspectiva reflexiva, não determinista."
+        ),
+        "recovery": (
+            "Dica: Reformule sua pergunta para focar em reflexão e organização "
+            "em vez de previsões específicas."
+        ),
+    },
+    "multiple_flags": {
+        "title": "⚠️ Múltiplas Restrições Detectadas",
+        "message": (
+            "Várias palavras-chave restritas foram identificadas no relatório. "
+            "O conteúdo foi sinalizado para revisão ética."
+        ),
+        "action": (
+            "Um aviso ético foi adicionado automaticamente. "
+            "Use o relatório como ferramenta de reflexão, não de previsão."
+        ),
+        "recovery": (
+            "Dica: Tente perguntas mais abertas como 'como posso refletir sobre...' "
+            "em vez de 'o que vai acontecer com...'"
+        ),
+    },
+    "disclaimer_injected": {
+        "title": "ℹ️ Aviso Ético Adicionado",
+        "message": (
+            "Um aviso ético foi inserido automaticamente no final do relatório."
+        ),
+        "action": (
+            "Este aviso garante que a análise seja usada como ferramenta "
+            "de reflexão, não como verdade absoluta."
+        ),
+        "recovery": None,
+    },
+    "empty_report": {
+        "title": "ℹ️ Relatório Vazio",
+        "message": (
+            "Não foi possível processar o relatório ou ele está vazio."
+        ),
+        "action": (
+            "Verifique se o texto de entrada contém informações suficientes "
+            "para análise."
+        ),
+        "recovery": (
+            "Dica: Forneça uma descrição mais detalhada do contexto ou "
+            "escolha símbolos específicos do Baralho Cigano."
+        ),
+    },
+}
+
+# Códigos de erro para identificação programática
+ERROR_CODES: dict[str, str] = {
+    "ETH001": "Palavra-chave bloqueada detectada",
+    "ETH002": "Múltiplas restrições identificadas",
+    "ETH003": "Disclaimer ético injetado",
+    "ETH004": "Relatório vazio ou inválido",
+    "ETH005": "Validação concluída - conteúdo seguro",
+}
 
 # ----------------------------------------------------------------------
 # Palavras-chave bloqueadas (case-insensitive, normalização aplicada)
@@ -73,12 +145,181 @@ BLOCKED_KEYWORDS: list[str] = [
     "inevitável",
 ]
 
+# ----------------------------------------------------------------------
+# Palavras-chave sensíveis para scan de input (case-insensitive)
+# ----------------------------------------------------------------------
+
+# Categorias de risco para detecção de input sensível:
+# - mental_health: depressão, ansiedade, ideação suicida
+# - physical_health: doença, diagnóstico, tratamento médico
+# - financial_risk: dívida, falência, perda financeira grave
+# - relationship_crisis: separação, divórcio, traição, abuso
+# - self_harm: automutilação, ideação de morte
+
+SENSITIVE_KEYWORDS: list[str] = [
+    # Saúde mental — depressão, ansiedade, ideação suicida
+    "depressão",
+    "depressivo",
+    "deprimido",
+    "ansiedade",
+    "ansioso",
+    "suicídio",
+    "suicidio",
+    "ideação suicida",
+    "pensamentos de morte",
+    "matar a si mesmo",
+    "automutilação",
+    "corte",
+    "ferir a si mesmo",
+    "crise de pânico",
+    "ataque de pânico",
+    "transtorno",
+    "psicose",
+    "psicótico",
+    "internação",
+    "hospitalização",
+    # Saúde física — doença grave, diagnóstico
+    "câncer",
+    "tumor",
+    "diagnóstico grave",
+    "doença crônica",
+    "terminal",
+    "HIV",
+    "AIDS",
+    "enfermidade",
+    # Risco financeiro — endividamento, falência
+    "falência",
+    "falência pessoal",
+    "dívida insustentável",
+    "não tenho dinheiro",
+    "sem dinheiro",
+    "não consigo pagar",
+    "ruína financeira",
+    "perdi tudo",
+    "sem recursos",
+    # Crise relacional — separação, abuso, traição
+    "separação",
+    "divórcio",
+    "traição",
+    "infidelidade",
+    "abuso",
+    "violência doméstica",
+    "abuso emocional",
+    "abuso físico",
+    "relação tóxica",
+    "manipulação",
+    "controle",
+    # Risco auto-lesivo
+    "automutilação",
+    "ferir-se",
+    "cortar-se",
+]
+
 # Padrão regex pré-compilado para busca case-insensitive
 # Cada keyword é escapada para безопасность em regex
 _BLOCKED_PATTERN: re.Pattern[str] = re.compile(
     "|".join(re.escape(kw.lower()) for kw in BLOCKED_KEYWORDS),
     re.IGNORECASE,
 )
+
+# Padrão pré-compilado para SENSITIVE_KEYWORDS (mesmo padrão de segurança)
+_SENSITIVE_PATTERN: re.Pattern[str] = re.compile(
+    "|".join(re.escape(kw.lower()) for kw in SENSITIVE_KEYWORDS),
+    re.IGNORECASE,
+)
+
+# ----------------------------------------------------------------------
+# Detecção de input sensível
+# ----------------------------------------------------------------------
+
+
+def detect_sensitive_input(text: str) -> tuple[bool, list[str]]:
+    """Detecta temas sensíveis no input do usuário.
+
+    Escaneia o texto de entrada em busca de palavras-chave que indicam
+    vulnerabilidade ou risco, incluindo:
+    - Saúde mental (depressão, ansiedade, ideação suicida)
+    - Saúde física (doença grave, diagnóstico)
+    - Risco financeiro (dívida, falência)
+    - Crise relacional (separação, abuso)
+    - Risco auto-lesivo
+
+    A busca é case-insensitive e normaliza caracteres especiais
+    (acentos, cedilha) para evitar bypass por variação ortográfica.
+
+    Args:
+        text: Texto de input do usuário a escanear.
+
+    Returns:
+        Tupla (is_sensitive, flags) onde:
+        - is_sensitive: True se pelo menos uma keyword sensível foi encontrada
+        - flags: Lista de keywords sensíveis detectadas (vazia se safe)
+
+    Examples:
+        >>> is_sensitive, flags = detect_sensitive_input("texto normal sobre trabalho")
+        >>> assert is_sensitive == False
+        >>> assert flags == []
+
+        >>> is_sensitive, flags = detect_sensitive_input("estou com depressão e problemas financeiros")
+        >>> assert is_sensitive == True
+        >>> assert "depressão" in flags
+    """
+    if not text:
+        return (False, [])
+
+    # Normalizar: lowercase + remover acentos para comparação robusta
+    normalized = _normalize_text(text)
+
+    flags: list[str] = []
+    for keyword in SENSITIVE_KEYWORDS:
+        kw_normalized = _normalize_text(keyword)
+        if kw_normalized in normalized:
+            flags.append(keyword)
+            logger.debug(
+                "Keyword sensível detectada: %r em input de %d chars",
+                keyword,
+                len(text),
+            )
+
+    is_sensitive = len(flags) > 0
+
+    if is_sensitive:
+        logger.info(
+            "Input sensível detectado: %d keywords encontradas",
+            len(flags),
+        )
+
+    return (is_sensitive, flags)
+
+
+def apply_input_guardrails(text: str) -> InputGuardrailsResult:
+    """Aplica guardrails de input e retorna resultado estruturado.
+
+    Wrapper que converte o resultado de detect_sensitive_input
+    no dataclass InputGuardrailsResult para uso uniforme no pipeline.
+
+    Args:
+        text: Texto de input do usuário a escanear.
+
+    Returns:
+        InputGuardrailsResult com is_sensitive e flags.
+
+    Examples:
+        >>> result = apply_input_guardrails("texto normal sobre trabalho")
+        >>> assert result.is_sensitive == False
+        >>> assert result.flags == []
+
+        >>> result = apply_input_guardrails("estou com depressão")
+        >>> assert result.is_sensitive == True
+        >>> assert "depressão" in result.flags
+    """
+    is_sensitive, flags = detect_sensitive_input(text)
+
+    return InputGuardrailsResult(
+        is_sensitive=is_sensitive,
+        flags=flags,
+    )
+
 
 # Disclaimer ético padrão (inserido quando needs_disclaimer=True)
 _ETHICAL_DISCLAIMER: str = """
@@ -90,13 +331,38 @@ de saúde, jurídica ou financeira. Se você estiver em sofrimento, procure
 ajuda especializada.
 """
 
+# ----------------------------------------------------------------------
+# Disclaimer de cabeçalho (posicionamento proeminente no topo)
+# ----------------------------------------------------------------------
+
+# Header disclaimer com texto em português e posição proeminente
+# Inclui chamada para ajuda especializada em destaque
+_HEADER_DISCLAIMER: str = """---
+# ⚠️ AVISO IMPORTANTE — LEIA ANTES DE CONTINUAR
+
+**Esta análise é uma ferramenta de organização e reflexão pessoal.**
+
+- Não constitui previsão determinista ou garantia de resultados
+- Não substitui acompanhamento de profissionais de saúde, direito ou finanças
+- Simbolismo do Baralho Cigano não possui base científica comprovada
+
+**Se você estiver em sofrimento emocional, procure ajuda especializada:**
+
+- **CVV** — Centro de Valorização da Vida: 188 (24h, gratuito)
+- **CAPS** — Centro de Atenção Psicossocial mais próximo
+- **SAMU** — Emergências: 192
+
+---
+
+"""
+
 
 # ----------------------------------------------------------------------
 # Validação de output
 # ----------------------------------------------------------------------
 
 
-def validate_output(text: str) -> tuple[bool, list[str]]:
+def validate_output(text: str) -> tuple[bool, list[str], Optional[dict[str, str]]]:
     """Valida texto do relatório contra guardrails éticos.
 
     Detecta palavras-chave bloqueadas que indicam:
@@ -111,21 +377,23 @@ def validate_output(text: str) -> tuple[bool, list[str]]:
         text: Texto do relatório a validar.
 
     Returns:
-        Tupla (is_valid, flags) onde:
+        Tupla (is_valid, flags, error_message) onde:
         - is_valid: True se nenhuma keyword bloqueada foi encontrada
         - flags: Lista de keywords detectadas (vazia se safe)
+        - error_message: Mensagem detalhada em português se bloqueado (None se válido)
 
     Examples:
-        >>> is_valid, flags = validate_output("Texto normal sobre trabalho")
+        >>> is_valid, flags, _ = validate_output("Texto normal sobre trabalho")
         >>> assert is_valid == True
         >>> assert flags == []
 
-        >>> is_valid, flags = validate_output("Isso indica morte iminente")
+        >>> is_valid, flags, msg = validate_output("Isso indica morte iminente")
         >>> assert is_valid == False
         >>> assert "morte" in flags
+        >>> assert msg is not None
     """
     if not text:
-        return (True, [])
+        return (True, [], None)
 
     # Normalizar: lowercase + remover acentos para comparação robusta
     normalized = _normalize_text(text)
@@ -148,8 +416,15 @@ def validate_output(text: str) -> tuple[bool, list[str]]:
             "Output bloqueado por guardrails: %d keywords detectadas",
             len(flags),
         )
+        # Construir mensagem de erro detalhada em português
+        if len(flags) == 1:
+            error_msg = _build_blocked_keyword_message(flags[0])
+        else:
+            error_msg = _build_multiple_flags_message(flags)
+    else:
+        error_msg = None
 
-    return (is_valid, flags)
+    return (is_valid, flags, error_msg)
 
 
 def _normalize_text(text: str) -> str:
@@ -170,9 +445,80 @@ def _normalize_text(text: str) -> str:
     return ascii_text
 
 
+def _build_blocked_keyword_message(keyword: str) -> dict[str, str]:
+    """Constrói mensagem de erro detalhada para uma keyword bloqueada.
+
+    Args:
+        keyword: A palavra-chave bloqueada detectada.
+
+    Returns:
+        Dicionário com título, mensagem, ação e recuperação.
+    """
+    templates = VALIDATION_MESSAGES["blocked_keyword"].copy()
+    templates["detail"] = f"Palavra detectada: '{keyword}'"
+    templates["code"] = ERROR_CODES["ETH001"]
+    return templates
+
+
+def _build_multiple_flags_message(flags: list[str]) -> dict[str, str]:
+    """Constrói mensagem de erro para múltiplas keywords bloqueadas.
+
+    Args:
+        flags: Lista de palavras-chave bloqueadas detectadas.
+
+    Returns:
+        Dicionário com título, mensagem, ação e recuperação.
+    """
+    templates = VALIDATION_MESSAGES["multiple_flags"].copy()
+    templates["detail"] = f"Palavras detectadas: {', '.join(flags[:5])}"
+    if len(flags) > 5:
+        templates["detail"] += f" (e mais {len(flags) - 5} outras)"
+    templates["code"] = ERROR_CODES["ETH002"]
+    return templates
+
+
 # ----------------------------------------------------------------------
 # Injeção de disclaimer ético
 # ----------------------------------------------------------------------
+
+
+def inject_header_disclaimer(report_md: str) -> str:
+    """Insere disclaimer de cabeçalho proeminente no início do relatório.
+
+    O header disclaimer é inserido no topo do relatório para alertar
+    o usuário sobre limitações antes de ler a análise. Inclui números
+    de emergência e recursos de ajuda especializada.
+
+    Args:
+        report_md: Conteúdo do relatório em Markdown.
+
+    Returns:
+        Relatório com disclaimer de cabeçalho prependido, ou texto original
+        se o relatório estiver vazio.
+
+    Examples:
+        >>> result = inject_header_disclaimer("# Relatório\\n\\nConteúdo")
+        >>> assert "AVISO IMPORTANTE" in result
+        >>> assert result.startswith("\\n---")
+        >>> assert "CVV" in result
+        >>> assert "188" in result
+    """
+    if not report_md or not report_md.strip():
+        logger.debug("inject_header_disclaimer: relatório vazio, retornando original")
+        return report_md
+
+    result = _HEADER_DISCLAIMER + report_md
+
+    logger.debug(
+        "Header disclaimer injetado em relatório de %d chars",
+        len(report_md),
+    )
+
+    return result
+
+
+# Alias para compatibilidade com diferentes convenções de nomenclatura
+inject_disclaimer_header = inject_header_disclaimer
 
 
 def inject_disclaimer(report_md: str) -> str:
@@ -246,12 +592,12 @@ def apply_guardrails(
     """
     logger.info("Aplicando guardrails éticos a relatório de %d chars", len(report_md))
 
-    # Validar
-    is_safe, flags = validate_output(report_md)
+    # Validar (agora com mensagem de erro detalhada)
+    is_safe, flags, error_msg = validate_output(report_md)
     needs_disclaimer = not is_safe
 
-    # Injetar disclaimer se necessário
-    final_content = inject_disclaimer(report_md) if needs_disclaimer else report_md
+    # Injetar disclaimer de cabeçalho SEMPRE (header injection)
+    final_content = inject_header_disclaimer(report_md)
 
     output = ValidatedOutput(
         content=final_content,
@@ -306,17 +652,18 @@ class BoundariesValidator:
             len(self._all_blocked),
         )
 
-    def validate(self, text: str) -> tuple[bool, list[str]]:
+    def validate(self, text: str) -> tuple[bool, list[str], Optional[dict[str, str]]]:
         """Valida texto usando configuração customizada.
 
         Args:
             text: Texto a validar.
 
         Returns:
-            Tupla (is_valid, flags) com keywords bloqueadas detectadas.
+            Tupla (is_valid, flags, error_msg) com keywords bloqueadas detectadas
+            e mensagem de erro detalhada em português.
         """
         if not text:
-            return (True, [])
+            return (True, [], None)
 
         normalized = _normalize_text(text)
 
@@ -328,7 +675,17 @@ class BoundariesValidator:
             if kw_norm in normalized:
                 flags.append(keyword)
 
-        return (len(flags) == 0, flags)
+        is_valid = len(flags) == 0
+
+        if not is_valid:
+            if len(flags) == 1:
+                error_msg = _build_blocked_keyword_message(flags[0])
+            else:
+                error_msg = _build_multiple_flags_message(flags)
+        else:
+            error_msg = None
+
+        return (is_valid, flags, error_msg)
 
     def inject(self, report_md: str) -> str:
         """Injeta disclaimer ético (mesmo comportamento de inject_disclaimer).
@@ -350,7 +707,7 @@ class BoundariesValidator:
         Returns:
             ValidatedOutput com content, flags e status.
         """
-        is_safe, flags = self.validate(report_md)
+        is_safe, flags, _ = self.validate(report_md)
         needs_disclaimer = not is_safe
         final_content = self.inject(report_md) if needs_disclaimer else report_md
 
