@@ -7,7 +7,7 @@ from datetime import datetime
 
 from src.input_processor import InputProcessor, ParseError
 from src.analysis_engine import AnalysisEngine
-from src.boundaries import apply_guardrails
+from src.boundaries import apply_guardrails, detect_sensitive_input
 from src.report_generator import ReportGenerator
 
 # ----------------------------------------------------------------------
@@ -89,6 +89,14 @@ def run_analyze(raw_input: str, format: str, output_path: str | None, output_for
     if quiet:
         logging.getLogger().setLevel(logging.WARNING)
     try:
+        # Fase 0: Verificação de input sensível antes de análise
+        is_sensitive, sensitive_flags = detect_sensitive_input(raw_input)
+        if is_sensitive:
+            logger.warning(
+                "Input sensível detectado — flags: %s",
+                sensitive_flags,
+            )
+
         # Fase 1: Parse e estruturação do input
         logger.info("Processando entrada: format=%s, length=%d", format, len(raw_input))
         processor = InputProcessor()

@@ -73,11 +73,26 @@ class ValidatedOutput:
     Attributes:
         content: Conteúdo do relatório em Markdown.
         disclaimer_flags: Lista de palavras-chave bloqueadas detectadas.
+        sensitive_flags: Lista de flags de sensibilidade detectados no output.
         needs_disclaimer: Indica se um disclaimer ético deve ser inserido.
         is_safe: Indica se o output passou na validação ética.
     """
 
     content: str
     disclaimer_flags: list[str] = field(default_factory=list)
+    sensitive_flags: list[str] = field(default_factory=list)
     needs_disclaimer: bool = False
     is_safe: bool = True
+
+
+@dataclass
+class InputGuardrailsResult:
+    """Resultado da detecção de sensibilidade no input do usuário.
+
+    Attributes:
+        is_sensitive: Indica se o input contém temas sensíveis.
+        flags: Lista de palavras-chave sensíveis detectadas.
+    """
+
+    is_sensitive: bool
+    flags: list[str] = field(default_factory=list)
