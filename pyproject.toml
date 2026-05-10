@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clareza-core"
+version = "0.0.1"
+description = "Sistema de Clareza Simbólico-Estratégica — análise estruturada via Baralho Cigano"
+readme = "CLAUDE.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Clareza Project"}
+]
+keywords = ["clarity", "symbolic", "cigano", "analysis", "cli"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+clareza = "src.main:main"
+
+[project.urls]
+Homepage = "https://github.com/clareza/clareza-core"
+Repository = "https://github.com/clareza/clareza-core"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.setuptools.package-data]
+src = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v"
