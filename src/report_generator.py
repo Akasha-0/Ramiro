@@ -44,6 +44,31 @@ REPORT_TEMPLATE = """# Relatório de Análise — {timestamp}
 *Relatório gerado por Sistema de Clareza Simbólico-Estratégica v0.0.1 — use como ferramenta de reflexão, não como previsão determinista.*
 """
 
+# ----------------------------------------------------------------------
+# Template compacto — resumo das 5 seções
+# ----------------------------------------------------------------------
+
+COMPACT_TEMPLATE = """# Análise — {timestamp}
+
+## Diagnóstico
+{diagnosis}
+
+## Interpretação Simbólica
+{symbolic_interpretation}
+
+## Riscos Identificados
+{risks}
+
+## Caminhos de Decisão
+{decisions}
+
+## Plano Prático
+{practical_plan}
+
+---
+*Relatório gerado por Sistema de Clareza Simbólico-Estratégica v0.0.1 — use como ferramenta de reflexão, não como previsão determinista.*
+"""
+
 
 # ----------------------------------------------------------------------
 # Gerador de relatórios
