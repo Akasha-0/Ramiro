@@ -90,6 +90,20 @@ def main() -> None:
              "Disponível apenas para --format spread.",
     )
 
+    # subcommand: history
+    history_parser = subparsers.add_parser("history", help="Listar sessões anteriores")
+    history_parser.add_argument(
+        "--search", "-s",
+        default=None,
+        help="Filtrar sessões por palavra-chave no texto ou cartas",
+    )
+    history_parser.add_argument(
+        "--limit", "-l",
+        type=int,
+        default=10,
+        help="Número máximo de sessões a exibir (padrão: 10)",
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -98,6 +112,9 @@ def main() -> None:
 
     if args.command == "analyze":
         run_analyze(args.input, args.format, args.output, args.template)
+
+    if args.command == "history":
+        run_history(args.search, args.limit)
 
 
 def run_analyze(
@@ -188,6 +205,20 @@ def run_analyze(
         logger.exception("Erro inesperado durante análise")
         print(f"Erro interno: {e}", file=sys.stderr)
         sys.exit(1)
+
+
+def run_history(
+    search: str | None,
+    limit: int,
+) -> None:
+    """Lista sessões anteriores do histórico.
+
+    Args:
+        search: Palavra-chave opcional para filtrar sessões.
+        limit: Número máximo de sessões a exibir.
+    """
+    # Placeholder - will be implemented in subtask-2-2
+    pass
 
 
 def _save_report(path: str, content: str) -> None:
