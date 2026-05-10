@@ -7,3 +7,4 @@
 .worktrees/
 .security-key
 logs/security/
+.venv/
