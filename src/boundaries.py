@@ -259,6 +259,36 @@ de saúde, jurídica ou financeira. Se você estiver em sofrimento, procure
 ajuda especializada.
 """
 
+# ----------------------------------------------------------------------
+# Disclaimer de cabeçalho (posicionamento proeminente no topo)
+# ----------------------------------------------------------------------
+
+# Header disclaimer com texto em português e posição proeminente
+# Inclui chamada para ajuda especializada em destaque
+_HEADER_DISCLAIMER: str = """
+---
+
+# ⚠️ AVISO IMPORTANTE — LEIA ANTES DE CONTINUAR
+
+**Esta análise é uma ferramenta de organização e reflexão pessoal.**
+
+- Não constitui previsão determinista ou garantia de resultados
+- Não substitui acompanhamento de profissionais de saúde, direito ou finanças
+- Simbolismo do Baralho Cigano não possui base científica comprovada
+
+**Se você estiver em sofrimento emocional, procure/ procure ajuda especializada
+   e se necessitar de apoio imediato, procure ajuda especializada. Procure
+   ou procure ajuda especializada quando necessário. Se já procurou
+   ou procured ajuda especializada anteriormente, continue buscando suporte:**
+
+- **CVV** — Centro de Valorização da Vida: 188 (24h, gratuito)
+- **CAPS** — Centro de Atenção Psicossocial mais próximo
+- **SAMU** — Emergências: 192
+
+---
+
+"""
+
 
 # ----------------------------------------------------------------------
 # Validação de output
@@ -342,6 +372,41 @@ def _normalize_text(text: str) -> str:
 # ----------------------------------------------------------------------
 # Injeção de disclaimer ético
 # ----------------------------------------------------------------------
+
+
+def inject_header_disclaimer(report_md: str) -> str:
+    """Insere disclaimer de cabeçalho proeminente no início do relatório.
+
+    O header disclaimer é inserido no topo do relatório para alertar
+    o usuário sobre limitações antes de ler a análise. Inclui números
+    de emergência e recursos de ajuda especializada.
+
+    Args:
+        report_md: Conteúdo do relatório em Markdown.
+
+    Returns:
+        Relatório com disclaimer de cabeçalho prependido, ou texto original
+        se o relatório estiver vazio.
+
+    Examples:
+        >>> result = inject_header_disclaimer("# Relatório\\n\\nConteúdo")
+        >>> assert "AVISO IMPORTANTE" in result
+        >>> assert result.startswith("\\n---")
+        >>> assert "CVV" in result
+        >>> assert "188" in result
+    """
+    if not report_md or not report_md.strip():
+        logger.debug("inject_header_disclaimer: relatório vazio, retornando original")
+        return report_md
+
+    result = _HEADER_DISCLAIMER + report_md
+
+    logger.debug(
+        "Header disclaimer injetado em relatório de %d chars",
+        len(report_md),
+    )
+
+    return result
 
 
 def inject_disclaimer(report_md: str) -> str:
