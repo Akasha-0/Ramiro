@@ -646,3 +646,58 @@ class TestQuietFlag:
         ])
         # Não deve dar erro de parse (código 2)
         assert exit_code != 2
+
+
+# ----------------------------------------------------------------------
+# Testes — default filename generation
+# ----------------------------------------------------------------------
+
+
+class TestDefaultFilename:
+    def test_default_filename_format(self) -> None:
+        """_default_output_path retorna caminho no formato correto."""
+        from src.main import _default_output_path
+
+        path = _default_output_path()
+        # Deve começar com ./
+        assert path.startswith("./")
+        # Deve terminar com .md
+        assert path.endswith(".md")
+        # Deve conter 'clareza-report-'
+        assert "clareza-report-" in path
+
+    def test_default_filename_contains_timestamp(self) -> None:
+        """_default_output_path inclui timestamp YYYYMMDD-HHMMSSffffff."""
+        from src.main import _default_output_path
+
+        path = _default_output_path()
+        # Timestamp no formato YYYYMMDD-HHMMSSffffff (12+ dígitos após o traço)
+        import re
+
+        assert re.search(r"\d{8}-\d{12,}", path)
+
+    def test_default_filename_generates_unique_names(self) -> None:
+        """Cada chamada gera nome único (timestamp diferente)."""
+        from src.main import _default_output_path
+
+        import time
+
+        path1 = _default_output_path()
+        time.sleep(0.01)  # Pequeno delay para garantir timestamp diferente
+        path2 = _default_output_path()
+        # Os caminhos devem ser diferentes
+        assert path1 != path2
+
+    def test_default_filename_starts_with_dot_slash(self) -> None:
+        """_default_output_path retorna caminho relativo (./)."""
+        from src.main import _default_output_path
+
+        path = _default_output_path()
+        assert path.startswith("./")
+
+    def test_default_filename_ends_with_md(self) -> None:
+        """_default_output_path retorna arquivo .md."""
+        from src.main import _default_output_path
+
+        path = _default_output_path()
+        assert path.endswith(".md")

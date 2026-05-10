@@ -168,9 +168,9 @@ def _default_output_path() -> str:
     """Gera um nome de arquivo de relatório com timestamp.
 
     Returns:
-        Caminho no formato ./clareza-report-YYYYMMDD-HHMMSS.md
+        Caminho no formato ./clareza-report-YYYYMMDD-HHMMSSffffff.md
     """
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S%f")
     return f"./clareza-report-{timestamp}.md"
 
 
