@@ -16,7 +16,9 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from src.types import AnalysisResult, CrossCardPattern
+from src.types import AnalysisResult, CrossCardPattern, ReportTemplate
+
+from src.template_engine import TemplateEngine
 
 logger = logging.getLogger(__name__)
 
@@ -83,15 +85,29 @@ class ReportGenerator:
     """Gerador de relatórios Markdown estruturados.
 
     Transforma o resultado da análise em um relatório legível
-    com 5 seções obrigatórias.
+    com 5 seções obrigatórias. Suporta templates customizados
+    via TemplateEngine.
 
     Attributes:
         include_timestamp: Se True, inclui timestamp no relatório (default True).
+        template_engine: Motor de renderização de templates (opcional).
+        custom_template: Template customizado a usar (opcional).
     """
 
-    def __init__(self, include_timestamp: bool = True) -> None:
+    def __init__(
+        self,
+        include_timestamp: bool = True,
+        template_engine: Optional[TemplateEngine] = None,
+        custom_template: Optional[ReportTemplate] = None,
+    ) -> None:
         self.include_timestamp = include_timestamp
-        logger.debug("ReportGenerator inicializado, timestamp=%s", include_timestamp)
+        self.template_engine = template_engine or TemplateEngine()
+        self.custom_template = custom_template
+        logger.debug(
+            "ReportGenerator inicializado, timestamp=%s, template=%s",
+            include_timestamp,
+            custom_template.template_id if custom_template else "default",
+        )
 
     # ------------------------------------------------------------------
     # API pública
@@ -102,6 +118,7 @@ class ReportGenerator:
         analysis: AnalysisResult,
         disclaimer: Optional[str] = None,
         output_format: str = "default",
+        custom_template: Optional[ReportTemplate] = None,
     ) -> str:
         """Gera relatório em Markdown (ou outro formato) a partir do resultado da análise.
 
@@ -110,6 +127,8 @@ class ReportGenerator:
             disclaimer: Texto adicional a ser inserido antes do rodapé (opcional).
             output_format: Formato do relatório — "default" (completo), "compact"
                 (resumido), ou "json" (estruturado). Default: "default".
+            custom_template: Template customizado de relatório (opcional).
+                Se fornecido, usa o template_engine para renderizar.
 
         Returns:
             String com relatório no formato solicitado.
@@ -118,9 +137,10 @@ class ReportGenerator:
             ValueError: Se output_format não for um dos valores suportados.
         """
         logger.info(
-            "Gerando relatório para análise com %d temas (formato=%s)",
+            "Gerando relatório para análise com %d temas (formato=%s, custom_template=%s)",
             len(analysis.themes),
             output_format,
+            custom_template.template_id if custom_template else "none",
         )
 
         # Validar formato
@@ -129,6 +149,20 @@ class ReportGenerator:
             logger.warning("Formato desconhecido '%s', usando 'default'", output_format)
             output_format = "default"
 
+        # Verificar se há template customizado (do parâmetro ou do construtor)
+        template_to_use = custom_template or self.custom_template
+
+        # Se há template customizado e formato default/compact, usar template_engine
+        if template_to_use and output_format in {"default", "compact"}:
+            timestamp = self._get_timestamp() if self.include_timestamp else None
+            return self.template_engine.render(
+                analysis,
+                template=template_to_use,
+                timestamp=timestamp,
+                disclaimer=disclaimer,
+            )
+
+        # Fallback para renderização interna (formato json ou sem template customizado)
         # Montar campos do template
         timestamp = self._get_timestamp()
         diagnosis = self._format_diagnosis(analysis)
@@ -149,7 +183,7 @@ class ReportGenerator:
             )
         else:
             report = self._generate_default_output(
-                timestamp, diagnosis, symbolic_interp, risks, decisions, practical_plan, disclaimer
+                timestamp, diagnosis, symbolic_interp, risks, decisions, cross_card_patterns, practical_plan, disclaimer
             )
 
         logger.info("Relatório gerado com %d caracteres", len(report))
@@ -162,6 +196,7 @@ class ReportGenerator:
         symbolic_interp: str,
         risks: str,
         decisions: str,
+        cross_card_patterns: str,
         practical_plan: str,
         disclaimer: Optional[str],
     ) -> str:
@@ -403,3 +438,27 @@ class ReportGenerator:
             Texto envolvido em _itálico_.
         """
         return f"_{text}_"
+
+    # ------------------------------------------------------------------
+    # Template engine access
+    # ------------------------------------------------------------------
+
+    def get_template_engine(self) -> TemplateEngine:
+        """Retorna o motor de template para uso em comandos CLI.
+
+        Returns:
+            TemplateEngine configurado.
+        """
+        return self.template_engine
+
+    def get_default_template(self) -> ReportTemplate:
+        """Retorna o template padrão do sistema.
+
+        Returns:
+            ReportTemplate com 5 seções padrão.
+        """
+        return self.template_engine.default_template or ReportTemplate(
+            template_id="default",
+            name="Modelo Padrão",
+            sections=[],
+        )
