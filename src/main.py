@@ -3,6 +3,7 @@
 import argparse
 import logging
 import sys
+from datetime import datetime
 
 from src.input_processor import InputProcessor, ParseError
 from src.analysis_engine import AnalysisEngine
@@ -18,38 +19,6 @@ logging.basicConfig(
     format="%(levelname)s %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
-
-
-# ----------------------------------------------------------------------
-# Helper functions
-# ----------------------------------------------------------------------
-
-
-def _is_valid_file_path(path: str) -> bool:
-    """Verifica se uma string parece ser um caminho de arquivo válido.
-
-    Considera caminho válido se:
-    - O arquivo existe no filesystem
-    - A extensão é .csv ou .txt
-
-    Args:
-        path: String a verificar.
-
-    Returns:
-        True se parece ser um caminho de arquivo CSV/TXT válido.
-    """
-    import os
-
-    if not path:
-        return False
-
-    # Verificar se o arquivo existe
-    if os.path.isfile(path):
-        return True
-
-    # Verificar extensões comuns para arquivos de entrada
-    valid_extensions = (".csv", ".txt")
-    return any(path.lower().endswith(ext) for ext in valid_extensions)
 
 
 # ----------------------------------------------------------------------
@@ -84,10 +53,15 @@ def main() -> None:
         help="Caminho do arquivo .md para salvar o relatório",
     )
     analyze_parser.add_argument(
-        "--template", "-t",
-        default=None,
-        help="Template de tiragem predefinido (3-card, celtic-cross). "
-             "Disponível apenas para --format spread.",
+        "--output-format",
+        choices=["compact", "verbose", "json"],
+        default="verbose",
+        help="Formato de saída do relatório (compact, verbose, json)",
+    )
+    analyze_parser.add_argument(
+        "--quiet", "-q",
+        action="store_true",
+        help="Suprime mensagens de progresso (apenas erros)",
     )
 
     args = parser.parse_args()
@@ -97,15 +71,10 @@ def main() -> None:
         sys.exit(1)
 
     if args.command == "analyze":
-        run_analyze(args.input, args.format, args.output, args.template)
+        run_analyze(args.input, args.format, args.output, args.output_format, args.quiet)
 
 
-def run_analyze(
-    raw_input: str,
-    format: str,
-    output_path: str | None,
-    template: str | None,
-) -> None:
+def run_analyze(raw_input: str, format: str, output_path: str | None, output_format: str = "verbose", quiet: bool = False) -> None:
     """Executa o pipeline completo de análise.
 
     Pipeline: input_processor → analysis_engine → boundaries → report_generator
@@ -114,27 +83,16 @@ def run_analyze(
         raw_input: Conteúdo bruto de entrada.
         format: Formato de entrada ("text", "spread", "symbols").
         output_path: Caminho opcional para salvar o relatório em .md.
-        template: Template de tiragem predefinido (apenas para format="spread").
+        output_format: Formato de saída ("compact", "verbose", "json").
+        quiet: Se True, suprime mensagens de progresso (apenas erros).
     """
-    # Validação: --template só é válido com --format spread
-    if template is not None and format != "spread":
-        logger.error("O argumento --template só é válido com --format spread")
-        print(
-            "Erro: --template requer --format spread",
-            file=sys.stderr,
-        )
-        sys.exit(2)
-
+    if quiet:
+        logging.getLogger().setLevel(logging.WARNING)
     try:
         # Fase 1: Parse e estruturação do input
         logger.info("Processando entrada: format=%s, length=%d", format, len(raw_input))
         processor = InputProcessor()
-        # Verificar se raw_input é um caminho de arquivo válido
-        if _is_valid_file_path(raw_input):
-            structured = processor.parse_from_file(raw_input, template)
-            logger.info("Entrada lida de arquivo: %s", raw_input)
-        else:
-            structured = processor.parse(raw_input, format)
+        structured = processor.parse(raw_input, format)
         logger.info(
             "Input processado: keywords=%s, cards=%d",
             len(structured.keywords) if structured.keywords else 0,
@@ -155,7 +113,7 @@ def run_analyze(
         # Fase 3: Geração do relatório Markdown
         logger.info("Gerando relatório")
         generator = ReportGenerator()
-        report_md = generator.generate(analysis_result)
+        report_md = generator.generate(analysis_result, output_format=output_format)
 
         # Fase 4: Aplicação de guardrails éticos
         logger.info("Aplicando guardrails éticos")
@@ -204,6 +162,16 @@ def _save_report(path: str, content: str) -> None:
     except OSError as e:
         logger.error("Falha ao salvar relatório em %s: %s", path, e)
         raise
+
+
+def _default_output_path() -> str:
+    """Gera um nome de arquivo de relatório com timestamp.
+
+    Returns:
+        Caminho no formato ./clareza-report-YYYYMMDD-HHMMSSffffff.md
+    """
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S%f")
+    return f"./clareza-report-{timestamp}.md"
 
 
 if __name__ == "__main__":
