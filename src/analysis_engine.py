@@ -18,7 +18,7 @@ from src.symbols import (
     get_symbol_by_name,
     match_keyword,
 )
-from src.types import AnalysisResult, CardPosition, StructuredInput
+from src.types import AnalysisResult, CardPosition, CrossCardPattern, StructuredInput
 
 logger = logging.getLogger(__name__)
 
@@ -587,6 +587,285 @@ def _symbol_to_action(symbol: CiganoSymbol) -> str:
 
 
 # ----------------------------------------------------------------------
+# Detecção de padrões entre cartas (cross-card patterns)
+# ----------------------------------------------------------------------
+
+
+def _detect_cross_card_patterns(
+    cards: list[CardPosition],
+) -> list[CrossCardPattern]:
+    """Detecta padrões significativos entre múltiplas cartas na tiragem.
+
+    Args:
+        cards: Lista de posições de cartas na tiragem.
+
+    Returns:
+        Lista de CrossCardPattern detectados.
+    """
+    if not cards or len(cards) < 2:
+        return []
+
+    patterns: list[CrossCardPattern] = []
+
+    # 1. Detectar repetições numéricas (mesma carta aparece em múltiplas posições)
+    numeric_repeat_patterns = _detect_numeric_repeats(cards)
+    patterns.extend(numeric_repeat_patterns)
+
+    # 2. Detectar sequências numéricas (cartas em ordem consecutiva)
+    sequence_patterns = _detect_numeric_sequences(cards)
+    patterns.extend(sequence_patterns)
+
+    # 3. Detectar clusters temáticos (cartas do mesmo tema)
+    theme_clusters = _detect_theme_clusters(cards)
+    patterns.extend(theme_clusters)
+
+    # 4. Detectar desequilíbrios elementais (distribuição de temas)
+    elemental_imbalances = _detect_elemental_imbalances(cards)
+    patterns.extend(elemental_imbalances)
+
+    logger.debug("Padrões cruzados detectados: %d", len(patterns))
+    return patterns
+
+
+def _detect_numeric_repeats(cards: list[CardPosition]) -> list[CrossCardPattern]:
+    """Detecta quando a mesma carta aparece múltiplas vezes.
+
+    Args:
+        cards: Lista de posições de cartas.
+
+    Returns:
+        Lista de padrões de repetição encontrados.
+    """
+    from collections import Counter
+
+    if len(cards) < 2:
+        return []
+
+    card_names = [c.card_name.lower() for c in cards]
+    name_counts = Counter(card_names)
+
+    patterns: list[CrossCardPattern] = []
+
+    for name, count in name_counts.items():
+        if count >= 2:
+            positions = [c.position for c in cards if c.card_name.lower() == name]
+
+            interpretation = (
+                f"A carta '{name.title()}' aparece {count} vezes na tiragem "
+                f"(posições {', '.join(map(str, positions))}). "
+                f"Este reforço indica que seu significado está sendo amplificado "
+                f"significativamente. A energia de '{name.title()}' é dominante "
+                f"neste momento — preste muita atenção a esta mensagem."
+            )
+
+            strength = "forte" if count >= 3 else "moderado"
+
+            patterns.append(CrossCardPattern(
+                pattern_type="numeric_repeat",
+                card_ids=positions,
+                interpretation=interpretation,
+                strength=strength,
+            ))
+
+    return patterns
+
+
+def _detect_numeric_sequences(cards: list[CardPosition]) -> list[CrossCardPattern]:
+    """Detecta sequências numéricas (cartas em posições consecutivas).
+
+    Args:
+        cards: Lista de posições de cartas.
+
+    Returns:
+        Lista de padrões de sequência encontrados.
+    """
+    if len(cards) < 2:
+        return []
+
+    # Ordenar por posição
+    sorted_cards = sorted(cards, key=lambda c: c.position)
+    positions = [c.position for c in sorted_cards]
+
+    # Verificar sequências de pelo menos 3 posições consecutivas
+    sequences: list[list[int]] = []
+    current_seq: list[int] = [positions[0]]
+
+    for i in range(1, len(positions)):
+        if positions[i] == current_seq[-1] + 1:
+            current_seq.append(positions[i])
+        else:
+            if len(current_seq) >= 3:
+                sequences.append(current_seq)
+            current_seq = [positions[i]]
+
+    # Verificar última sequência
+    if len(current_seq) >= 3:
+        sequences.append(current_seq)
+
+    patterns: list[CrossCardPattern] = []
+
+    for seq in sequences:
+        card_names = [c.card_name for c in sorted_cards if c.position in seq]
+
+        interpretation = (
+            f"Posições consecutivas ({', '.join(map(str, seq))}) revelam "
+            f"um fluxo: {' → '.join(card_names)}. "
+            f"Este encadeamento sugere uma progressão natural da situação, "
+            f"onde cada carta contribui para o desenvolvimento da próxima. "
+            f"A sequência indica que os eventos estão se desenrolando de "
+            f"forma fluida econnected."
+        )
+
+        patterns.append(CrossCardPattern(
+            pattern_type="numeric_sequence",
+            card_ids=seq,
+            interpretation=interpretation,
+            strength="moderado",
+        ))
+
+    return patterns
+
+
+def _detect_theme_clusters(cards: list[CardPosition]) -> list[CrossCardPattern]:
+    """Detecta quando múltiplas cartas compartilham o mesmo tema.
+
+    Args:
+        cards: Lista de posições de cartas.
+
+    Returns:
+        Lista de padrões de cluster temático encontrados.
+    """
+    if len(cards) < 3:
+        return []
+
+    from collections import Counter
+
+    # Mapear cartas para símbolos e seus temas
+    card_themes: dict[int, str] = {}
+    for card in cards:
+        symbol = get_symbol_by_name(card.card_name)
+        if symbol:
+            card_themes[card.position] = symbol.theme
+
+    if len(card_themes) < 3:
+        return []
+
+    # Agrupar por tema
+    theme_positions: dict[str, list[int]] = {}
+    for position, theme in card_themes.items():
+        if theme not in theme_positions:
+            theme_positions[theme] = []
+        theme_positions[theme].append(position)
+
+    patterns: list[CrossCardPattern] = []
+
+    for theme, positions in theme_positions.items():
+        if len(positions) >= 2:
+            theme_names = {
+                "trabalho": "Trabalho e carreira",
+                "relação": "Relacionamentos",
+                "saúde": "Saúde e vitalidade",
+                "espiritual": "Espiritualidade",
+                "dinheiro": "Finanças",
+                "viagem": "Viagem e mudanças",
+                "família": "Família e lar",
+            }
+
+            theme_display = theme_names.get(theme, theme.title())
+
+            interpretation = (
+                f"Cluster de '{theme_display}' detectado nas posições "
+                f"{', '.join(map(str, sorted(positions)))}. "
+                f"Múltiplas cartas neste tema indicam que esta área da vida "
+                f"requer atenção especial. A concentração de energia em "
+                f"'{theme_display}' sugere que a situação está sendo moldada "
+                f"por fatores relacionados a este domínio."
+            )
+
+            strength = "forte" if len(positions) >= 3 else "moderado"
+
+            patterns.append(CrossCardPattern(
+                pattern_type="theme_cluster",
+                card_ids=sorted(positions),
+                interpretation=interpretation,
+                strength=strength,
+            ))
+
+    return patterns
+
+
+def _detect_elemental_imbalances(cards: list[CardPosition]) -> list[CrossCardPattern]:
+    """Detecta desequilíbrios na distribuição de elementos/temas.
+
+    Args:
+        cards: Lista de posições de cartas.
+
+    Returns:
+        Lista de padrões de desequilíbrio encontrados.
+    """
+    if len(cards) < 4:
+        return []
+
+    from collections import Counter
+
+    # Mapear para temas
+    themes: list[str] = []
+    for card in cards:
+        symbol = get_symbol_by_name(card.card_name)
+        if symbol:
+            themes.append(symbol.theme)
+
+    if len(themes) < 4:
+        return []
+
+    theme_counts = Counter(themes)
+
+    # Verificar se há dominância clara (> 50% de um único tema)
+    total = len(themes)
+    patterns: list[CrossCardPattern] = []
+
+    for theme, count in theme_counts.items():
+        percentage = (count / total) * 100
+        if percentage >= 60:
+            dominant_positions = [
+                c.position for c in cards
+                if get_symbol_by_name(c.card_name)
+                and get_symbol_by_name(c.card_name).theme == theme
+            ]
+
+            theme_names = {
+                "trabalho": "trabalho/carrreira",
+                "relação": "relacionamentos",
+                "saúde": "saúde",
+                "espiritual": "espiritualidade",
+                "dinheiro": "finanças",
+                "viagem": "viagem/mudanças",
+                "família": "família/lar",
+            }
+
+            theme_display = theme_names.get(theme, theme)
+
+            interpretation = (
+                f"Desequilíbrio detectado: {percentage:.0f}% das cartas "
+                f"({count}/{total}) pertencem ao tema '{theme_display}'. "
+                f"Isto indica que a energia está fortemente concentrada "
+                f"nesta área. Embora revele sobre o que você deve focar, "
+                f"também sugere cuidado para não negligenciar outros "
+                f"aspectos da vida. Equilibre seu foco com atenção aos "
+                f"detalhes que não aparecem na tiragem."
+            )
+
+            patterns.append(CrossCardPattern(
+                pattern_type="elemental_imbalance",
+                card_ids=sorted(dominant_positions),
+                interpretation=interpretation,
+                strength="moderado",
+            ))
+
+    return patterns
+
+
+# ----------------------------------------------------------------------
 # Motor principal de análise
 # ----------------------------------------------------------------------
 
@@ -650,6 +929,9 @@ class AnalysisEngine:
         # Fase 7: Geração do plano prático
         practical_plan = _generate_practical_plan(mapped_symbols, themes, risks)
 
+        # Fase 8: Detecção de padrões cruzados (apenas para tiragens)
+        cross_card_patterns = _detect_cross_card_patterns(input_data.cards or [])
+
         result = AnalysisResult(
             diagnosis=diagnosis,
             themes=themes,
@@ -658,13 +940,15 @@ class AnalysisEngine:
             practical_plan=practical_plan,
             card_interpretations=card_interpretations,
             symbolic_mappings=symbolic_mappings,
+            cross_card_patterns=cross_card_patterns,
         )
 
         logger.info(
-            "Análise concluída: temas=%s, riscos=%d, decisões=%d",
+            "Análise concluída: temas=%s, riscos=%d, decisões=%d, padrões=%d",
             themes,
             len(risks),
             len(decisions),
+            len(cross_card_patterns),
         )
 
         return result
