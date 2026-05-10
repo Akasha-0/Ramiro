@@ -1,0 +1,280 @@
+{
+  "card_actions": {
+    "trabalho": {
+      "description": "Ações relacionadas a ambiente profissional, carreira e decisões de trabalho",
+      "action_templates": [
+        {
+          "type": "agenda_encontro",
+          "template": "Agende uma conversa com {pessoa} sobre {assunto}",
+          "timeframe": "this_week",
+          "success_criterion": "Conversa realizada com follow-up documentado"
+        },
+        {
+          "type": "reflete_decisao",
+          "template": "Reserve 30 minutos para refletir sobre {tema} antes de tomar decisão",
+          "timeframe": "immediate",
+          "success_criterion": "Decisão tomada com base em reflexão documentada"
+        },
+        {
+          "type": "documenta_processo",
+          "template": "Documente o progresso em {projeto} para manter clareza",
+          "timeframe": "this_week",
+          "success_criterion": "Documentação atualizada com próximo passo definido"
+        }
+      ],
+      "card_ids": [7, 10, 20, 23, 26, 29, 32, 35]
+    },
+    "relacao": {
+      "description": "Ações relacionadas a relacionamentos, amizades e conexões interpessoais",
+      "action_templates": [
+        {
+          "type": "inicia_conversa",
+          "template": "Inicie uma conversa com {pessoa} sobre {assunto}",
+          "timeframe": "this_week",
+          "success_criterion": "Diálogo aberto com troca construtiva"
+        },
+        {
+          "type": "exprima_sentimento",
+          "template": "Expresse {sentimento} de forma clara e respeitosa para {pessoa}",
+          "timeframe": "this_week",
+          "success_criterion": "Mensagem transmitida e feedback recebido"
+        },
+        {
+          "type": "fortalece_vinculo",
+          "template": "Proponha uma atividade juntos para fortalecer a conexão",
+          "timeframe": "this_month",
+          "success_criterion": "Encontro realizado ou planejado"
+        }
+      ],
+      "card_ids": [9, 14, 15, 21, 27, 31, 36]
+    },
+    "saude": {
+      "description": "Ações relacionadas a saúde física e mental",
+      "action_templates": [
+        {
+          "type": "agenda_exame",
+          "template": "Agende uma consulta ou exame sobre {assunto}",
+          "timeframe": "this_week",
+          "success_criterion": "Consulta agendada com data confirmada"
+        },
+        {
+          "type": "inicia_rotina",
+          "template": "Estabeleça uma rotina de {atividade} com consistência",
+          "timeframe": "this_month",
+          "success_criterion": "3 semanas consecutivas de prática"
+        },
+        {
+          "type": "busca_apoio",
+          "template": "Busque apoio profissional para {tema}",
+          "timeframe": "this_week",
+          "success_criterion": "Primeira sessão realizada ou marcada"
+        }
+      ],
+      "card_ids": [5]
+    },
+    "espiritual": {
+      "description": "Ações relacionadas a crescimento pessoal, autoconhecimento e propósito",
+      "action_templates": [
+        {
+          "type": "pratica_reflexao",
+          "template": "Dedique {tempo} diariamente à reflexão sobre {tema}",
+          "timeframe": "this_month",
+          "success_criterion": "Diário mantido por 2 semanas com insights registrados"
+        },
+        {
+          "type": "busca_conhecimento",
+          "template": "Estude mais sobre {assunto} através de {recurso}",
+          "timeframe": "this_month",
+          "success_criterion": "Conhecimento aplicado em situação real"
+        },
+        {
+          "type": "aceita_mudanca",
+          "template": "Permita que {situacao} chegue ao fim para que o novo possa começar",
+          "timeframe": "immediate",
+          "success_criterion": "Liberação consciente do antigo registrada"
+        }
+      ],
+      "card_ids": [1, 2, 6, 8, 11, 12, 16, 17, 18, 19, 22, 25, 28, 30]
+    },
+    "dinheiro": {
+      "description": "Ações relacionadas a finanças, prosperidade e estabilidade material",
+      "action_templates": [
+        {
+          "type": "analisa_financas",
+          "template": "Revise e organize suas finanças de {periodo}",
+          "timeframe": "this_week",
+          "success_criterion": "Relatório financeiro simples criado"
+        },
+        {
+          "type": "define_meta",
+          "template": "Defina uma meta financeira clara para {objetivo}",
+          "timeframe": "this_week",
+          "success_criterion": "Meta documentada com prazo e valor definidos"
+        },
+        {
+          "type": "busca_oportunidade",
+          "template": "Explore novas oportunidades de renda em {area}",
+          "timeframe": "this_month",
+          "success_criterion": "Uma nova oportunidade identificada ou iniciada"
+        }
+      ],
+      "card_ids": [33, 34]
+    },
+    "familia": {
+      "description": "Ações relacionadas a ambiente doméstico, família e raízes",
+      "action_templates": [
+        {
+          "type": "fortalece_lar",
+          "template": "Dedicque atenção ao ambiente doméstico melhorando {aspecto}",
+          "timeframe": "this_month",
+          "success_criterion": "Melhoria concretizada no lar"
+        },
+        {
+          "type": "reune_familia",
+          "template": "Organize um momento de convivio familiar para {proposito}",
+          "timeframe": "this_week",
+          "success_criterion": "Encontro realizado com boa participação"
+        },
+        {
+          "type": "cuida_figura",
+          "template": "Demonstre cuidado e gratidão para com {pessoa}",
+          "timeframe": "this_week",
+          "success_criterion": "Gesto de carinho realizado"
+        }
+      ],
+      "card_ids": [4, 13, 24]
+    },
+    "viagem": {
+      "description": "Ações relacionadas a mudanças, viagens e transições",
+      "action_templates": [
+        {
+          "type": "planeja_mudanca",
+          "template": "Inicie o planejamento de {mudanca} com etapas definidas",
+          "timeframe": "this_week",
+          "success_criterion": "Plano com pelo menos 3 próximos passos"
+        },
+        {
+          "type": "explora_novo",
+          "template": "Busque novas perspectivas explorando {area}",
+          "timeframe": "this_month",
+          "success_criterion": "Uma nova experiência ou aprendizado concretizado"
+        }
+      ],
+      "card_ids": [3]
+    }
+  },
+  "urgency_escalation": {
+    "description": "Regras para escalonar urgência baseado em cartas de perigo",
+    "danger_cards": [15, 20],
+    "danger_keywords": ["perigo", "ameaça", "agressor", "medo", "confronto", "ruptura", "corte"],
+    "escalation_levels": {
+      "low": {
+        "description": "Urgência normal - ações em tempo padrão",
+        "multiplier": 1.0,
+        "timeframe_adjustment": "no_change"
+      },
+      "medium": {
+        "description": "Urgência moderada - antecipar ações em uma categoria",
+        "multiplier": 1.5,
+        "timeframe_adjustment": "immediate"
+      },
+      "high": {
+        "description": "Urgência alta - todas as ações para imediato/esta semana",
+        "multiplier": 2.0,
+        "timeframe_adjustment": "immediate"
+      }
+    },
+    "default_level": "low"
+  },
+  "recommendation_templates": {
+    "description": "Templates reutilizáveis para gerar recomendações contextuais",
+    "templates": [
+      {
+        "id": "tpl_acao_enquadrada",
+        "template": "Faça {acao} com foco em {foco}",
+        "examples": [
+          "Faça uma análise detallada do mercado antes de investir",
+          "Faça uma conversa aberta com seu gestor sobre suas expectativas"
+        ]
+      },
+      {
+        "id": "tpl_passo_a_passo",
+        "template": "1) {passo1}, 2) {passo2}, 3) {passo3}",
+        "examples": [
+          "1) Identifique o problema, 2) Busque informação, 3) Defina ação concreta"
+        ]
+      },
+      {
+        "id": "tpl_acao_condicional",
+        "template": "Se {condicao}, então {acao}, caso contrário {alternativa}",
+        "examples": [
+          "Se a situação não melhorar em 2 semanas, busque ajuda profissional"
+        ]
+      },
+      {
+        "id": "tpl_reflexao_guiada",
+        "template": "Reserve tempo para refletir: {pergunta1}, {pergunta2}, {pergunta3}",
+        "examples": [
+          "Reserve tempo para refletir: O que espero dessa mudança? Quais meus medos? Como posso superá-los?"
+        ]
+      }
+    ]
+  },
+  "timeframes": {
+    "description": "Definições de horizontes temporais para ações",
+    "definitions": {
+      "immediate": {
+        "label": "Imediato",
+        "horizon_days": 1,
+        "description": "Ação que deve ser iniciada hoje ou nas próximas 24 horas"
+      },
+      "this_week": {
+        "label": "Esta Semana",
+        "horizon_days": 7,
+        "description": "Ação que deve ser concluída ou ter progresso significativo esta semana"
+      },
+      "this_month": {
+        "label": "Este Mês",
+        "horizon_days": 30,
+        "description": "Ação que faz parte de um plano de médio prazo este mês"
+      }
+    }
+  },
+  "success_criteria": {
+    "description": "Critérios para avaliar se uma recomendação foi bem-sucedida",
+    "categories": {
+      "comunicacao": {
+        "label": "Comunicação",
+        "criteria": [
+          "Conversa ou mensagem realizada com clareza",
+          "Feedback recebido e considerado",
+          "Entendimento mútuo verificado"
+        ]
+      },
+      "acao": {
+        "label": "Ação",
+        "criteria": [
+          "Passo concreto executado",
+          "Resultado tangível observado",
+          "Mudança de estado verificada"
+        ]
+      },
+      "reflexao": {
+        "label": "Reflexão",
+        "criteria": [
+          "Insights registrados por escrito",
+          "Clareza aumentada sobre a situação",
+          "Perspectiva ampliada"
+        ]
+      },
+      "planejamento": {
+        "label": "Planejamento",
+        "criteria": [
+          "Próximos passos documentados",
+          "Prazo definido para execução",
+          "Recursos necessários identificados"
+        ]
+      }
+    }
+  }
+}
