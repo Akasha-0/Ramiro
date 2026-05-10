@@ -15,6 +15,7 @@ import re
 from typing import Optional
 
 from src.types import CardPosition, StructuredInput
+from src.spread_templates import get_template, SpreadTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -353,3 +354,136 @@ class InputProcessor:
         if len(content) <= self.max_length:
             return content, False
         return content[: self.max_length], True
+
+    # ------------------------------------------------------------------
+    # File path e template support
+    # ------------------------------------------------------------------
+
+    def parse_from_file(
+        self,
+        file_path: str,
+        template_name: Optional[str] = None,
+    ) -> StructuredInput:
+        """Lê e parseia conteúdo de um arquivo CSV.
+
+        Suporta leitura de arquivos com caminho absoluto ou relativo.
+        Opcionalmente aplica um template de tiragem para inferir contexto.
+
+        Args:
+            file_path: Caminho para o arquivo CSV.
+            template_name: Nome do template opcional para contexto de posições.
+
+        Returns:
+            StructuredInput com dados parseados do arquivo.
+
+        Raises:
+            ParseError: Se o arquivo não puder ser lido ou parseado.
+            FileNotFoundError: Se o arquivo não existir.
+        """
+        logger.debug("Lendo arquivo CSV: %s", file_path)
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+        except FileNotFoundError:
+            raise ParseError(
+                "Arquivo não encontrado",
+                details=f"Caminho: {file_path!r}",
+            )
+        except PermissionError:
+            raise ParseError(
+                "Sem permissão para ler o arquivo",
+                details=f"Caminho: {file_path!r}",
+            )
+        except OSError as e:
+            raise ParseError(
+                "Erro ao ler arquivo",
+                details=str(e),
+            )
+
+        result = self.parse(content, "spread")
+
+        # Se template foi fornecido, aplicar contexto às posições
+        if template_name and result.cards:
+            result = self._apply_template_context(result, template_name)
+
+        return result
+
+    def _apply_template_context(
+        self,
+        structured_input: StructuredInput,
+        template_name: str,
+    ) -> StructuredInput:
+        """Aplica contexto de um template às posições de uma tiragem.
+
+        Usa o template para determinar o position_context de cada carta
+        baseada na sua posição.
+
+        Args:
+            structured_input: StructuredInput com cartas parseadas.
+            template_name: Nome do template a aplicar.
+
+        Returns:
+            StructuredInput com position_context preenchido em cada carta.
+
+        Raises:
+            ParseError: Se o template não existir.
+        """
+        if not structured_input.cards:
+            return structured_input
+
+        template = get_template(template_name)
+        if template is None:
+            raise ParseError(
+                "Template não encontrado",
+                details=f"Template: {template_name!r}. Templates disponíveis: {list(get_template.__self__.TEMPLATES.keys()) if hasattr(get_template, '__self__') else 'consulte a documentação'}",
+            )
+
+        # Mapear contextos do template para as posições
+        context_by_position: dict[int, str] = {}
+        for pos in template.positions:
+            context_by_position[pos.position] = pos.context
+
+        # Aplicar contexto às cartas
+        updated_cards: list[CardPosition] = []
+        for card in structured_input.cards:
+            context = context_by_position.get(card.position)
+            if context:
+                updated_cards.append(
+                    CardPosition(
+                        position=card.position,
+                        card_name=card.card_name,
+                        interpretation=card.interpretation,
+                        position_context=context,
+                    )
+                )
+            else:
+                updated_cards.append(card)
+
+        return StructuredInput(
+            format=structured_input.format,
+            raw_content=structured_input.raw_content,
+            cards=updated_cards,
+            keywords=structured_input.keywords,
+        )
+
+    def parse_with_context(
+        self,
+        content: str,
+        template_name: Optional[str] = None,
+    ) -> StructuredInput:
+        """Parseia conteúdo CSV com contexto de template opcional.
+
+        Wrapper conveniente que combina parse() e _apply_template_context().
+
+        Args:
+            content: Conteúdo CSV ou texto.
+            template_name: Nome do template opcional.
+
+        Returns:
+            StructuredInput com contexto de template aplicado se fornecido.
+        """
+        result = self.parse(content, "spread")
+        if template_name:
+            result = self._apply_template_context(result, template_name)
+        return result
