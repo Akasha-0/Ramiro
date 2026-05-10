@@ -92,7 +92,13 @@ def main() -> None:
     )
 
     # subcommand: interactive
-    interactive_parser = subparsers.add_parser("interactive", help="Modo interativo de leitura guiada")
+    interactive_parser = subparsers.add_parser(
+        "interactive",
+        help="Modo interativo de leitura guiada",
+        description="Inicia uma sessão interativa para explorar símbolos e padrões de "
+        "forma progressiva e reflexiva. O sistema faz perguntas para guiar a leitura.",
+        epilog="Após coletar os dados, o sistema gera um relatório completo.",
+    )
 
     args = parser.parse_args()
 
