@@ -6,9 +6,7 @@ deve circular entre módulos.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Optional
-from typing import Any
 
 
 @dataclass
@@ -19,13 +17,11 @@ class CardPosition:
         position: Índice da posição na tiragem (1-based).
         card_name: Nome da carta (ex: "Cruz", "Estrela", "Café").
         interpretation: Interpretação gerada pela análise (opcional).
-        position_context: Contexto da posição na tiragem (ex: "passado", "presente", "futuro") (opcional).
     """
 
     position: int
     card_name: str
     interpretation: Optional[str] = None
-    position_context: Optional[str] = None
 
 
 @dataclass
@@ -46,25 +42,6 @@ class StructuredInput:
 
 
 @dataclass
-class CrossCardPattern:
-    """Padrão detectado entre múltiplas cartas na tiragem.
-
-    Attributes:
-        pattern_type: Tipo do padrão detectado
-            ("numeric_repeat", "numeric_sequence", "theme_cluster",
-             "elemental_imbalance", "conflict").
-        card_ids: IDs das cartas que formam o padrão.
-        interpretation: Interpretação simbólica do padrão cruzado.
-        strength: Intensidade/significância do padrão (opcional).
-    """
-
-    pattern_type: str
-    card_ids: list[int]
-    interpretation: str
-    strength: Optional[str] = None
-
-
-@dataclass
 class AnalysisResult:
     """Resultado da análise simbólico-estratégica.
 
@@ -76,7 +53,6 @@ class AnalysisResult:
         practical_plan: Plano prático de ação.
         card_interpretations: Interpretações por carta (para tiragens).
         symbolic_mappings: Mapeamentos simbólicos individuais.
-        cross_card_patterns: Padrões detectados entre múltiplas cartas.
     """
 
     diagnosis: str
@@ -86,7 +62,6 @@ class AnalysisResult:
     practical_plan: str = ""
     card_interpretations: Optional[list[str]] = None
     symbolic_mappings: Optional[dict[str, str]] = None
-    cross_card_patterns: list[CrossCardPattern] = field(default_factory=list)
 
 
 @dataclass
@@ -96,70 +71,107 @@ class ValidatedOutput:
     Attributes:
         content: Conteúdo do relatório em Markdown.
         disclaimer_flags: Lista de palavras-chave bloqueadas detectadas.
-        sensitive_flags: Lista de flags de sensibilidade detectados no output.
         needs_disclaimer: Indica se um disclaimer ético deve ser inserido.
         is_safe: Indica se o output passou na validação ética.
     """
 
     content: str
     disclaimer_flags: list[str] = field(default_factory=list)
-    sensitive_flags: list[str] = field(default_factory=list)
     needs_disclaimer: bool = False
     is_safe: bool = True
 
 
 @dataclass
-class InputGuardrailsResult:
-    """Resultado da detecção de sensibilidade no input do usuário.
+class Session:
+    """Uma sessão individual de reflexão.
 
     Attributes:
-        is_sensitive: Indica se o input contém temas sensíveis.
-        flags: Lista de palavras-chave sensíveis detectadas.
-    """
-
-    is_sensitive: bool
-    flags: list[str] = field(default_factory=list)
-
-
-@dataclass
-class SessionSummary:
-    """Resumo de uma sessão para listagem no histórico.
-
-    Attributes:
-        session_id: ID único da sessão (formato UUID).
-        created_at: Data e hora de criação da sessão.
-        input_format: Formato do input original ("text", "spread", "symbols").
-        summary: Resumo da sessão (diagnóstico ou palavras-chave).
-        themes: Lista de temas identificados.
+        session_id: Identificador único da sessão.
+        timestamp: Timestamp ISO da sessão.
+        input_format: Formato do input ("text", "spread", "symbols").
+        raw_content: Conteúdo bruto original.
+        analysis_result: Resultado da análise (opcional).
+        unresolved_threads: Lista de IDs de threads não resolvidas desta sessão.
     """
 
     session_id: str
-    created_at: datetime
+    timestamp: str
     input_format: str
-    summary: str
-    themes: list[str] = field(default_factory=list)
+    raw_content: str
+    analysis_result: Optional[AnalysisResult] = None
+    unresolved_threads: list[str] = field(default_factory=list)
 
 
 @dataclass
-class SessionData:
-    """Dados completos de uma sessão armazenada.
+class NarrativeThread:
+    """Uma linha narrativa que atravessa múltiplas sessões.
 
     Attributes:
-        session_id: ID único da sessão (formato UUID).
-        created_at: Data e hora de criação da sessão.
-        input_format: Formato do input original ("text", "spread", "symbols").
-        raw_input: Input bruto fornecido pelo usuário.
-        structured_input: Input estruturado após parsing.
-        analysis_result: Resultado da análise simbólico-estratégica.
-        validated_output: Output validado pelos guardrails.
-        metadata: Metadados adicionais da sessão.
+        thread_id: Identificador único da thread.
+        name: Nome descritivo da thread (ex: "Carreira", "Relacionamento").
+        theme: Tema central identificado.
+        session_ids: Lista de IDs das sessões onde esta thread apareceu.
+        status: Status atual ("active", "resolved", "escalated").
+        first_mention: Timestamp da primeira menção.
+        last_mention: Timestamp da última menção.
+        progression: Lista de descrições da progressão ao longo das sessões.
     """
 
-    session_id: str
-    created_at: datetime
-    input_format: str
-    raw_input: str
-    structured_input: Optional[dict[str, Any]] = None
-    analysis_result: Optional[dict[str, Any]] = None
-    validated_output: Optional[dict[str, Any]] = None
-    metadata: dict[str, Any] = field(default_factory=dict)
+    thread_id: str
+    name: str
+    theme: str
+    session_ids: list[str] = field(default_factory=list)
+    status: str = "active"
+    first_mention: Optional[str] = None
+    last_mention: Optional[str] = None
+    progression: list[str] = field(default_factory=list)
+
+
+@dataclass
+class Arc:
+    """Um arco narrativo conectando múltiplas sessões.
+
+    Attributes:
+        arc_id: Identificador único do arco.
+        name: Nome descritivo do arco (ex: "Jornada de 2024").
+        sessions: Lista de sessões ordenadas por timestamp.
+        threads: Lista de threads narrativas identificadas.
+        start_date: Data de início do arco.
+        end_date: Data de fim do arco (opcional).
+        dominant_themes: Temas dominantes do arco.
+    """
+
+    arc_id: str
+    name: str
+    sessions: list[Session] = field(default_factory=list)
+    threads: list[NarrativeThread] = field(default_factory=list)
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    dominant_themes: list[str] = field(default_factory=list)
+
+
+@dataclass
+class ChapterSummary:
+    """Sumário de um capítulo narrativo do arco.
+
+    Attributes:
+        chapter_number: Número do capítulo.
+        title: Título do capítulo.
+        arc_id: ID do arco ao qual este capítulo pertence.
+        sessions_covered: Lista de IDs das sessões cobertas.
+        narrative_summary: Resumo narrativo conectando as sessões.
+        unresolved_threads: Threads identificadas como não resolvidas.
+        escalation_detected: Indica se escalada foi detectada.
+        resolution_detected: Indica se resolução foi detectada.
+        key_insight: Principais insights do capítulo.
+    """
+
+    chapter_number: int
+    title: str
+    arc_id: str
+    sessions_covered: list[str] = field(default_factory=list)
+    narrative_summary: str = ""
+    unresolved_threads: list[str] = field(default_factory=list)
+    escalation_detected: bool = False
+    resolution_detected: bool = False
+    key_insight: str = ""
