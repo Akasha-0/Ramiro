@@ -263,20 +263,20 @@ class InputProcessor:
             parsed = self._parse_csv_line(raw_line)
             if parsed is None:
                 raise ParseError(
-                    "Linha com formato CSV inválido",
+                    "Erro na linha",
                     line=line_no,
-                    details=f"Não foi possível interpretar: {raw_line!r}",
-                    recovery="Use vírgula, ponto-e-vírgula ou tabulação para separar posição e nome da carta. Exemplo: 1,estrela",
+                    details=f"Formato esperado: POSITION,CARD (exemplo: 1,estrela)",
+                    recovery="Use vírgula, ponto-e-vírgula ou tabulação para separar. Exemplo: 1,estrela",
                 )
 
             try:
                 position = int(parsed[0])
             except ValueError:
                 raise ParseError(
-                    "Posição inválida",
+                    "Erro na linha",
                     line=line_no,
-                    details=f"Esperado número, encontrado: {parsed[0]!r}",
-                    recovery="Use apenas números inteiros para a posição. Exemplo: 1,estrela ou 2,casa",
+                    details=f"Formato esperado: POSITION,CARD (exemplo: 1,estrela)",
+                    recovery="Use número inteiro na primeira coluna. Exemplo: 1,estrela ou 2,casa",
                 )
 
             if position < 1:
