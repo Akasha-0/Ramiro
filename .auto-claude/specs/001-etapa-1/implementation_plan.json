@@ -2,7 +2,7 @@
   "feature": "Etapa 1",
   "description": "Etapa 1 — Estratégia antes de código\n\nBase interpretativa original:\nmaturidade + obstáculo + estratégia\n\nTradução para IA:\n\nAntes de programar, o projeto precisa saber exatamente qual problema de IA quer resolver. O maior risco inicial é tentar criar algo grande demais, genérico demais ou abstrato demais.\n\nObjetivo da etapa:\n\nDefinir o escopo mínimo do produto de IA.\n\nPergunta técnica central:\n\nQue tarefa específica este sistema de IA executa melhor do que um fluxo manual?\n\nEntregáveis:\n\n- Nome provisório do produto\n- Problema principal\n- Usuário-alvo inicial\n- Caso de uso principal\n- O que a IA faz\n- O que a IA não faz\n- Limites da versão 0.0.1\n\nExemplo de definição:\n\nProduto: AI Core v0.0.1\n\nProblema:\nUsuários têm ideias, consultas, documentos ou demandas complexas, mas não conseguem transformar isso em plano prático.\n\nFunção da IA:\nReceber uma entrada bruta, identificar o objetivo, organizar o raciocínio, gerar uma saída estruturada e propor próximos passos.\n\nFora do escopo:\nLogin, pagamento, multiusuário, marketplace, automações externas, banco complexo.\n\nCritério de conclusão:\n\n[ ] Existe uma definição clara do problema.\n[ ] Existe um usuário-alvo inicial.\n[ ] Existe uma tarefa principal.\n[ ] Existe uma lista clara do que não será construído agora.",
   "created_at": "2026-05-10T00:26:36.059Z",
-  "updated_at": "2026-05-10T00:26:45.791Z",
+  "updated_at": "2026-05-10T13:51:18.474Z",
   "status": "backlog",
   "phases": [],
   "planStatus": "pending",

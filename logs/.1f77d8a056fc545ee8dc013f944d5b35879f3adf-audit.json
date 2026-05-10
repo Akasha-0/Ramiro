@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/home/skynet/ramires/ramires/logs/.1f77d8a056fc545ee8dc013f944d5b35879f3adf-audit.json",
+    "files": [
+        {
+            "date": 1778430784422,
+            "name": "/home/skynet/ramires/ramires/logs/mcp-puppeteer-2026-05-10.log",
+            "hash": "0296a8d326a20fb796ce6b735acb3ea08cfdbc55fdfff0ad8c2c879d7359a057"
+        }
+    ],
+    "hashType": "sha256"
+}
