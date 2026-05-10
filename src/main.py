@@ -90,6 +90,9 @@ def main() -> None:
              "Disponível apenas para --format spread.",
     )
 
+    # subcommand: interactive
+    interactive_parser = subparsers.add_parser("interactive", help="Modo interativo de leitura guiada")
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -98,6 +101,19 @@ def main() -> None:
 
     if args.command == "analyze":
         run_analyze(args.input, args.format, args.output, args.template)
+
+    if args.command == "interactive":
+        run_interactive()
+
+
+def run_interactive() -> None:
+    """Executa o modo interativo de leitura guiada.
+
+    Oferece um fluxo interativo para explorar símbolos e padrões
+    de forma progressiva e reflexiva.
+    """
+    print("Modo interativo de leitura guiada")
+    print("Este comando ainda não foi implementado.")
 
 
 def run_analyze(
