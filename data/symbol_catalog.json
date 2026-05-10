@@ -1,0 +1,86 @@
+{
+  "_metadata": {
+    "version": "1.0",
+    "description": "Catálogo de agrupamentos simbólicos do Baralho Cigano por elemento arquetípico",
+    "source": "Baralho Cigano de 36 cartas"
+  },
+  "card_clusters": [
+    {
+      "id": "water",
+      "name": "Água",
+      "description": "Cartas associadas ao elemento água simbolizam o mundo emocional, a fluidez interior e a conexão com o inconsciente. Representamintrospecção, sensibilidades e o fluxo natural da vida.",
+      "element": "água",
+      "nature": "emocional",
+      "card_ids": [3, 4, 17, 19, 25, 27, 31, 34, 36],
+      "keywords": ["emoção", "intuição", "inconsciente", "sensibilidade", "fluidez", "acolhimento", "sentimento", "luna", "mar", "profundidade"],
+      "interpretation_note": "Cartas de água indicam momento propício para introspection e trabalho emocional. Não force decisões — permita que as águas encontrem seu curso.",
+      "related_clusters": ["air", "transition"]
+    },
+    {
+      "id": "earth",
+      "name": "Terra",
+      "description": "Cartas do elemento terra representam a материальный mundo, a estabilidade, a segurança material e o crescimento sustentável. Simbolizam fundamentos, estrutura e realidade prática.",
+      "element": "terra",
+      "nature": "material",
+      "card_ids": [4, 5, 13, 24, 26, 30, 33, 34],
+      "keywords": ["estabilidade", "segurança", "fundamento", "crescimento", "material", "estrutura", "raízes", "natureza", "abundância", "prosperidade"],
+      "interpretation_note": "Cartas de terra pedem atenção ao mundo físico: saúde, dinheiro, moradia, família. Trabalhe nas bases antes de buscar expansão.",
+      "related_clusters": ["water", "fire"]
+    },
+    {
+      "id": "fire",
+      "name": "Fogo",
+      "description": "Cartas do elemento fogo simbolizam paixão, energia vital, ação decisiva e transformação ativa. Representam confrontação, força de vontade e momentos de alta intensidade.",
+      "element": "fogo",
+      "nature": "ativa",
+      "card_ids": [7, 15, 20, 21, 22, 35],
+      "keywords": ["paixão", "energia", "ação", "força", "decisão", "confronto", "intensidade", "motivação", "ruptura", "corte"],
+      "interpretation_note": "Cartas de fogo indicam momento de ação. Não adie — use a energia disponível para resolver o que precisa ser resolvido. Cuidado com agressividade excessiva.",
+      "related_clusters": ["earth", "transition"]
+    },
+    {
+      "id": "air",
+      "name": "Ar",
+      "description": "Cartas do elemento ar representam o mundo mental, a comunicação, o conhecimento e a sabedoria. Simbolizam troca, intermediação e perspectivas externas.",
+      "element": "ar",
+      "nature": "mental",
+      "card_ids": [1, 2, 11, 14, 18, 28, 29, 32, 35],
+      "keywords": ["comunicação", "conhecimento", "sabedoria", "mensagem", "perspectiva", "troca", "intermediação", "discernimento", "aprendizado"],
+      "interpretation_note": "Cartas de ar indicam momento para buscar informação, consultar outros, estudar ou mediar situações. A clareza virá pela comunicação.",
+      "related_clusters": ["water", "transition"]
+    },
+    {
+      "id": "transition",
+      "name": "Transição",
+      "description": "Cartas de transição representam momentos liminares, escolhas, finais e inícios. Simbolizam a passagem entre estados e a necessidade de aceitação da mudança.",
+      "element": "transição",
+      "nature": "liminar",
+      "card_ids": [6, 8, 12, 16, 23, 9, 10],
+      "keywords": ["mudança", "transformação", "escolha", "encruzilhada", "fim", "início", "incerteza", "passagem", "liminar", "ciclo"],
+      "interpretation_note": "Cartas de transição indicam que uma mudança está em curso — aceita-la traz paz, resisti-la traz sofrimento. Esteja aberto ao novo que nasce.",
+      "related_clusters": ["fire", "water"]
+    }
+  ],
+  "cluster_interactions": {
+    "water_earth": {
+      "description": "Combinação entre emoção e materialidade indica momento de cuidado com questões práticas que afetam o bem-estar emocional.",
+      "advice": "Cuide do seu entorno físico para encontrar paz interior."
+    },
+    "fire_air": {
+      "description": "Combinação entre ação e comunicação indica momento propício para declarações, negociações e decisões comunicadas claramente.",
+      "advice": "Use sua voz para fazer acontecer."
+    },
+    "water_transition": {
+      "description": "Combinação entre emoção e mudança indica momento de processamento profundo — permita-se sentir para atravessar a transformação.",
+      "advice": "Sinta antes de agir; a transformação precisa ser sentida."
+    },
+    "earth_fire": {
+      "description": "Combinação entre fundamento e intensidade indica momento de construção através da ação. Trabalhe com vigor nas bases.",
+      "advice": "Edifique com determinação."
+    },
+    "air_transition": {
+      "description": "Combinação entre conhecimento e mudança indica revelação durante transformação — segredos podem emergir neste período.",
+      "advice": "Mantenha-se atento; a verdade está sendo revelada."
+    }
+  }
+}
