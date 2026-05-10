@@ -483,8 +483,8 @@ def apply_guardrails(
     is_safe, flags = validate_output(report_md)
     needs_disclaimer = not is_safe
 
-    # Injetar disclaimer de cabeçalho se necessário
-    final_content = inject_header_disclaimer(report_md) if needs_disclaimer else report_md
+    # Injetar disclaimer de cabeçalho SEMPRE (header injection)
+    final_content = inject_header_disclaimer(report_md)
 
     output = ValidatedOutput(
         content=final_content,
