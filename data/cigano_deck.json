@@ -1,0 +1,290 @@
+[
+  {
+    "id": 1,
+    "name": "O Cigano",
+    "name_pt": "O Cigano",
+    "position": 1,
+    "interpretation": "Mensageiro de mudanças. Traz notícias inesperadas ou a chegada de alguém com perspectivas diferentes. Simboliza adaptação a novas culturas e ideias.",
+    "keywords": ["cigano", "viajante", "nômade", "peregrino", "estrangeiro", "novidades", "notícias"]
+  },
+  {
+    "id": 2,
+    "name": "O Trevo",
+    "name_pt": "O Trevo",
+    "position": 2,
+    "interpretation": "Representa a sorte e o acaso. Pode indicar um golpe de sorte ou, no sentido invertido, azar imerecido. Lembra que o destino nem sempre é justo.",
+    "keywords": ["trevo", "sorte", "fortuna", "acaso", "azar", "sorte grande", "azarado"]
+  },
+  {
+    "id": 3,
+    "name": "O Navio",
+    "name_pt": "O Navio",
+    "position": 3,
+    "interpretation": "Simboliza viagem, mudança de ambiente e descoberta. Pode indicar uma transição importante ou o início de uma jornada física ou interior.",
+    "keywords": ["navio", "viagem", "mar", "navegação", "aventura", "trajetória", "destino", "jornada"]
+  },
+  {
+    "id": 4,
+    "name": "A Casa",
+    "name_pt": "A Casa",
+    "position": 4,
+    "interpretation": "Representa o ambiente doméstico, a família e a segurança material. Indica estabilidade ou a necessidade de fortalecimento das bases pessoais.",
+    "keywords": ["casa", "lar", "fogão", "moradia", "residência", "família", "raízes", "base", "segurança"]
+  },
+  {
+    "id": 5,
+    "name": "A Árvore",
+    "name_pt": "A Árvore",
+    "position": 5,
+    "interpretation": "Símbolo de vida, crescimento e saúde. Indica vitalidade ou alerta para questões corporais. Representa desenvolvimento ao longo do tempo.",
+    "keywords": ["árvore", "natureza", "crescimento", "raízes", "saúde", "vitalidade", "longevidade"]
+  },
+  {
+    "id": 6,
+    "name": "As Nuvens",
+    "name_pt": "As Nuvens",
+    "position": 6,
+    "interpretation": "Representa confusão mental, indecisão e incerteza temporária. Indica um período de indefinição que pode se dissipar com tempo e reflexão.",
+    "keywords": ["nuvens", "neblina", "incerteza", "confusão", "dúvida", "nebulosidade", "escuro"]
+  },
+  {
+    "id": 7,
+    "name": "A Cobra",
+    "name_pt": "A Cobra",
+    "position": 7,
+    "interpretation": "Duplo sentido: pode indicar traição e engano, ou simbolizar cura e transformação profunda. Depende muito das cartas vizinhas.",
+    "keywords": ["cobra", "serpente", "traição", "engano", "cura", "transformação", "renovação", "velho", "novo"]
+  },
+  {
+    "id": 8,
+    "name": "O Caixão",
+    "name_pt": "O Caixão",
+    "position": 8,
+    "interpretation": "Representa encerramento, fim de ciclo e perda. Não é necessariamente morte física — indica o fim de uma fase e o nascimento de outra.",
+    "keywords": ["caixão", "morte", "fim", "encerramento", "sepultamento", "adeus", "perda", "luto"]
+  },
+  {
+    "id": 9,
+    "name": "O Buquê",
+    "name_pt": "O Buquê",
+    "position": 9,
+    "interpretation": "Simboliza presente, surpresa positiva e momento alegre. Indica recebimento de boas notícias ou reconhecimento por esforços.",
+    "keywords": ["buquê", "flores", "presente", "oferta", "surpresa", "alegria", "celebração", "dar", "receber"]
+  },
+  {
+    "id": 10,
+    "name": "A Forca",
+    "name_pt": "A Forca",
+    "position": 10,
+    "interpretation": "Indica situação de espera, pausa forçada ou bloqueio. Representa um momento em que a ação direta não é possível. Pode também sinalizar perspectiva alternativa.",
+    "keywords": ["forca", "bloqueio", "obstáculo", "espera", "pausa", "suspensão", "imobilidade", "prisão"]
+  },
+  {
+    "id": 11,
+    "name": "A Serpente",
+    "name_pt": "A Serpente",
+    "position": 11,
+    "interpretation": "Símbolo de sabedoria antiga e conhecimento oculto. Indica oportunidade de aprender algo valioso ou, alternativamente, tentação a ser resistida.",
+    "keywords": ["serpente", "sabedoria", "curiosidade", "experiência", "tentação", "conhecimento", "antigo"]
+  },
+  {
+    "id": 12,
+    "name": "A Morte",
+    "name_pt": "A Morte",
+    "position": 12,
+    "interpretation": "Transformação radical e fim de ciclo. Não prevê morte física — indica mudança profunda e inevitável. Recusar essa transformação causa sofrimento.",
+    "keywords": ["morte", "transformação", "fim", "mudança profunda", "renascimento", "mudança radical", "purgação"]
+  },
+  {
+    "id": 13,
+    "name": "A Cegonha",
+    "name_pt": "A Cegonha",
+    "position": 13,
+    "interpretation": "Indica chegada de algo novo — pode ser um bebê, um projeto, um relacionamento ou oportunidade. Símbolo de novos começos e esperança.",
+    "keywords": ["cegonha", "novidades", "nascimento", "chegada", "bebê", "gestação", "início", "novo capítulo"]
+  },
+  {
+    "id": 14,
+    "name": "O Cão",
+    "name_pt": "O Cão",
+    "position": 14,
+    "interpretation": "Representa amizade leal, allyship e proteção. Indica que alguém está ao seu lado ou que você deve buscar apoio em quem confia.",
+    "keywords": ["cão", "amigo", "lealdade", "fidelidade", "proteção", "confiança", "companheirismo", "guardião"]
+  },
+  {
+    "id": 15,
+    "name": "O Lobo",
+    "name_pt": "O Lobo",
+    "position": 15,
+    "interpretation": "Símbolo de perigo, ameaça externa ou confrontação. Pode indicar alguém agressivo no ambiente ou a necessidade de enfrentar um oponente.",
+    "keywords": ["lobo", "perigo", "agressor", "ameaça", "medo", "confronto", "força", "competição"]
+  },
+  {
+    "id": 16,
+    "name": "A Cabana",
+    "name_pt": "A Cabana",
+    "position": 16,
+    "interpretation": "Representa simplicidade, acolhimento e recolhimento. Indica necessidade de recuo, introspecção ou vida mais simples.",
+    "keywords": ["cabana", "refúgio", "retiro", "pobreza", "humildade", "simplicidade", "acolhimento"]
+  },
+  {
+    "id": 17,
+    "name": "A Estrela",
+    "name_pt": "A Estrela",
+    "position": 17,
+    "interpretation": "Símbolo de esperança, luz interior e orientação. Indica que há um caminho claro a seguir e que a situação vai melhorar. Esperança é a palavra-chave.",
+    "keywords": ["estrela", "luz", "guia", "esperança", "futuro", "iluminação", "direção", "céu", "orientação"]
+  },
+  {
+    "id": 18,
+    "name": "A Coruja",
+    "name_pt": "A Coruja",
+    "position": 18,
+    "interpretation": "Símbolo de sabedoria, mistério e conhecimento oculto. Indica que a verdade está emergindo ou que é hora de investigar mais fundo.",
+    "keywords": ["coruja", "sabedoria", "conhecimento", "mistério", "segredo", "noite", "observação", "discernimento"]
+  },
+  {
+    "id": 19,
+    "name": "A Lua",
+    "name_pt": "A Lua",
+    "position": 19,
+    "interpretation": "Representa o mundo emocional e inconsciente. Indica que nem tudo é o que parece — há forças emocionais em jogo. Período propício para introspecção.",
+    "keywords": ["lua", "noite", "inconsciente", "emoção", "ilusão", "sonho", "subconsciente", "mistério"]
+  },
+  {
+    "id": 20,
+    "name": "O Machado",
+    "name_pt": "O Machado",
+    "position": 20,
+    "interpretation": "Símbolo de decisão difícil, corte ou ruptura. Indica necessidade de separações ou cortes drásticos para resolver uma situação.",
+    "keywords": ["machado", "corte", "separação", "ruptura", "decisão difícil", "conflito", "divisão", "fim"]
+  },
+  {
+    "id": 21,
+    "name": "O Facho",
+    "name_pt": "O Facho",
+    "position": 21,
+    "interpretation": "Símbolo de paixão, energia vital e força de vontade. Indica momento de alta energia e motivação, ou atração forte por alguém ou algo.",
+    "keywords": ["facho", "tocha", "luz", "paixão", "força", "energia", "motivação", "atração"]
+  },
+  {
+    "id": 22,
+    "name": "A Cruz",
+    "name_pt": "A Cruz",
+    "position": 22,
+    "interpretation": "Representa sofrimento, provação ou peso emocional. Indica um período difícil que está sendo enfrentado ou precisa ser enfrentado.",
+    "keywords": ["cruz", "sofrimento", "dor", "peso", "carga", "sacrifício", "prova", "dificuldade", "caminho"]
+  },
+  {
+    "id": 23,
+    "name": "A Cruz de São André",
+    "name_pt": "A Cruz de São André",
+    "position": 23,
+    "interpretation": "Representa encruzilhada e escolha difícil entre dois caminhos. Indica momento de decisão importante onde qualquer escolha tem consequências.",
+    "keywords": ["cruz de são andré", "cruz", "encruzilhada", "escolha", "decisão", "bifurcação", "indecisão"]
+  },
+  {
+    "id": 24,
+    "name": "O Urso",
+    "name_pt": "O Urso",
+    "position": 24,
+    "interpretation": "Símbolo de força protetora, pode representar uma figura materna ou alguém que oferece cuidado e segurança. Também indica poder e autoridade natural.",
+    "keywords": ["urso", "força", "proteção", "mãe", "cuidado", "natureza", "poder", "autoridade"]
+  },
+  {
+    "id": 25,
+    "name": "As Estrelas",
+    "name_pt": "As Estrelas",
+    "position": 25,
+    "interpretation": "Indica múltiplas opções e possibilidades. Representa diversidade de caminhos e a bênção de ter escolhas. É um sinal de abundância de alternativas.",
+    "keywords": ["estrelas", "múltiplas", "diversidade", "escolha", "alternativas", "opções", "universo"]
+  },
+  {
+    "id": 26,
+    "name": "O Mercado",
+    "name_pt": "O Mercado",
+    "position": 26,
+    "interpretation": "Símbolo de negócios, comércio e acordos. Indica atividade comercial, negociação ou oportunidade de negócio.",
+    "keywords": ["mercado", "compra", "venda", "negócio", "transação", "comércio", "troca", "acordo"]
+  },
+  {
+    "id": 27,
+    "name": "O Beijo",
+    "name_pt": "O Beijo",
+    "position": 27,
+    "interpretation": "Representa amor, ternura, reconciliação ou intimidade. Indica momento de proximidade emocional ou física com alguém significativo.",
+    "keywords": ["beijo", "amor", "ternura", "intimidade", "paixão", "reconciliação", "afeto", "conexão"]
+  },
+  {
+    "id": 28,
+    "name": "O Livro",
+    "name_pt": "O Livro",
+    "position": 28,
+    "interpretation": "Símbolo de conhecimento, estudo e revelação de segredos. Indica que informação importante será revelada ou que é hora de estudar algo novo.",
+    "keywords": ["livro", "estudo", "conhecimento", "mistério", "segredo", "revelação", "aprendizado", "leitura"]
+  },
+  {
+    "id": 29,
+    "name": "A Carta",
+    "name_pt": "A Carta",
+    "position": 29,
+    "interpretation": "Representa comunicação, mensagem ou notícia aguardada. Indica que uma resposta ou informação importante está a caminho.",
+    "keywords": ["carta", "mensagem", "notícia", "comunicação", "correspondência", "notificação", "aviso"]
+  },
+  {
+    "id": 30,
+    "name": "O Florista",
+    "name_pt": "O Florista",
+    "position": 30,
+    "interpretation": "Símbolo de cultivo, beleza e paciência. Indica que é preciso tempo e cuidado para que algo floresça. Trabalho discreto que traz resultados futuros.",
+    "keywords": ["florista", "flores", "beleza", "cuidado", "presente", "cultivo", "paciência", "jardinagem"]
+  },
+  {
+    "id": 31,
+    "name": "O Anel",
+    "name_pt": "O Anel",
+    "position": 31,
+    "interpretation": "Símbolo de compromisso, parceria e vínculo duradouro. Indica pedido de compromisso, acordo importante ou união significativa.",
+    "keywords": ["anel", "compromisso", "casamento", "união", "fidelidade", "promessa", "aliança", "vínculo"]
+  },
+  {
+    "id": 32,
+    "name": "O Pompom",
+    "name_pt": "O Pompom",
+    "position": 32,
+    "interpretation": "Representa um jovem, enviado ou intermediário. Indica que alguém está agindo como mensageiro ou mediador entre duas partes.",
+    "keywords": ["pompom", "rapaz", "mensagem", "embaixador", "enviado", "intermediário", "representante", "jovem"]
+  },
+  {
+    "id": 33,
+    "name": "O Peixe",
+    "name_pt": "O Peixe",
+    "position": 33,
+    "interpretation": "Símbolo de prosperidade, abundância e dinheiro. Indica fluxo financeiro positivo ou necessidade de seguir a intuição para encontrar recursos.",
+    "keywords": ["peixe", "mar", "abundância", "prosperidade", "dinheiro", "fluidez", "intuição", "profundidade"]
+  },
+  {
+    "id": 34,
+    "name": "A Âncora",
+    "name_pt": "A Âncora",
+    "position": 34,
+    "interpretation": "Símbolo de estabilidade, esperança e resistência. Indica que após um período de movimento, é hora de se ancorar e consolidar.",
+    "keywords": ["âncora", "estabilidade", "esperança", "segurança", "fé", "raízes", "resistência", "base"]
+  },
+  {
+    "id": 35,
+    "name": "A Flecha",
+    "name_pt": "A Flecha",
+    "position": 35,
+    "interpretation": "Símbolo de direção clara, objetivo definido e comunicação direta. Indica momento de foco e precisão na ação ou na mensagem.",
+    "keywords": ["flecha", "direção", "mira", "objetivo", "decisão", "mensagem", "comunicação", "acerto"]
+  },
+  {
+    "id": 36,
+    "name": "O Cafezinho",
+    "name_pt": "O Cafezinho",
+    "position": 36,
+    "interpretation": "Símbolo de convívio social, amizade e conversas informais. Indica um encontro, bate-papo ou momento de conexão com pessoas próximas.",
+    "keywords": ["café", "cafezinho", "encontro", "conversa", "amizade", "acolhimento", "convívio", "socialização"]
+  }
+]
