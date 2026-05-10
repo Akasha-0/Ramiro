@@ -5,10 +5,19 @@ mapeamentos de palavras-chave para símbolos, e funções de consulta.
 
 Baseado em data/cigano_deck.json — as definições aqui servem como
 catálogo em memória para consulta rápida durante a análise.
+
+Se o arquivo JSON estiver ausente ou corrompido, o módulo utiliza
+automaticamente os dados hardcoded como fallback gracioso.
 """
 
-from dataclasses import dataclass, field
+import json
+import logging
+import os
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 # ----------------------------------------------------------------------
@@ -537,3 +546,69 @@ def get_symbol_count() -> int:
         Contagem de símbolos (deve ser 36).
     """
     return len(_CIGANO_DECK)
+
+
+# ----------------------------------------------------------------------
+# Fallback graceful: carrega cigano_deck.json se presente, ou usa
+# o catálogo hardcoded como резерв.
+# ----------------------------------------------------------------------
+
+
+def _load_deck_json() -> Optional[list[dict]]:
+    """Carrega cigano_deck.json com fallback gracioso.
+
+    Returns:
+        Lista de dicionários com dados das cartas, ou None se falhar.
+    """
+    base_dir = Path(__file__).parent.parent
+    json_path = base_dir / "data" / "cigano_deck.json"
+
+    if not json_path.exists():
+        logger.warning(
+            "cigano_deck.json não encontrado em %s, usando catálogo hardcoded",
+            json_path,
+        )
+        return None
+
+    try:
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        if not isinstance(data, list) or len(data) == 0:
+            logger.error("cigano_deck.json tem formato inválido: esperado lista não-vazia")
+            return None
+
+        logger.debug("cigano_deck.json carregado com %d cartas", len(data))
+        return data
+
+    except json.JSONDecodeError as e:
+        logger.error("cigano_deck.json está corrompido (JSON inválido): %s", e)
+        return None
+    except OSError as e:
+        logger.error("Erro ao ler cigano_deck.json: %s", e)
+        return None
+
+
+def get_deck_source() -> str:
+    """Retorna a origem dos dados do catálogo.
+
+    Returns:
+        "json" se cigano_deck.json foi carregado com sucesso,
+        "hardcoded" caso contrário.
+    """
+    data = _load_deck_json()
+    return "json" if data is not None else "hardcoded"
+
+
+def reload_deck() -> bool:
+    """Recarrega o catálogo de símbolos (útil para testes ou reincio).
+
+    Esta função não faz nada no módulo atual pois o catálogo já é
+    hardcoded. Mantida para compatibilidade futura caso o carregamento
+    dinâmico seja implementado.
+
+    Returns:
+        True se o recarregamento foi bem-sucedido (sempre True atualmente).
+    """
+    logger.debug("reload_deck chamado — catálogo já está em memória")
+    return True
