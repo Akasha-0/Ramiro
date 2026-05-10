@@ -5,6 +5,7 @@ YAML com overrides via variáveis de ambiente.
 """
 
 import logging
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -101,24 +102,90 @@ def _parse_path(value: Optional[str]) -> Optional[Path]:
         return None
 
 
+def _load_env_overrides() -> dict:
+    """Carrega overrides de configuração a partir de variáveis de ambiente.
+
+    Variáveis de ambiente seguem o padrão CLAREZA_* e sobrescrevem
+    tanto valores default quanto valores do YAML.
+
+    Variáveis suportadas:
+        CLAREZA_OUTPUT_DIR: Diretório de saída para relatórios.
+        CLAREZA_FORMAT: Formato de relatório ("compact" ou "verbose").
+        CLAREZA_LANGUAGE: Idioma padrão ("pt", "en", "es").
+        CLAREZA_HISTORY_DIR: Diretório para histórico de sessões.
+        CLAREZA_AUTO_SAVE: Se "1" ou "true", ativa auto-save.
+        CLAREZA_QUIET: Se "1" ou "true", ativa modo silencioso.
+
+    Returns:
+        Dicionário com campos que devem sobrescrever a configuração.
+    """
+    overrides: dict = {}
+
+    # CLAREZA_OUTPUT_DIR
+    env_output_dir = os.environ.get("CLAREZA_OUTPUT_DIR")
+    if env_output_dir:
+        parsed = _parse_path(env_output_dir)
+        if parsed is not None:
+            overrides["default_output_dir"] = parsed
+
+    # CLAREZA_FORMAT
+    env_format = os.environ.get("CLAREZA_FORMAT")
+    if env_format and env_format in VALID_REPORT_FORMATS:
+        overrides["default_report_format"] = env_format
+
+    # CLAREZA_LANGUAGE
+    env_lang = os.environ.get("CLAREZA_LANGUAGE")
+    if env_lang and env_lang in VALID_LANGUAGES:
+        overrides["default_language"] = env_lang
+
+    # CLAREZA_HISTORY_DIR
+    env_history_dir = os.environ.get("CLAREZA_HISTORY_DIR")
+    if env_history_dir:
+        parsed = _parse_path(env_history_dir)
+        if parsed is not None:
+            overrides["session_history_dir"] = parsed
+
+    # CLAREZA_AUTO_SAVE
+    env_auto_save = os.environ.get("CLAREZA_AUTO_SAVE")
+    if env_auto_save:
+        overrides["auto_save_sessions"] = env_auto_save.lower() in ("1", "true", "yes")
+
+    # CLAREZA_QUIET
+    env_quiet = os.environ.get("CLAREZA_QUIET")
+    if env_quiet:
+        overrides["quiet_mode"] = env_quiet.lower() in ("1", "true", "yes")
+
+    if overrides:
+        logger.debug("Overrides de ambiente aplicados: %s", list(overrides.keys()))
+
+    return overrides
+
+
 def load_config() -> ClarezaConfig:
     """Carrega configuração do usuário a partir do arquivo YAML padrão.
 
     Lê ~/.config/clareza/config.yaml e sobrescreve valores default
-    com valores encontrados no arquivo. Campos ausentes no YAML
-    mantêm os valores default de ClarezaConfig.
+    com valores encontrados no arquivo. Em seguida, aplica overrides
+    de variáveis de ambiente (CLAREZA_*) que sempre têm precedence.
+
+    A precedência é: defaults < YAML < ambiente
 
     Returns:
-        ClarezaConfig com valores do YAML (parciais) mesclados aos defaults.
+        ClarezaConfig com valores mesclados (ambiente tem maior precedência).
     """
     config_data = _load_yaml_config(DEFAULT_CONFIG_PATH)
+    env_overrides = _load_env_overrides()
 
-    if config_data is None:
-        logger.debug("Usando configuração padrão (nenhum arquivo YAML encontrado)")
+    if config_data is None and not env_overrides:
+        logger.debug("Usando configuração padrão (nenhum arquivo YAML ou env encontrado)")
         return DEFAULT_CONFIG
 
     # Construir kwargs apenas com campos presentes no YAML
     kwargs: dict = {}
+
+    # Tratar config_data None como dict vazio
+    if config_data is None:
+        config_data = {}
 
     if "default_output_dir" in config_data:
         parsed = _parse_path(config_data["default_output_dir"])
@@ -145,6 +212,9 @@ def load_config() -> ClarezaConfig:
 
     if "quiet_mode" in config_data:
         kwargs["quiet_mode"] = bool(config_data["quiet_mode"])
+
+    # Aplicar overrides de ambiente (maior precedência)
+    kwargs.update(env_overrides)
 
     config = ClarezaConfig(**kwargs)
     logger.debug("Configuração carregada com sucesso: %s", config)
