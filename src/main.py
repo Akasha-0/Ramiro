@@ -256,8 +256,22 @@ def run_analyze(
         logger.info("Gerando relatório")
         progress = create_progress(description="Gerando relatório")
         progress.start()
+
+        # Carregar template customizado se disponível
+        from src.config import load_config
+        custom_template = None
+        try:
+            config = load_config()
+            if config.template_path:
+                from src.template_loader import TemplateLoader
+                loader = TemplateLoader()
+                custom_template = loader.get_template(config.template_path)
+                logger.info("Template customizado carregado: %s", custom_template.template_id)
+        except Exception as e:
+            logger.debug("Usando template padrão: %s", e)
+
         generator = ReportGenerator()
-        report_md = generator.generate(analysis_result)
+        report_md = generator.generate(analysis_result, custom_template=custom_template)
         progress.complete("Relatório gerado")
 
         # Fase 4: Aplicação de guardrails éticos
