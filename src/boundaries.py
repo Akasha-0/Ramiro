@@ -265,9 +265,7 @@ ajuda especializada.
 
 # Header disclaimer com texto em português e posição proeminente
 # Inclui chamada para ajuda especializada em destaque
-_HEADER_DISCLAIMER: str = """
----
-
+_HEADER_DISCLAIMER: str = """---
 # ⚠️ AVISO IMPORTANTE — LEIA ANTES DE CONTINUAR
 
 **Esta análise é uma ferramenta de organização e reflexão pessoal.**
@@ -276,10 +274,7 @@ _HEADER_DISCLAIMER: str = """
 - Não substitui acompanhamento de profissionais de saúde, direito ou finanças
 - Simbolismo do Baralho Cigano não possui base científica comprovada
 
-**Se você estiver em sofrimento emocional, procure/ procure ajuda especializada
-   e se necessitar de apoio imediato, procure ajuda especializada. Procure
-   ou procure ajuda especializada quando necessário. Se já procurou
-   ou procured ajuda especializada anteriormente, continue buscando suporte:**
+**Se você estiver em sofrimento emocional, procure ajuda especializada:**
 
 - **CVV** — Centro de Valorização da Vida: 188 (24h, gratuito)
 - **CAPS** — Centro de Atenção Psicossocial mais próximo
@@ -407,6 +402,10 @@ def inject_header_disclaimer(report_md: str) -> str:
     )
 
     return result
+
+
+# Alias para compatibilidade com diferentes convenções de nomenclatura
+inject_disclaimer_header = inject_header_disclaimer
 
 
 def inject_disclaimer(report_md: str) -> str:
