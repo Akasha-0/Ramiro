@@ -523,6 +523,22 @@ class InteractiveSession:
             return False
 
     # ------------------------------------------------------------------
+    # Tratamento de abort
+    # ------------------------------------------------------------------
+
+    def handle_abort(self) -> None:
+        """Trata o abort da sessão de forma graceful.
+
+        Loga o evento e prepara para encerramento limpo.
+        Pode ser chamada diretamente ou via KeyboardInterrupt.
+
+        Raises:
+            SessionAborted: Sempre, para sinalizar encerramento.
+        """
+        logger.info("Sessão interativa abortada pelo usuário")
+        raise SessionAborted()
+
+    # ------------------------------------------------------------------
     # Mensagens formatadas
     # ------------------------------------------------------------------
 
