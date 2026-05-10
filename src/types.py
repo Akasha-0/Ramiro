@@ -53,6 +53,7 @@ class AnalysisResult:
         practical_plan: Plano prático de ação.
         card_interpretations: Interpretações por carta (para tiragens).
         symbolic_mappings: Mapeamentos simbólicos individuais.
+        cross_card_patterns: Padrões detectados entre múltiplas cartas.
     """
 
     diagnosis: str
@@ -62,6 +63,7 @@ class AnalysisResult:
     practical_plan: str = ""
     card_interpretations: Optional[list[str]] = None
     symbolic_mappings: Optional[dict[str, str]] = None
+    cross_card_patterns: list[CrossCardPattern] = field(default_factory=list)
 
 
 @dataclass
