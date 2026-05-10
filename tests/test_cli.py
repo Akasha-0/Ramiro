@@ -16,7 +16,7 @@ import tempfile
 
 import pytest
 
-from src.main import main, run_analyze
+from src.main import main, run_analyze, run_arcs_list, run_arc_summary
 
 
 # ----------------------------------------------------------------------
@@ -474,3 +474,217 @@ class TestNoDebugPrints:
         # Nenhuma linha de log deve aparecer no stdout de produção
         assert "INFO src.main" not in output
         assert "DEBUG" not in output
+
+
+# ----------------------------------------------------------------------
+# Testes — run_arcs_list()
+# ----------------------------------------------------------------------
+
+
+class TestRunArcsList:
+    def test_arcs_list_with_no_arcs(self) -> None:
+        """Sem arcos, exibe mensagem informativa."""
+        output, exit_code = capture_stdout(run_arcs_list)
+        # run_arcs_list não chama sys.exit() em sucesso, retorna -1
+        assert exit_code in (0, -1)
+        assert "Nenhum arco" in output or "total" in output.lower()
+
+    def test_arcs_list_exits_with_code_0(self) -> None:
+        """run_arcs_list termina com sucesso (ou código -1 sem exit)."""
+        _, exit_code = capture_stdout(run_arcs_list)
+        # Sucesso: exit_code 0 (com exit) ou -1 (sem exit)
+        assert exit_code in (0, -1)
+
+    def test_arcs_list_format(self) -> None:
+        """Saída segue formato de lista de arcos."""
+        output, exit_code = capture_stdout(run_arcs_list)
+        # Sucesso
+        assert exit_code in (0, -1)
+        # Título ou header presente (pode ser "# Arcos" ou "Nenhum arco")
+        assert "#" in output or "Nenhum" in output
+
+    def test_arcs_list_with_existing_arcs(self) -> None:
+        """Com arcos existentes, lista cada um."""
+        from src.arc_manager import ArcManager
+
+        # Criar arco temporário
+        manager = ArcManager()
+        test_arc_name = "test_arc_cli_list"
+        try:
+            manager.delete_arc(test_arc_name)
+        except Exception:
+            pass
+        manager.create_arc(test_arc_name, description="Arco de teste para CLI")
+
+        output, exit_code = capture_stdout(run_arcs_list)
+        # Sucesso
+        assert exit_code in (0, -1)
+        assert test_arc_name in output
+
+        # Limpar
+        manager.delete_arc(test_arc_name)
+
+
+# ----------------------------------------------------------------------
+# Testes — run_arc_summary()
+# ----------------------------------------------------------------------
+
+
+class TestRunArcSummary:
+    def test_arc_summary_nonexistent_arc(self) -> None:
+        """Arco inexistente causa saída com código 1."""
+        output, exit_code = capture_stdout(
+            run_arc_summary, "arco_inexistente_12345"
+        )
+        # Exits with 1 for not found
+        assert exit_code in (1, -1)
+        assert "não encontrado" in output.lower()
+
+    def test_arc_summary_existing_arc(self) -> None:
+        """Sumário de arco existente mostra estatísticas."""
+        from src.arc_manager import ArcManager
+
+        # Criar arco com sessão
+        manager = ArcManager()
+        test_arc_name = "test_arc_cli_summary"
+        try:
+            manager.delete_arc(test_arc_name)
+        except Exception:
+            pass
+        manager.create_arc(test_arc_name, description="Arco de teste para summary")
+
+        output, exit_code = capture_stdout(run_arc_summary, test_arc_name)
+        # Sucesso
+        assert exit_code in (0, -1)
+        assert test_arc_name in output
+        assert "sessões" in output.lower() or "total" in output.lower()
+
+        # Limpar
+        manager.delete_arc(test_arc_name)
+
+    def test_arc_summary_format(self) -> None:
+        """Saída contém título e seções."""
+        from src.arc_manager import ArcManager
+
+        manager = ArcManager()
+        test_arc_name = "test_arc_cli_format"
+        try:
+            manager.delete_arc(test_arc_name)
+        except Exception:
+            pass
+        manager.create_arc(test_arc_name)
+
+        output, exit_code = capture_stdout(run_arc_summary, test_arc_name)
+        # Sucesso
+        assert exit_code in (0, -1)
+        # Título do sumário
+        assert "#" in output
+        # Nome do arco
+        assert test_arc_name in output
+
+        # Limpar
+        manager.delete_arc(test_arc_name)
+
+    def test_arc_summary_with_sessions(self) -> None:
+        """Arco com sessões mostra informações completas."""
+        from src.arc_manager import ArcManager
+
+        manager = ArcManager()
+        test_arc_name = "test_arc_cli_sessions"
+        try:
+            manager.delete_arc(test_arc_name)
+        except Exception:
+            pass
+
+        # Criar arco com dados simulados
+        manager.create_arc(test_arc_name, description="Teste com sessões")
+
+        # Adicionar sessão simulada usando storage diretamente
+        arc = manager.get_arc(test_arc_name)
+        if arc:
+            from datetime import datetime
+            from src.types import SessionRecord
+
+            session = SessionRecord(
+                session_id="test-session-001",
+                timestamp=datetime.now(),
+                arc_name=test_arc_name,
+                input_content="teste de input",
+                format="text",
+                keywords=["trabalho", "saúde"],
+                themes=["trabalho", "saúde"],
+                cards=["Cruz", "Estrela"],
+                diagnosis="Diagnóstico de teste",
+                risks=["Risco 1"],
+                decisions=["Decisão 1"],
+            )
+            arc.sessions.append(session)
+            manager._storage.save_arc(arc)
+
+        output, exit_code = capture_stdout(run_arc_summary, test_arc_name)
+        # Sucesso
+        assert exit_code in (0, -1)
+        # Total de sessões deve estar presente
+        assert "1" in output or "total" in output.lower()
+
+        # Limpar
+        manager.delete_arc(test_arc_name)
+
+
+# ----------------------------------------------------------------------
+# Testes — main(): subcomandos arc
+# ----------------------------------------------------------------------
+
+
+class TestMainArcSubcommands:
+    def test_arcs_subcommand_runs_successfully(self) -> None:
+        """Subcomando 'arcs' executa sem erro."""
+        stdout, _, exit_code = run_main_with_args(["arcs"])
+        # Sucesso: exit_code 0 ou -1 (sem SystemExit)
+        assert exit_code in (0, -1)
+        assert "Arcos" in stdout or "Nenhum" in stdout
+
+    def test_arc_summary_subcommand_requires_name(self) -> None:
+        """'arc summary' sem nome termina com erro."""
+        stdout, stderr, exit_code = run_main_with_args(["arc", "summary"])
+        assert exit_code == 2
+        assert "required" in stderr.lower() or "name" in stderr.lower()
+
+    def test_arc_summary_subcommand_with_valid_name(self) -> None:
+        """'arc summary <nome>' executa corretamente."""
+        from src.arc_manager import ArcManager
+
+        manager = ArcManager()
+        test_arc_name = "test_main_arc_summary"
+        try:
+            manager.delete_arc(test_arc_name)
+        except Exception:
+            pass
+        manager.create_arc(test_arc_name, description="Teste CLI main")
+
+        stdout, _, exit_code = run_main_with_args(["arc", "summary", test_arc_name])
+        # Sucesso
+        assert exit_code in (0, -1)
+        assert test_arc_name in stdout
+
+        # Limpar
+        manager.delete_arc(test_arc_name)
+
+    def test_arc_summary_subcommand_nonexistent(self) -> None:
+        """'arc summary <nome_inexistente>' reporta arco não encontrado."""
+        stdout, stderr, exit_code = run_main_with_args([
+            "arc", "summary", "inexistente_xyz_987"
+        ])
+        # Erro: exit_code 1 (com SystemExit) ou -1 (sem exit)
+        assert exit_code in (1, -1)
+        assert "não encontrado" in stdout.lower() or "não encontrado" in stderr.lower()
+
+    def test_arc_invalid_subcommand(self) -> None:
+        """Subcomando inexistente em 'arc' termina com erro."""
+        stdout, stderr, exit_code = run_main_with_args(["arc", "invalid_sub"])
+        # 'arc invalid_sub' sem subcomando válido no subparser
+        # Argumento "invalid_sub" é passado como positional que o subparser
+        # não reconhece -> exit code 2 argparse error
+        assert exit_code in (1, 2)
+        # Deve exibir help do subparser ou erro
+        assert "help" in stderr.lower() or "invalid" in stderr.lower()
