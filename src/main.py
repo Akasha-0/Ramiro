@@ -3,6 +3,7 @@
 import argparse
 import logging
 import sys
+from datetime import datetime
 
 from src.input_processor import InputProcessor, ParseError
 from src.analysis_engine import AnalysisEngine
@@ -161,6 +162,16 @@ def _save_report(path: str, content: str) -> None:
     except OSError as e:
         logger.error("Falha ao salvar relatório em %s: %s", path, e)
         raise
+
+
+def _default_output_path() -> str:
+    """Gera um nome de arquivo de relatório com timestamp.
+
+    Returns:
+        Caminho no formato ./clareza-report-YYYYMMDD-HHMMSS.md
+    """
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    return f"./clareza-report-{timestamp}.md"
 
 
 if __name__ == "__main__":
