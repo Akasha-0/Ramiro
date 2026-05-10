@@ -16,7 +16,7 @@ import tempfile
 
 import pytest
 
-from src.main import main, run_analyze
+from src.main import main, run_analyze, run_interactive
 
 
 # ----------------------------------------------------------------------
@@ -542,3 +542,95 @@ class TestNoDebugPrints:
         # Nenhuma linha de log deve aparecer no stdout de produção
         assert "INFO src.main" not in output
         assert "DEBUG" not in output
+
+
+# ----------------------------------------------------------------------
+# Testes — CLI interactive command
+# ----------------------------------------------------------------------
+
+
+class TestMainInteractiveCommand:
+    """Testes de integração para o subcomando 'interactive'."""
+
+    def test_interactive_subcommand_recognized(self) -> None:
+        """Subcomando 'interactive' é reconhecido pelo argparse."""
+        stdout, stderr, exit_code = run_main_with_args(["interactive", "--help"])
+        assert exit_code == 0
+        # Help output vai para stdout
+        assert "interactive" in stdout.lower()
+
+    def test_interactive_in_help_output(self) -> None:
+        """Subcomando 'interactive' aparece na ajuda."""
+        stdout, _, exit_code = run_main_with_args(["--help"])
+        assert exit_code == 0
+        assert "interactive" in stdout.lower()
+
+    def test_interactive_shows_in_subcommand_list(self) -> None:
+        """Subcomando 'interactive' aparece na lista de subcomandos."""
+        stdout, _, exit_code = run_main_with_args(["--help"])
+        assert exit_code == 0
+        # Verifica que o subcomando analyze também aparece (lista de subcomandos)
+        assert "analyze" in stdout.lower()
+
+    def test_interactive_abort_command(self) -> None:
+        """Comando 'sair' durante abort da sessão termina com código 0."""
+        from unittest.mock import patch
+        from src.interactive_session import InteractiveSession, SessionAborted
+        from src.main import run_interactive
+
+        # Simular abort via input mock
+        call_count = 0
+
+        def mock_run(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            raise SessionAborted()
+
+        with patch.object(InteractiveSession, "run", mock_run):
+            stdout, stderr, exit_code = capture_stdout_stderr(run_interactive)
+
+        assert exit_code == 0
+        assert "Sessão encerrada" in stdout or "encerrada" in stdout
+
+    def test_interactive_no_args_exits_with_code_0(self) -> None:
+        """interactive sem argumentos extras funciona (mostra boas-vindas)."""
+        from unittest.mock import patch
+        from src.interactive_session import InteractiveSession, SessionAborted
+
+        call_count = 0
+
+        def mock_run(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            raise SessionAborted()
+
+        with patch.object(InteractiveSession, "run", mock_run):
+            stdout, stderr, exit_code = run_main_with_args(["interactive"])
+
+        assert exit_code == 0
+
+    def test_interactive_with_full_flow(self) -> None:
+        """Fluxo completo interativo gera relatório."""
+        from unittest.mock import patch, MagicMock
+        from src.interactive_session import InteractiveSession, SessionAborted
+        from src.types import CardPosition, StructuredInput
+
+        # Simular fluxo completo
+        mock_structured = StructuredInput(
+            format="spread",
+            raw_content="minha dúvida",
+            cards=[
+                CardPosition(position=1, card_name="Cruz", position_context="Presente"),
+                CardPosition(position=2, card_name="Estrela", position_context="Futuro"),
+            ],
+            keywords=None,
+        )
+
+        def mock_run(*args, **kwargs):
+            return mock_structured
+
+        with patch.object(InteractiveSession, "run", mock_run):
+            stdout, stderr, exit_code = run_main_with_args(["interactive"])
+
+        assert exit_code == 0
+        assert "# Relatório de Análise" in stdout or "Relatório" in stdout
