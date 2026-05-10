@@ -57,7 +57,7 @@ def analyze_command(card_id: int) -> None:
     cards = get_cards_data()
     card = next((c for c in cards if c["id"] == card_id), None)
     if card is None:
-        click.echo(f"Erro: Carta com ID {card_id} não encontrada.", err=True)
+        click.echo(f"Erro: Carta com ID {card_id} não encontrado.", err=True)
         click.echo("Use 'clareza list' para ver todas as cartas disponíveis.", err=True)
         raise SystemExit(1)
     click.echo(f"Carta #{card['id']}: {card['name']}")
