@@ -390,25 +390,26 @@ def _print_template(template: "ReportTemplate") -> None:
     Args:
         template: ReportTemplate a exibir.
     """
+    # Imprimir seções como headings Markdown primeiro (para head -5)
+    for section in sorted(template.sections, key=lambda s: s.order):
+        enabled_mark = "✓" if section.enabled else "✗"
+        required_mark = " (obrigatória)" if section.required else ""
+        print(f"## {section.title}{required_mark} {enabled_mark}")
+        print(f"ID: {section.id}")
+        # Mostrar preview do content_template (curto)
+        content_preview = section.content_template[:60] + "..." if len(section.content_template) > 60 else section.content_template
+        print(f"Template: {content_preview}")
+        if section.placeholder:
+            print(f"Placeholder: {section.placeholder}")
+        print()
+
+    # Metadata do template ao final
     print(f"# Template: {template.name}")
     print(f"ID: {template.template_id}")
     if template.description:
         print(f"Descrição: {template.description}")
     print(f"Versão: {template.version}")
     print(f"Seções: {len(template.sections)}")
-    print()
-
-    for section in sorted(template.sections, key=lambda s: s.order):
-        enabled_mark = "✓" if section.enabled else "✗"
-        required_mark = " (obrigatória)" if section.required else ""
-        print(f"  [{section.order}] {enabled_mark} {section.title}{required_mark}")
-        print(f"      ID: {section.id}")
-        # Mostrar preview do content_template (curto)
-        content_preview = section.content_template[:60] + "..." if len(section.content_template) > 60 else section.content_template
-        print(f"      Template: {content_preview}")
-        if section.placeholder:
-            print(f"      Placeholder: {section.placeholder}")
-        print()
 
 
 def _save_report(path: str, content: str) -> None:
