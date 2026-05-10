@@ -13,9 +13,11 @@ import pytest
 from src.boundaries import (
     BLOCKED_KEYWORDS,
     BoundariesValidator,
+    SENSITIVE_KEYWORDS,
     _normalize_text,
     _ETHICAL_DISCLAIMER,
     apply_guardrails,
+    detect_sensitive_input,
     inject_disclaimer,
     validate_output,
 )
@@ -139,6 +141,92 @@ class TestValidateOutput:
         assert is_valid is False
         # Flag deve ser a keyword original, não a normalizada
         assert "mal olhado" in flags
+
+
+# ----------------------------------------------------------------------
+# Testes — detect_sensitive_input()
+# ----------------------------------------------------------------------
+
+
+class TestDetectSensitiveInput:
+    def test_safe_text_returns_false(self) -> None:
+        is_sensitive, flags = detect_sensitive_input("Texto normal sobre trabalho e família")
+        assert is_sensitive is False
+        assert flags == []
+
+    def test_detects_single_sensitive_keyword(self) -> None:
+        is_sensitive, flags = detect_sensitive_input("Estou com depressão há semanas")
+        assert is_sensitive is True
+        assert "depressão" in flags
+
+    def test_detects_multiple_sensitive_keywords(self) -> None:
+        is_sensitive, flags = detect_sensitive_input("Tenho ansiedade e não tenho dinheiro para pagar as contas")
+        assert is_sensitive is True
+        assert "ansiedade" in flags
+        assert "não tenho dinheiro" in flags
+
+    def test_case_insensitive_detection(self) -> None:
+        is_sensitive, flags = detect_sensitive_input("DEPRESSÃO ANSIEDADE deprimido")
+        assert is_sensitive is True
+        assert "depressão" in flags
+        assert "ansiedade" in flags
+        assert "deprimido" in flags
+
+    def test_accent_insensitive_detection(self) -> None:
+        """Keywords com acento são detectadas mesmo sem acento no texto."""
+        is_sensitive, flags = detect_sensitive_input("estou deprimido")
+        assert is_sensitive is True
+        assert "deprimido" in flags
+
+    def test_empty_text_returns_false(self) -> None:
+        is_sensitive, flags = detect_sensitive_input("")
+        assert is_sensitive is False
+        assert flags == []
+
+    def test_whitespace_only_returns_false(self) -> None:
+        is_sensitive, flags = detect_sensitive_input("   \n\t  ")
+        assert is_sensitive is False
+        assert flags == []
+
+    def test_detects_suicide_ideation(self) -> None:
+        text = "Tenho pensamentos de morte eхо me matar"
+        is_sensitive, flags = detect_sensitive_input(text)
+        assert is_sensitive is True
+        assert "pensamentos de morte" in flags
+
+    def test_detects_self_harm(self) -> None:
+        text = "Pratico automutilação"
+        is_sensitive, flags = detect_sensitive_input(text)
+        assert is_sensitive is True
+        assert "automutilação" in flags
+
+    def test_detects_financial_risk(self) -> None:
+        text = "Estou em falência pessoal e perdi tudo"
+        is_sensitive, flags = detect_sensitive_input(text)
+        assert is_sensitive is True
+        assert "falência" in flags
+        assert "perdi tudo" in flags
+
+    def test_detects_relationship_crisis(self) -> None:
+        text = "Estou em separação e sofro abuso emocional"
+        is_sensitive, flags = detect_sensitive_input(text)
+        assert is_sensitive is True
+        assert "separação" in flags
+        assert "abuso emocional" in flags
+
+    def test_detects_physical_health(self) -> None:
+        text = "Fui diagnosticado com cancer terminal"
+        is_sensitive, flags = detect_sensitive_input(text)
+        assert is_sensitive is True
+        assert "câncer" in flags
+        assert "terminal" in flags
+
+    def test_returns_flags_in_original_form(self) -> None:
+        """Flags retornam o texto original da keyword (não normalizado)."""
+        is_sensitive, flags = detect_sensitive_input("TENHO ANSIEDADE")
+        assert is_sensitive is True
+        # Flag deve ser a keyword original, não a normalizada
+        assert "ansiedade" in flags
 
 
 # ----------------------------------------------------------------------
