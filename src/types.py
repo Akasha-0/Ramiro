@@ -17,11 +17,13 @@ class CardPosition:
         position: Índice da posição na tiragem (1-based).
         card_name: Nome da carta (ex: "Cruz", "Estrela", "Café").
         interpretation: Interpretação gerada pela análise (opcional).
+        position_context: Contexto da posição na tiragem (ex: "passado", "presente", "futuro") (opcional).
     """
 
     position: int
     card_name: str
     interpretation: Optional[str] = None
+    position_context: Optional[str] = None
 
 
 @dataclass
