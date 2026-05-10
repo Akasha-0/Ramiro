@@ -51,6 +51,12 @@ def main() -> None:
         default=None,
         help="Caminho do arquivo .md para salvar o relatório",
     )
+    analyze_parser.add_argument(
+        "--output-format",
+        choices=["compact", "verbose", "json"],
+        default="verbose",
+        help="Formato de saída do relatório (compact, verbose, json)",
+    )
 
     args = parser.parse_args()
 
@@ -59,10 +65,10 @@ def main() -> None:
         sys.exit(1)
 
     if args.command == "analyze":
-        run_analyze(args.input, args.format, args.output)
+        run_analyze(args.input, args.format, args.output, args.output_format)
 
 
-def run_analyze(raw_input: str, format: str, output_path: str | None) -> None:
+def run_analyze(raw_input: str, format: str, output_path: str | None, output_format: str = "verbose") -> None:
     """Executa o pipeline completo de análise.
 
     Pipeline: input_processor → analysis_engine → boundaries → report_generator
@@ -71,6 +77,7 @@ def run_analyze(raw_input: str, format: str, output_path: str | None) -> None:
         raw_input: Conteúdo bruto de entrada.
         format: Formato de entrada ("text", "spread", "symbols").
         output_path: Caminho opcional para salvar o relatório em .md.
+        output_format: Formato de saída ("compact", "verbose", "json").
     """
     try:
         # Fase 1: Parse e estruturação do input
