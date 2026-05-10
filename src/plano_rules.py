@@ -8,7 +8,7 @@ de carga e validação das regras definidas em data/plano_rules.json.
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from src.symbols import CiganoSymbol, get_symbol_by_name
 
 logger = logging.getLogger(__name__)
 
@@ -601,6 +601,24 @@ def generate_recommendations(
     result = "\n".join(lines)
     logger.debug("Recomendações geradas: %d símbolos → %d linhas", len(symbols), len(lines))
     return result
+
+
+def _is_danger_card(symbol: CiganoSymbol) -> bool:
+    """Verifica se um símbolo é uma carta de perigo.
+
+    Args:
+        symbol: Símbolo CiganoSymbol a verificar.
+
+    Returns:
+        True se o símbolo for uma carta perigosa, False caso contrário.
+    """
+    try:
+        rules = load_plano_rules()
+        return symbol.id in rules.urgency_escalation.danger_cards
+    except (FileNotFoundError, PlanoRulesValidationError):
+        # Fallback: listas hardcoded baseadas no perigo comum do Baralho Cigano
+        fallback_danger_ids = {7, 8, 12, 15, 20, 22}
+        return symbol.id in fallback_danger_ids
 
 
 def load_plano_rules() -> PlanoRules:

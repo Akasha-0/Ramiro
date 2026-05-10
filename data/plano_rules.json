@@ -165,7 +165,7 @@
   },
   "urgency_escalation": {
     "description": "Regras para escalonar urgência baseado em cartas de perigo",
-    "danger_cards": [15, 20],
+    "danger_cards": [7, 15, 20],
     "danger_keywords": ["perigo", "ameaça", "agressor", "medo", "confronto", "ruptura", "corte"],
     "escalation_levels": {
       "low": {
