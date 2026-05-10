@@ -127,6 +127,12 @@ def main() -> None:
         description="Sistema de Clareza Simbólico-Estratégica",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
+    # Global flag for verbose mode - can be placed before or after subcommand
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Ativa output detalhado de debug",
+    )
     subparsers = parser.add_subparsers(dest="command", help="Comandos disponíveis")
 
     # subcommand: analyze
@@ -153,11 +159,6 @@ def main() -> None:
         help="Template de tiragem predefinido (3-card, celtic-cross). "
              "Disponível apenas para --format spread.",
     )
-    analyze_parser.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="Ativa output detalhado de debug",
-    )
 
     args = parser.parse_args()
 
@@ -167,8 +168,11 @@ def main() -> None:
         print(colored.error("Erro: " + ERROR_MESSAGES["no_command"]), file=sys.stderr)
         sys.exit(1)
 
+    # Get verbose from main parser (allows --verbose before or after subcommand)
+    verbose = getattr(args, 'verbose', False) or getattr(args, 'v', False)
+
     if args.command == "analyze":
-        run_analyze(args.input, args.format, args.output, args.template, args.verbose)
+        run_analyze(args.input, args.format, args.output, args.template, verbose)
 
 
 def run_analyze(
