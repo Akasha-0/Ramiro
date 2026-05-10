@@ -204,6 +204,50 @@ class Arc:
 
 
 @dataclass
+class TemplateSection:
+    """Uma seção individual dentro de um modelo de relatório.
+
+    Attributes:
+        id: Identificador único da seção (ex: "diagnostico", "interpretacao").
+        title: Título da seção exibido no relatório (ex: "Diagnóstico").
+        order: Ordem de renderização da seção (1-based).
+        content_template: Template Jinja2 para renderização do conteúdo.
+        enabled: Indica se a seção está ativa (opcional, padrão True).
+        required: Indica se a seção é obrigatória (opcional, padrão False).
+        placeholder: Placeholder usado quando não há dados para a seção (opcional).
+    """
+
+    id: str
+    title: str
+    order: int
+    content_template: str
+    enabled: bool = True
+    required: bool = False
+    placeholder: Optional[str] = None
+
+
+@dataclass
+class ReportTemplate:
+    """Modelo de relatório configurável com seções personalizáveis.
+
+    Attributes:
+        template_id: Identificador único do modelo.
+        name: Nome descritivo do modelo (ex: "Modelo Padrão", "Modelo Breve").
+        description: Descrição do modelo (opcional).
+        sections: Lista de TemplateSection ordenadas por 'order'.
+        version: Versão do modelo (opcional, padrão "1.0").
+        metadata: Metadados adicionais do modelo (opcional).
+    """
+
+    template_id: str
+    name: str
+    sections: list[TemplateSection] = field(default_factory=list)
+    description: Optional[str] = None
+    version: str = "1.0"
+    metadata: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
 class ChapterSummary:
     """Sumário de um capítulo narrativo do arco.
 
