@@ -9,6 +9,7 @@ from src.input_processor import InputProcessor, ParseError
 from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
+from src.types import ReportTemplate
 from src.logging_utils import create_progress
 from src.exceptions import (
     ClarezaError,
@@ -161,6 +162,17 @@ def main() -> None:
              "Disponível apenas para --format spread.",
     )
 
+    # subcommand: template
+    template_parser = subparsers.add_parser("template", help="Gerenciar templates de relatório")
+    template_subparsers = template_parser.add_subparsers(dest="template_action", help="Ações de template")
+
+    template_show_parser = template_subparsers.add_parser("show", help="Mostrar template ativo")
+    template_show_parser.add_argument(
+        "--path",
+        default=None,
+        help="Caminho para template customizado (opcional)",
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -174,6 +186,8 @@ def main() -> None:
 
     if args.command == "analyze":
         run_analyze(args.input, args.format, args.output, args.template, verbose)
+    elif args.command == "template":
+        run_template(args, verbose)
 
 
 def run_analyze(
@@ -325,6 +339,76 @@ def run_analyze(
         if 'progress' in locals():
             progress.error("Erro no processamento")
         sys.exit(1)
+
+
+def run_template(args: argparse.Namespace, verbose: bool = False) -> None:
+    """Executa comando de template (show, list, etc).
+
+    Args:
+        args: Namespace com argumentos do parser (template_action, path, etc).
+        verbose: Se True, ativa logging detalhado (DEBUG level).
+    """
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    from src.report_generator import ReportGenerator
+
+    if args.template_action == "show":
+        generator = ReportGenerator()
+        template_engine = generator.get_template_engine()
+
+        # Verificar se há template customizado
+        if args.path:
+            from src.template_engine import TemplateEngine
+            from src.template_loader import load_template_from_file
+            try:
+                custom_template = load_template_from_file(args.path)
+                template_to_show = custom_template
+                logger.info("Template customizado carregado de: %s", args.path)
+            except Exception as e:
+                logger.error("Erro ao carregar template: %s", e)
+                colored = _get_error_output()
+                print(colored.error(f"✗ Erro ao carregar template: {e}"), file=sys.stderr)
+                sys.exit(1)
+        else:
+            template_to_show = generator.get_default_template()
+
+        # Exibir template em formato legível
+        _print_template(template_to_show)
+        sys.exit(0)
+
+    else:
+        # Ação padrão ou inválida
+        colored = _get_error_output()
+        print(colored.error("Ação de template não reconhecida."), file=sys.stderr)
+        sys.exit(1)
+
+
+def _print_template(template: "ReportTemplate") -> None:
+    """Imprime template de relatório de forma legível.
+
+    Args:
+        template: ReportTemplate a exibir.
+    """
+    print(f"# Template: {template.name}")
+    print(f"ID: {template.template_id}")
+    if template.description:
+        print(f"Descrição: {template.description}")
+    print(f"Versão: {template.version}")
+    print(f"Seções: {len(template.sections)}")
+    print()
+
+    for section in sorted(template.sections, key=lambda s: s.order):
+        enabled_mark = "✓" if section.enabled else "✗"
+        required_mark = " (obrigatória)" if section.required else ""
+        print(f"  [{section.order}] {enabled_mark} {section.title}{required_mark}")
+        print(f"      ID: {section.id}")
+        # Mostrar preview do content_template (curto)
+        content_preview = section.content_template[:60] + "..." if len(section.content_template) > 60 else section.content_template
+        print(f"      Template: {content_preview}")
+        if section.placeholder:
+            print(f"      Placeholder: {section.placeholder}")
+        print()
 
 
 def _save_report(path: str, content: str) -> None:

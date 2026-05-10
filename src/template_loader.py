@@ -459,3 +459,25 @@ class TemplateValidator:
                     break
 
         return warnings
+
+
+# ----------------------------------------------------------------------
+# Convenience functions
+# ----------------------------------------------------------------------
+
+
+def load_template_from_file(path: str) -> ReportTemplate:
+    """Carrega template de um arquivo YAML (função convenience).
+
+    Args:
+        path: Caminho string para o arquivo YAML de template.
+
+    Returns:
+        ReportTemplate com seções carregadas do arquivo.
+
+    Raises:
+        TemplateClarezaError: Se o arquivo não existir, for inválido,
+            ou se a validação falhar.
+    """
+    loader = TemplateLoader()
+    return loader.load_from_file(Path(path))

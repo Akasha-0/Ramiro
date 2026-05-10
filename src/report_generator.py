@@ -457,8 +457,6 @@ class ReportGenerator:
         Returns:
             ReportTemplate com 5 seções padrão.
         """
-        return self.template_engine.default_template or ReportTemplate(
-            template_id="default",
-            name="Modelo Padrão",
-            sections=[],
-        )
+        from src.template_loader import TemplateLoader
+        loader = TemplateLoader()
+        return loader.default_template
