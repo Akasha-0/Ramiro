@@ -82,5 +82,271 @@
       "description": "Combinação entre conhecimento e mudança indica revelação durante transformação — segredos podem emergir neste período.",
       "advice": "Mantenha-se atento; a verdade está sendo revelada."
     }
+  },
+  "cross_card_patterns": {
+    "pairs": [
+      {
+        "id": "casa_estrela",
+        "cards": ["A Casa", "A Estrela"],
+        "interpretation": "Combinação de segurança material com esperança e direção. Indica que suas bases estão protegidas e há luz no caminho à frente.",
+        "advice": "Continue construindo — o futuro é promissor."
+      },
+      {
+        "id": "casa_arvore",
+        "cards": ["A Casa", "A Árvore"],
+        "interpretation": "Crescimento dentro do ambiente doméstico. Indica desenvolvimento saudável das bases pessoais ou familiares.",
+        "advice": "Invista em suas raízes — o crescimento virá naturalmente."
+      },
+      {
+        "id": "lua_estrela",
+        "cards": ["A Lua", "A Estrela"],
+        "interpretation": "Iluminação emocional após período de escuridão. As forças inconscientes estão guiando você para clareza.",
+        "advice": "Confie na sua intuição — ela está mostrando o caminho."
+      },
+      {
+        "id": "anel_beijo",
+        "cards": ["O Anel", "O Beijo"],
+        "interpretation": "Compromisso seguido de ternura. Indica aprofundamento de vínculo amoroso ou reconciliação significativa.",
+        "advice": "Expresse seus sentimentos — o momento é propício para intimidade."
+      },
+      {
+        "id": "livro_carta",
+        "cards": ["O Livro", "A Carta"],
+        "interpretation": "Conhecimento sendo comunicado. Revelação de segredos através de mensagens formais ou documentos.",
+        "advice": "Fique atento a comunicações importantes."
+      },
+      {
+        "id": "morte_caixao",
+        "cards": ["A Morte", "O Caixão"],
+        "interpretation": "Transformação profunda com encerramento completo. Fase de despedidas e preparação para renascimento.",
+        "advice": "Permita que o velho seja enterrado — o novo está nascendo."
+      },
+      {
+        "id": "nuvens_forca",
+        "cards": ["As Nuvens", "A Forca"],
+        "interpretation": "Confusão que leva a paralisia. Bloqueio emocional causado por incerteza prolongada.",
+        "advice": "Busque clareza antes de agir — mas não paralise indefinidamente."
+      },
+      {
+        "id": "cao_lobo",
+        "cards": ["O Cão", "O Lobo"],
+        "interpretation": "Convivência com aliados e ameaças. Ambiente social dividido entre proteção e perigo.",
+        "advice": "Identifique quem são seus verdadeiros aliados."
+      },
+      {
+        "id": "cegonha_florista",
+        "cards": ["A Cegonha", "O Florista"],
+        "interpretation": "Novos começos que requerem cultivo paciente. Algo novo chegando mas precisando de tempo para se desenvolver.",
+        "advice": "Prepare-se para o novo, mas tenha paciência no crescimento."
+      },
+      {
+        "id": "navio_casa",
+        "cards": ["O Navio", "A Casa"],
+        "interpretation": "Viagem que leva ao retorno ou mudança de ambiente. Jornada que resulta em nova moradia ou segurança encontrada.",
+        "advice": "A jornada trará você para um novo lar, físico ou interior."
+      },
+      {
+        "id": "peixe_anel",
+        "cards": ["O Peixe", "O Anel"],
+        "interpretation": "Prosperidade que se formaliza em compromisso. Abundância material ou emocional que se consolida em vínculo.",
+        "advice": "Seus recursos estão flowing para um compromisso significativo."
+      },
+      {
+        "id": "coruja_livro",
+        "cards": ["A Coruja", "O Livro"],
+        "interpretation": "Sabedoria oculta sendo revelada. Conhecimento profundo sendo descoberto através de investigação.",
+        "advice": "Mergulhe nos estudos — segredos importantes serão revelados."
+      },
+      {
+        "id": "cruz_morte",
+        "cards": ["A Cruz", "A Morte"],
+        "interpretation": "Sofrimento que leva à transformação. Provação difícil que resulta em mudança profunda.",
+        "advice": "A dor é parte do processo — atravesse-a para renascer."
+      },
+      {
+        "id": "cigano_estrela",
+        "cards": ["O Cigano", "A Estrela"],
+        "interpretation": "Perspectiva externa trazendo esperança. Alguém de fora traz luz e novas direções.",
+        "advice": "Ouça vozes diferentes — elas podem iluminar seu caminho."
+      },
+      {
+        "id": "florista_buque",
+        "cards": ["O Florista", "O Buquê"],
+        "interpretation": "Cultivo que resulta em presente. Trabalho paciente que traz recompensa doce.",
+        "advice": "Continue cuidando — a recompensa está chegando."
+      },
+      {
+        "id": "mercado_peixe",
+        "cards": ["O Mercado", "O Peixe"],
+        "interpretation": "Negócios prósperos e abundância. Momento favorável para comércio e acumulação de recursos.",
+        "advice": "Aja com confiança — as condições são favoráveis."
+      },
+      {
+        "id": "cafezinho_beijo",
+        "cards": ["O Cafezinho", "O Beijo"],
+        "interpretation": "Convívio social que gera proximidade. Encontros informais que aproximam pessoas.",
+        "advice": "Participe de encontros sociais — conexões importantes surgem ali."
+      },
+      {
+        "id": "flecha_carta",
+        "cards": ["A Flecha", "A Carta"],
+        "interpretation": "Mensagem direta e precisa. Comunicação clara que transmite direção e objetivo.",
+        "advice": "Comunique-se com clareza — sua mensagem será compreendida."
+      }
+    ],
+    "sequences": [
+      {
+        "id": "casa_arvore_florista",
+        "cards": ["A Casa", "A Árvore", "O Florista"],
+        "interpretation": "Jornada de crescimento doméstico: de fundações estáveis → desenvolvimento saudável → cultivo paciente de resultados.",
+        "advice": "Construa suas bases primeiro, depois cultive com paciência."
+      },
+      {
+        "id": "nuvens_estrela",
+        "cards": ["As Nuvens", "A Estrela"],
+        "interpretation": "Caminho da confusão à clareza. Após período de indefinição, a luz emerge e traz direção.",
+        "advice": "Aguarde as nuvens se dissiparem — a estrela sempre aparece."
+      },
+      {
+        "id": "morte_caixao_cegonha",
+        "cards": ["A Morte", "O Caixão", "A Cegonha"],
+        "interpretation": "Ciclo completo de transformação: morte simbólica → encerramento → renascimento. Fim de um capítulo e início de outro.",
+        "advice": "Permita que cada fase ocorra naturalmente — o renascimento virá."
+      },
+      {
+        "id": "carta_livro_coruja",
+        "cards": ["A Carta", "O Livro", "A Coruja"],
+        "interpretation": "Processo de revelação: mensagem recebida → estudo profundo → sabedoria oculta revelada.",
+        "advice": "Investigue as mensagens que recebe — revelações importantes aguardam."
+      },
+      {
+        "id": "cao_casa_cegonha",
+        "cards": ["O Cão", "A Casa", "A Cegonha"],
+        "interpretation": "Proteção leal que leva a novos começos. Amigos verdadeiros ajudam a construir lares e receber o novo.",
+        "advice": "Agradeça seus aliados — eles são parte do seu novo começo."
+      },
+      {
+        "id": "lua_casa_peixe",
+        "cards": ["A Lua", "A Casa", "O Peixe"],
+        "interpretation": "Fluxo emocional que encontra segurança material. processed feelings que trazem prosperidade.",
+        "advice": "Permita-se sentir — a fluidez emocional traz abundância."
+      },
+      {
+        "id": "navio_cigano_estrelas",
+        "cards": ["O Navio", "O Cigano", "As Estrelas"],
+        "interpretation": "Jornada de peregrino que encontra múltiplas possibilidades. Viagem interior ou física que revela caminhos.",
+        "advice": "Explore novas perspectivas — múltiplas opções estão disponíveis."
+      },
+      {
+        "id": "florista_buque_cegonha",
+        "cards": ["O Florista", "O Buquê", "A Cegonha"],
+        "interpretation": "Cultivo que resulta em surpresa e depois em algo novo. Trabalho paciente que traz alegrias e recomeços.",
+        "advice": "Seu cuidado está sendo recompensado — algo bonito está nascendo."
+      },
+      {
+        "id": "cafezinho_beijo_anel",
+        "cards": ["O Cafezinho", "O Beijo", "O Anel"],
+        "interpretation": "De encontro casual a intimidade e compromisso. Conexão social que se aprofunda em vínculo formal.",
+        "advice": "Deixe os relacionamentos evoluírem naturalmente — o compromisso pode surgir."
+      },
+      {
+        "id": "forca_cruz_morte",
+        "cards": ["A Forca", "A Cruz", "A Morte"],
+        "interpretation": "De paralisia por provação à transformação. Período difícil que culmina em mudança radical.",
+        "advice": "Aguarde — após a pausa forçada e o peso, virá a libertação."
+      },
+      {
+        "id": "cobra_livro_sabedoria",
+        "cards": ["A Cobra", "O Livro", "A Serpente"],
+        "interpretation": "Tentação ou transformação inicial, seguida de conhecimento e depois sabedoria profunda.",
+        "advice": "Resista à tentação inicial — o conhecimento profundo virá depois."
+      }
+    ],
+    "oppositions": [
+      {
+        "id": "cao_lobo_opp",
+        "cards": ["O Cão", "O Lobo"],
+        "description": "Aliado leal versus ameaça agressiva. Mesmo ambiente contendo forças de proteção e perigo.",
+        "interpretation": "Avalie cuidadosamente quem está ao seu lado — nem todos são quem parecem.",
+        "resolution": "Fortaleça vínculos com aliados verdadeiros e identifique ameaças potenciais."
+      },
+      {
+        "id": "morte_cegonha_opp",
+        "cards": ["A Morte", "A Cegonha"],
+        "description": "Fim absoluto versus começo absoluto. Transformação versus renascimento.",
+        "interpretation": "Você está encerrando uma fase enquanto outra começa — concilie ambos os processos.",
+        "resolution": "Permita que o velho morra enquanto acolhe o novo."
+      },
+      {
+        "id": "casa_cabana_opp",
+        "cards": ["A Casa", "A Cabana"],
+        "description": "Segurança estruturada versus simplicidade acolhedora. Conforto material versus vida simples.",
+        "interpretation": "Tensão entre ambições materiais e necessidade de simplicidade.",
+        "resolution": "Busque equilíbrio entre construir e simplificar."
+      },
+      {
+        "id": "florista_machado_opp",
+        "cards": ["O Florista", "O Machado"],
+        "description": "Cultivo paciente versus corte drástico. Cuidado versus separação.",
+        "interpretation": "Conflito entre preservar algo e a necessidade de cortá-lo.",
+        "resolution": "Cultive o que deve ser preservado, corte o que precisa ser removido."
+      },
+      {
+        "id": "beijo_machado_opp",
+        "cards": ["O Beijo", "O Machado"],
+        "description": "Reconciliação versus separação. Aproximação versus ruptura.",
+        "interpretation": "Forças opostas em jogo: tendência a unir versus necessidade de separar.",
+        "resolution": "Escolha com consciência — ambas opções têm consequências."
+      },
+      {
+        "id": "estrela_nuvens_opp",
+        "cards": ["A Estrela", "As Nuvens"],
+        "description": "Luz e esperança versus confusão e incerteza. Clareza versus nebulosidade.",
+        "interpretation": "Esperança obscurecida por dúvidas. A luz existe mas não é visível ainda.",
+        "resolution": "Aguarde que as nuvens se dissipem — a estrela não desapareceu."
+      },
+      {
+        "id": "peixe_forca_opp",
+        "cards": ["O Peixe", "A Forca"],
+        "description": "Prosperidade fluindo versus paralisia bloqueante. Abundância versus estancamento.",
+        "interpretation": "Recursos disponíveis mas bloqueados de fluir. Potencial preso.",
+        "resolution": "Identifique o que está bloqueando e libere o fluxo."
+      },
+      {
+        "id": "trevo_lobo_opp",
+        "cards": ["O Trevo", "O Lobo"],
+        "description": "Sorte versus perigo. Fortuna versus ameaça.",
+        "interpretation": "Sorte que pode ser explorada por outros. Bom momento com riscos adjacentes.",
+        "resolution": "Aproveite a sorte, mas esteja vigilante contra ameaças."
+      },
+      {
+        "id": "cruz_buque_opp",
+        "cards": ["A Cruz", "O Buquê"],
+        "description": "Sofrimento versus alegria. Peso versus celebração.",
+        "interpretation": "Período difícil encontrando pockets de alegria. Dor intercalada com prazeres.",
+        "resolution": "Permita-se celebrar mesmo durante provações."
+      },
+      {
+        "id": "ancora_navio_opp",
+        "cards": ["A Âncora", "O Navio"],
+        "description": "Estabilidade versus movimento. Ancoragem versus jornada.",
+        "interpretation": "Tensão entre necessidade de ficar e desejo de partir.",
+        "resolution": "Decida se é hora de partir ou de se ancorar — não dá para fazer ambos."
+      },
+      {
+        "id": "urna_cigano_opp",
+        "cards": ["A Cegonha", "O Cigano"],
+        "description": "Retorno do novo versus chegada do inesperado. Familiar versus estrangeiro.",
+        "interpretation": "Conflito entre o novo que vem de dentro (renascimento) e o que vem de fora (novidades externas).",
+        "resolution": "Integre perspectivas externas com seus novos começos."
+      },
+      {
+        "id": "urso_lobo_opp",
+        "cards": ["O Urso", "O Lobo"],
+        "description": "Proteção materna versus ameaça predatória. Cuidado versus agressão.",
+        "interpretation": "Forças protetoras e ameaçadoras em conflito no ambiente.",
+        "resolution": "Busque a proteção do urso e afaste-se do lobo."
+      }
+    ]
   }
 }
