@@ -4,6 +4,7 @@ import argparse
 import logging
 import sys
 
+from src.config import load_config
 from src.input_processor import InputProcessor, ParseError
 from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
@@ -31,9 +32,15 @@ def main() -> None:
         description="Sistema de Clareza Simbólico-Estratégica",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
+    parser.add_argument(
+        "--show-config",
+        action="store_true",
+        help="Exibir configuração atual do sistema",
+    )
+
+    # analyze subcommand
     subparsers = parser.add_subparsers(dest="command", help="Comandos disponíveis")
 
-    # subcommand: analyze
     analyze_parser = subparsers.add_parser("analyze", help="Analisar entrada e gerar relatório")
     analyze_parser.add_argument(
         "--input", "-i",
@@ -54,12 +61,27 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    if args.show_config:
+        run_show_config()
+        sys.exit(0)
+
     if args.command is None:
         parser.print_help()
         sys.exit(1)
 
     if args.command == "analyze":
         run_analyze(args.input, args.format, args.output)
+
+
+def run_show_config() -> None:
+    """Exibe a configuração atual do sistema."""
+    config = load_config()
+    print(f"default_output_dir: {config.default_output_dir}")
+    print(f"default_report_format: {config.default_report_format}")
+    print(f"default_language: {config.default_language}")
+    print(f"session_history_dir: {config.session_history_dir}")
+    print(f"auto_save_sessions: {config.auto_save_sessions}")
+    print(f"quiet_mode: {config.quiet_mode}")
 
 
 def run_analyze(raw_input: str, format: str, output_path: str | None) -> None:
