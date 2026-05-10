@@ -73,6 +73,76 @@ BLOCKED_KEYWORDS: list[str] = [
     "inevitável",
 ]
 
+# ----------------------------------------------------------------------
+# Palavras-chave sensíveis para scan de input (case-insensitive)
+# ----------------------------------------------------------------------
+
+# Categorias de risco para detecção de input sensível:
+# - mental_health: depressão, ansiedade, ideação suicida
+# - physical_health: doença, diagnóstico, tratamento médico
+# - financial_risk: dívida, falência, perda financeira grave
+# - relationship_crisis: separação, divórcio, traição, abuso
+# - self_harm: automutilação, ideação de morte
+
+SENSITIVE_KEYWORDS: list[str] = [
+    # Saúde mental — depressão, ansiedade, ideação suicida
+    "depressão",
+    "depressivo",
+    "deprimido",
+    "ansiedade",
+    "ansioso",
+    "suicídio",
+    "suicidio",
+    "ideação suicida",
+    "pensamentos de morte",
+    "matar a si mesmo",
+    "automutilação",
+    "corte",
+    "ferir a si mesmo",
+    "crise de pânico",
+    "ataque de pânico",
+    "transtorno",
+    "psicose",
+    "psicótico",
+    "internação",
+    "hospitalização",
+    # Saúde física — doença grave, diagnóstico
+    "câncer",
+    "tumor",
+    "diagnóstico grave",
+    "doença crônica",
+    "terminal",
+    "HIV",
+    "AIDS",
+    "enfermidade",
+    # Risco financeiro — endividamento, falência
+    "falência",
+    "falência pessoal",
+    "dívida insustentável",
+    "não tenho dinheiro",
+    "sem dinheiro",
+    "não consigo pagar",
+    "ruína financeira",
+    "perdi tudo",
+    "sem recursos",
+    # Crise relacional — separação, abuso, traição
+    "separação",
+    "divórcio",
+    "traição",
+    "infidelidade",
+    "abuso",
+    "violência doméstica",
+    "abuso emocional",
+    "abuso físico",
+    "relação tóxica",
+    "manipulação",
+    "controle",
+    # Risco auto-lesivo
+    "automutilação",
+    "ferir-se",
+    "cortar-se",
+]
+
 # Padrão regex pré-compilado para busca case-insensitive
 # Cada keyword é escapada para безопасность em regex
 _BLOCKED_PATTERN: re.Pattern[str] = re.compile(
