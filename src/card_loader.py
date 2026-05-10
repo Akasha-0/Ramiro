@@ -17,6 +17,13 @@ REQUIRED_FIELDS = [
     "contextual_notes",
 ]
 
+# Fields containing keywords that need normalization
+KEYWORD_FIELDS = [
+    "themes",
+    "alternate_names",
+    "emotional_associations",
+]
+
 
 def get_data_path() -> Path:
     """Get the path to the cigano_deck.json data file.
@@ -59,6 +66,34 @@ def validate_deck(deck: List[Dict[str, Any]]) -> None:
         validate_card_fields(card, index)
 
 
+def normalize_card_keywords(card: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize keyword fields in a card to lowercase and stripped.
+
+    Args:
+        card: The card dictionary to normalize.
+
+    Returns:
+        A new card dictionary with normalized keyword fields.
+    """
+    normalized = card.copy()
+    for field in KEYWORD_FIELDS:
+        if field in card and isinstance(card[field], list):
+            normalized[field] = [keyword.lower().strip() for keyword in card[field]]
+    return normalized
+
+
+def normalize_deck_keywords(deck: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Normalize keyword fields in all cards of the deck.
+
+    Args:
+        deck: The list of card dictionaries to normalize.
+
+    Returns:
+        A new list of card dictionaries with normalized keyword fields.
+    """
+    return [normalize_card_keywords(card) for card in deck]
+
+
 def load_deck() -> List[Dict[str, Any]]:
     """Load the Baralho Cigano deck from JSON data file.
 
@@ -86,4 +121,4 @@ def load_deck() -> List[Dict[str, Any]]:
 
     validate_deck(deck)
 
-    return deck
+    return normalize_deck_keywords(deck)
