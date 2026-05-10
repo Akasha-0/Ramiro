@@ -349,6 +349,7 @@ def _identify_risks(
     risks: list[str] = []
     seen_categories: set[str] = set()
 
+    logger.debug("Iniciando detecção de padrões de risco")
     # Verificar símbolos com keywords de risco
     risk_keywords = {
         "perigo": ["lobo", "serpente", "cobra"],
@@ -358,20 +359,24 @@ def _identify_risks(
     }
 
     for symbol in symbols:
+        logger.debug("Verificando símbolo %r para padrões de risco", symbol.name)
         for category, trigger_cards in risk_keywords.items():
             if symbol.name.lower() in trigger_cards:
                 if category not in seen_categories:
                     seen_categories.add(category)
                     risks.append(_RISK_DESCRIPTIONS.get(category, f"Risco em {category}"))
+                    logger.debug("Padrão de risco detectado: %s via %r", category, symbol.name)
 
     # Verificar triggers de risco no conteúdo
     content_lower = raw_content.lower()
+    logger.debug("Analisando conteúdo para triggers de risco: %d caracteres", len(content_lower))
     for trigger_words, category in _RISK_TRIGGERS:
         for word in trigger_words:
             if len(word) >= 3 and word in content_lower:
                 if category not in seen_categories:
                     seen_categories.add(category)
                     risks.append(_RISK_DESCRIPTIONS.get(category, f"Risco: {category}"))
+                    logger.debug("Trigger de risco encontrado: %r em %s", word, category)
                 break
 
     logger.debug("Riscos identificados: %s", risks)
@@ -411,6 +416,7 @@ def _map_decisions(
     decisions: list[str] = []
     seen_categories: set[str] = set()
 
+    logger.debug("Iniciando mapeamento de padrões de decisão")
     # Mapa de símbolos para tipos de decisão
     decision_map: dict[str, str] = {
         "cruz de são andré": "🔀 Encruzilhada: duas direções disponíveis — avalie prós e contras antes de escolher.",
@@ -430,16 +436,19 @@ def _map_decisions(
     for symbol in symbols:
         symbol_key = symbol.name.lower()
         if symbol_key in decision_map:
+            logger.debug("Padrão de decisão detectado via símbolo: %r → %s", symbol.name, symbol_key)
             decisions.append(decision_map[symbol_key])
 
     # Verificar triggers de decisão no conteúdo
     content_lower = raw_content.lower()
+    logger.debug("Analisando conteúdo para triggers de decisão: %d caracteres", len(content_lower))
     for trigger_words, category in _DECISION_TRIGGERS:
         for word in trigger_words:
             if len(word) >= 3 and word in content_lower:
                 if category not in seen_categories:
                     seen_categories.add(category)
                     decisions.append(_DECISION_DESCRIPTIONS.get(category, f"Decisão pendente: {category}"))
+                    logger.debug("Trigger de decisão encontrado: %r em %s", word, category)
                 break
 
     # Se nenhum decisão específica encontrada mas há símbolos, generic fallback
@@ -974,8 +983,11 @@ class AnalysisEngine:
 
         # Processar keywords (text ou symbols format)
         if input_data.keywords:
+            logger.debug("Extraindo símbolos de %d keywords", len(input_data.keywords))
             for kw in input_data.keywords:
+                logger.debug("Processando keyword: %r", kw)
                 matched = _map_keyword_to_symbol(kw)
+                logger.debug("Keyword %r → %d símbolos encontrados", kw, len(matched))
                 for sym in matched:
                     if sym not in symbols:
                         symbols.append(sym)
@@ -1016,10 +1028,13 @@ class AnalysisEngine:
         if not input_data.cards:
             return None
 
+        logger.debug("Carregando %d cartas para interpretação", len(input_data.cards))
         all_symbols = get_all_symbols()
+        logger.debug("Catálogo de símbolos carregado: %d símbolos disponíveis", len(all_symbols))
         interpretations: list[str] = []
 
         for card in input_data.cards:
+            logger.debug("Interpretando carta na posição %d: %r", card.position, card.card_name)
             interp = _interpret_card_position(card, all_symbols)
             interpretations.append(interp)
 
