@@ -12,6 +12,7 @@ Recebe StructuredInput (types.py) e retorna AnalysisResult (types.py).
 import logging
 from typing import Optional
 
+from src.plano_rules import generate_recommendations
 from src.symbols import (
     CiganoSymbol,
     get_all_symbols,
@@ -647,8 +648,8 @@ class AnalysisEngine:
         # Fase 6: Mapeamento de decisões
         decisions = _map_decisions(mapped_symbols, input_data.raw_content, themes)
 
-        # Fase 7: Geração do plano prático
-        practical_plan = _generate_practical_plan(mapped_symbols, themes, risks)
+        # Fase 7: Geração do plano prático (usando PlanoRules configurável)
+        practical_plan = generate_recommendations(mapped_symbols, themes, risks)
 
         result = AnalysisResult(
             diagnosis=diagnosis,
