@@ -5,9 +5,12 @@ e resultados de recomendações do sistema de plano prático, além de funções
 de carga e validação das regras definidas em data/plano_rules.json.
 """
 
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -363,6 +366,241 @@ def _validate_plano_rules(rules: PlanoRules) -> None:
             raise PlanoRulesValidationError(
                 f"timeframes: horizonte '{tf}' não definido"
             )
+
+
+# ----------------------------------------------------------------------
+# Gerador de recomendações práticas
+# ----------------------------------------------------------------------
+
+
+def _build_action(
+    template: ActionTemplate,
+    symbol: CiganoSymbol,
+    urgency: str = "medium",
+) -> str:
+    """Constrói uma ação formatada a partir de um template.
+
+    Args:
+        template: Template de ação a ser preenchido.
+        symbol: Símbolo que originou a ação.
+        urgency: Nível de urgência atual.
+
+    Returns:
+        String com ação formatada.
+    """
+    # Substituições básicas com base no símbolo
+    replacements = {
+        "acao": symbol.advice if symbol.advice else "avalie esta situação",
+        "foco": symbol.theme,
+        "tema": symbol.theme,
+        "assunto": symbol.interpretation[:50] if symbol.interpretation else "a situação",
+        "pessoa": "quem está envolvido",
+        "sentimento": "seus sentimentos",
+        "tempo": "15 minutos",
+        "recurso": "fontes confiáveis",
+        "situacao": "a situação atual",
+        "periodo": "este mês",
+        "objetivo": "sua estabilidade",
+        "area": symbol.theme,
+        "projeto": "o projeto em questão",
+        "mudanca": "a mudança identificada",
+        "proposito": "fortalecer vínculos",
+        "aspecto": "organização",
+    }
+
+    action_text = template.template
+    for key, value in replacements.items():
+        action_text = action_text.replace(f"{{{key}}}", value)
+
+    # Adicionar indicação de urgência se aplicável
+    if urgency == "high":
+        action_text = f"[URGENTE] {action_text}"
+    elif urgency == "low":
+        action_text = f"[LONGO PRAZO] {action_text}"
+
+    return action_text
+
+
+def _determine_urgency(
+    symbols: list[CiganoSymbol],
+    risks: list[str],
+    rules: PlanoRules,
+) -> str:
+    """Determina o nível de urgência baseado em símbolos e riscos.
+
+    Args:
+        symbols: Lista de símbolos presentes na análise.
+        risks: Lista de riscos identificados.
+        rules: Regras carregadas com configurações de urgência.
+
+    Returns:
+        Nível de urgência ("low", "medium", "high").
+    """
+    escalation = rules.urgency_escalation
+
+    # Verificar se há cartas de perigo
+    danger_ids = set(escalation.danger_cards)
+    for symbol in symbols:
+        if symbol.id in danger_ids:
+            return "high"
+
+    # Verificar palavras-chave de perigo nos riscos
+    risk_text = " ".join(risks).lower()
+    for keyword in escalation.danger_keywords:
+        if keyword.lower() in risk_text:
+            return "medium"
+
+    return escalation.default_level
+
+
+def generate_recommendations(
+    symbols: list[CiganoSymbol],
+    themes: list[str],
+    risks: list[str],
+) -> str:
+    """Gera recomendações práticas de ação com base na análise simbólica.
+
+    Usa as regras configuradas em data/plano_rules.json para gerar
+    ações contextuais com prazos e critérios de sucesso.
+
+    Args:
+        symbols: Lista de símbolos predominantes do Baralho Cigano.
+        themes: Lista de temas predominantes identificados.
+        risks: Lista de riscos identificados.
+
+    Returns:
+        String com recomendações estruturadas em Markdown.
+    """
+    import re
+
+    lines: list[str] = []
+
+    # Se não há símbolos, retornar mensagem genérica
+    if not symbols:
+        lines.append("- Aprofundar a análise com mais contexto para gerar recomendações.")
+        return "\n".join(lines)
+
+    # Carregar regras
+    try:
+        rules = load_plano_rules()
+    except (FileNotFoundError, PlanoRulesValidationError) as e:
+        logger.warning("Não foi possível carregar regras: %s — usando fallback", e)
+        # Fallback: usar advise do símbolo principal
+        top = symbols[0]
+        lines.append(f"**Foco principal ({top.name})**: {top.advice}")
+        return "\n".join(lines)
+
+    # Determinar urgência
+    urgency = _determine_urgency(symbols, risks, rules)
+
+    # Foco principal
+    top_symbol = symbols[0]
+    lines.append(f"**Foco principal ({top_symbol.name})**: {top_symbol.advice}")
+    lines.append("")
+
+    # Atenção temática
+    if themes:
+        theme = themes[0]
+        if theme in rules.card_actions:
+            theme_actions = rules.card_actions[theme]
+            lines.append(f"**Atenção ao tema {theme}**: {theme_actions.description}")
+            lines.append("")
+    else:
+        # Usar tema do símbolo principal
+        theme = top_symbol.theme
+        if theme in rules.card_actions:
+            theme_actions = rules.card_actions[theme]
+            lines.append(f"**Atenção ao tema {theme}**: {theme_actions.description}")
+            lines.append("")
+
+    # Cuidados necessários
+    if risks:
+        lines.append("**Cuidados necessários**:")
+        for risk in risks[:3]:
+            # Extrair texto após separador
+            parts = re.split(r"—|-|\*", risk, maxsplit=1)
+            risk_text = parts[-1].strip() if len(parts) > 1 else risk.strip()
+            # Remover emoji inicial se houver
+            risk_text = re.sub(r"^[\U0001F3FB-\U0001F3FF]\s*", "", risk_text)
+            lines.append(f"- {risk_text}")
+        lines.append("")
+
+    # Ações práticas por tema
+    actions_generated: list[str] = []
+    themes_processed: set[str] = set()
+
+    # Processar tema principal
+    for theme in themes:
+        if theme in themes_processed:
+            continue
+        themes_processed.add(theme)
+
+        if theme in rules.card_actions:
+            theme_actions = rules.card_actions[theme]
+            for action_template in theme_actions.action_templates[:2]:
+                action_text = _build_action(action_template, top_symbol, urgency)
+                actions_generated.append(action_text)
+
+    # Próximos passos baseados em símbolos restantes
+    if len(symbols) > 1:
+        lines.append("**Próximos passos**:")
+        for symbol in symbols[1:4]:
+            action_map = {
+                "cigano": "Converse com alguém de perspectiva diferente.",
+                "trevo": "Mantenha-se alerta a oportunidades inesperadas.",
+                "navio": "Considere uma mudança de cenário.",
+                "casa": "Cuide do seu ambiente e base.",
+                "árvore": "Invista em crescimento sustentável.",
+                "nuvens": "Aguarde clareza antes de decidir.",
+                "cobra": "Avalie quem está ao seu redor com cuidado.",
+                "caixão": "Permita que ciclos se encerrem.",
+                "buquê": "Celebre conquistas, pequenas ou grandes.",
+                "forca": "Mude sua perspectiva sobre a situação.",
+                "serpente": "Busque conhecimento profundo.",
+                "morte": "Permita que transformações ocorram.",
+                "cegonha": "Prepare-se para receber algo novo.",
+                "cão": "Valorize seus aliados leais.",
+                "lobo": "Identifique ameaças e aja com firmeza.",
+                "cabana": "Busque acolhimento e simplicidade.",
+                "estrela": "Mantenha esperança e clareza.",
+                "coruja": "Observe mais, fale menos.",
+                "lua": "Confie na sua intuição.",
+                "machado": "Avalie o que precisa ser cortado.",
+                "facho": "Use sua energia para iluminar.",
+                "cruz": "Peça apoio se precisar.",
+                "cruz de são andré": "Escolha com consciência — ambas direções têm peso.",
+                "urso": "Busque proteção e cuidado.",
+                "estrelas": "Explore diferentes possibilidades.",
+                "mercado": "Negocie com vantagem.",
+                "beijo": "Exprima afeto e busque reconciliação.",
+                "livro": "Busque conhecimento e informação.",
+                "carta": "Fique atento a mensagens importantes.",
+                "florista": "Cultive com paciência e cuidado.",
+                "anel": "Avalie compromissos com seriedade.",
+                "pompom": "Preste atenção a intermediários.",
+                "peixe": "Siga sua intuição para prosperidade.",
+                "âncora": "Consolide o que já tem.",
+                "flecha": "Defina sua direção com precisão.",
+                "cafezinho": "Reserve tempo para convívio social.",
+            }
+            step = action_map.get(symbol.name.lower())
+            if step:
+                if urgency == "high":
+                    step = f"[URGENTE] {step}"
+                lines.append(f"- {step}")
+
+    # Se não gerou ações, usar fallback
+    if not actions_generated and not any(lines):
+        lines.append("**Próximos passos**:")
+        lines.append("- Aguarde mais informações para detalhamento.")
+    elif actions_generated:
+        lines.append("**Ações sugeridas**:")
+        for action in actions_generated[:3]:
+            lines.append(f"- {action}")
+
+    result = "\n".join(lines)
+    logger.debug("Recomendações geradas: %d símbolos → %d linhas", len(symbols), len(lines))
+    return result
 
 
 def load_plano_rules() -> PlanoRules:
