@@ -60,6 +60,20 @@ ERROR_MESSAGES = {
 }
 
 # ----------------------------------------------------------------------
+# Output styling — suporte a cores para mensagens de erro e output
+# ----------------------------------------------------------------------
+
+def _get_error_output() -> 'ColoredOutput':
+    """Retorna instância de ColoredOutput para mensagens de erro.
+
+    Returns:
+        ColoredOutput configurado com base no ambiente atual.
+    """
+    from src.logging_utils import ColoredOutput
+    return ColoredOutput()
+
+
+# ----------------------------------------------------------------------
 # Logging configuration
 # ----------------------------------------------------------------------
 
@@ -144,7 +158,8 @@ def main() -> None:
 
     if args.command is None:
         parser.print_help()
-        print(ERROR_MESSAGES["no_command"], file=sys.stderr)
+        colored = _get_error_output()
+        print(colored.error("Erro: " + ERROR_MESSAGES["no_command"]), file=sys.stderr)
         sys.exit(1)
 
     if args.command == "analyze":
@@ -170,7 +185,8 @@ def run_analyze(
     # Validação: --template só é válido com --format spread
     if template is not None and format != "spread":
         logger.error("O argumento --template só é válido com --format spread")
-        print(ERROR_MESSAGES["template_requires_spread"], file=sys.stderr)
+        colored = _get_error_output()
+        print(colored.error("Erro: " + ERROR_MESSAGES["template_requires_spread"]), file=sys.stderr)
         sys.exit(2)
 
     try:
@@ -216,9 +232,10 @@ def run_analyze(
             )
 
         # Fase 5: Output
+        colored = _get_error_output()
         if output_path:
             _save_report(output_path, validated.content)
-            print(f"Relatório salvo em: {output_path}", file=sys.stderr)
+            print(colored.success(f"✓ Relatório salvo em: {output_path}"), file=sys.stderr)
             sys.exit(0)
         else:
             print(validated.content)
@@ -226,38 +243,46 @@ def run_analyze(
 
     except FileNotFoundClarezaError as e:
         logger.error("Arquivo não encontrado: %s", e.file_path)
-        print(f"Erro: {ERROR_MESSAGES['file_not_found']}", file=sys.stderr)
+        colored = _get_error_output()
+        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['file_not_found']}"), file=sys.stderr)
         sys.exit(2)
     except ParseError as e:
         logger.error("Erro no parse da entrada: %s", e)
-        print(f"Erro: {ERROR_MESSAGES['parse_error']}", file=sys.stderr)
+        colored = _get_error_output()
+        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['parse_error']}"), file=sys.stderr)
         sys.exit(2)
     except TemplateClarezaError as e:
         logger.error("Template inválido: %s", e.template_name)
+        colored = _get_error_output()
         available_hint = ""
         if e.available:
             available_hint = f"\nTemplates disponíveis: {', '.join(e.available)}"
-        print(f"Erro: Template não encontrado: {e.template_name}{available_hint}", file=sys.stderr)
+        print(colored.error(f"✗ Erro: Template não encontrado: {e.template_name}{available_hint}"), file=sys.stderr)
         sys.exit(2)
     except ValidationClarezaError as e:
         logger.error("Validação falhou: %s", e)
-        print(f"Erro: {ERROR_MESSAGES['validation_error']}", file=sys.stderr)
+        colored = _get_error_output()
+        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['validation_error']}"), file=sys.stderr)
         sys.exit(2)
     except ClarezaError as e:
         logger.error("Erro do sistema: %s", e)
-        print(f"Erro: {e.message}", file=sys.stderr)
+        colored = _get_error_output()
+        print(colored.error(f"✗ Erro: {e.message}"), file=sys.stderr)
         sys.exit(2)
     except ValueError as e:
         logger.error("Valor inválido: %s", e)
-        print(f"Erro: {ERROR_MESSAGES['validation_error']}", file=sys.stderr)
+        colored = _get_error_output()
+        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['validation_error']}"), file=sys.stderr)
         sys.exit(2)
     except OSError as e:
         logger.error("Erro de sistema de arquivos: %s", e)
-        print(f"Erro: {ERROR_MESSAGES['output_write_error']}", file=sys.stderr)
+        colored = _get_error_output()
+        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['output_write_error']}"), file=sys.stderr)
         sys.exit(2)
     except Exception as e:
         logger.exception("Erro inesperado durante análise")
-        print(f"Erro: {ERROR_MESSAGES['unexpected_error']}", file=sys.stderr)
+        colored = _get_error_output()
+        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['unexpected_error']}"), file=sys.stderr)
         sys.exit(1)
 
 
@@ -270,6 +295,8 @@ def _save_report(path: str, content: str) -> None:
     """
     import os
 
+    colored = _get_error_output()
+
     # Verificar se o diretório existe ou pode ser criado
     dir_path = os.path.dirname(path)
     if dir_path and not os.path.isdir(dir_path):
@@ -278,8 +305,8 @@ def _save_report(path: str, content: str) -> None:
         except OSError as e:
             logger.error("Não foi possível criar o diretório %s: %s", dir_path, e)
             print(
-                f"Erro: Não foi possível criar o diretório {dir_path!r}.\n"
-                "Verifique se o caminho está correto e se você tem permissão.",
+                colored.error(f"✗ Erro: Não foi possível criar o diretório {dir_path!r}.\n"
+                "Verifique se o caminho está correto e se você tem permissão."),
                 file=sys.stderr,
             )
             raise
@@ -291,14 +318,14 @@ def _save_report(path: str, content: str) -> None:
     except PermissionError as e:
         logger.error("Sem permissão para escrever em %s: %s", path, e)
         print(
-            f"Erro: Sem permissão para salvar em {path!r}.\n"
-            "Verifique as permissões do diretório.",
+            colored.error(f"✗ Erro: Sem permissão para salvar em {path!r}.\n"
+            "Verifique as permissões do diretório."),
             file=sys.stderr,
         )
         raise
     except OSError as e:
         logger.error("Falha ao salvar relatório em %s: %s", path, e)
-        print(ERROR_MESSAGES["output_write_error"], file=sys.stderr)
+        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['output_write_error']}"), file=sys.stderr)
         raise
 
 
