@@ -138,7 +138,13 @@ def run_analyze(raw_input: str, format: str, output_path: str | None, arc: str |
                 validated.disclaimer_flags,
             )
 
-        # Fase 5: Output
+        # Fase 5: Salvar sessão no arco se --arc foi fornecido
+        if arc:
+            logger.info("Salvando sessão no arco: %s", arc)
+            manager = ArcManager()
+            manager.add_session(arc, structured, analysis_result)
+
+        # Fase 6: Output
         if output_path:
             _save_report(output_path, validated.content)
             print(f"Relatório salvo em: {output_path}", file=sys.stderr)
