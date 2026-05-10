@@ -6,6 +6,8 @@ from pathlib import Path
 
 import click
 
+from clareza.report import generate_report
+
 
 def get_cards_data() -> list[dict]:
     """Load cards data from the JSON file."""
@@ -64,6 +66,25 @@ def analyze_command(card_id: int) -> None:
     click.echo(f"Carta #{card['id']}: {card['name']}")
     click.echo(f"Palavras-chave: {', '.join(card['keywords'])}")
     click.echo(f"Significado: {card['meaning']}")
+
+
+@cli.command("report")
+@click.option("--cards", "-c", multiple=True, type=int, help="ID da carta para incluir no relatório")
+@click.option("--question", "-q", default="", help="Pergunta principal do usuário")
+def report_command(cards: tuple[int, ...], question: str) -> None:
+    """Gerar relatório de reflexão com cinco seções.
+
+    Gera um relatório estruturado com as seções:
+    Diagnóstico, Interpretação Simbólica, Riscos, Decisões e Plano Prático.
+    """
+    if not cards:
+        click.echo("Erro: É necessário especificar pelo menos uma carta.", err=True)
+        click.echo("Use 'clareza report --cards 1 --cards 7 --question \"Sua pergunta\"'", err=True)
+        raise SystemExit(1)
+
+    card_ids = list(cards)
+    report = generate_report(card_ids, question)
+    click.echo(report)
 
 
 if __name__ == "__main__":
