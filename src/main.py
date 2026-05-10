@@ -26,6 +26,27 @@ logger = logging.getLogger(__name__)
 # ----------------------------------------------------------------------
 
 
+def _get_effective_args(args: argparse.Namespace) -> argparse.Namespace:
+    """Aplica valores default da configuração quando argumentos CLI não são fornecidos.
+
+    A precedência é: argumento CLI > configuração > default
+
+    Args:
+        args: Namespace de argumentos parseados (com default=None para argumentos opcionais).
+
+    Returns:
+        Namespace com valores efetivos aplicados.
+    """
+    config = load_config()
+
+    effective_format = args.format if args.format is not None else config.default_report_format
+
+    return argparse.Namespace(
+        format=effective_format,
+        output=args.output,
+    )
+
+
 def main() -> None:
     """Orquestra a análise simbólico-estratégica via CLI."""
     parser = argparse.ArgumentParser(
@@ -70,7 +91,8 @@ def main() -> None:
         sys.exit(1)
 
     if args.command == "analyze":
-        run_analyze(args.input, args.format, args.output)
+        effective = _get_effective_args(args)
+        run_analyze(args.input, effective.format, effective.output)
 
 
 def run_show_config() -> None:
