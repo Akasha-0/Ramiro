@@ -9,6 +9,7 @@ from src.input_processor import InputProcessor, ParseError
 from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
+from src.logging_utils import create_progress
 from src.exceptions import (
     ClarezaError,
     FileNotFoundClarezaError,
@@ -207,6 +208,8 @@ def run_analyze(
     try:
         # Fase 1: Parse e estruturação do input
         logger.info("Processando entrada: format=%s, length=%d", format, len(raw_input))
+        progress = create_progress(description="Processando entrada")
+        progress.start()
         processor = InputProcessor()
         # Verificar se raw_input é um caminho de arquivo válido
         if _is_valid_file_path(raw_input):
@@ -214,6 +217,7 @@ def run_analyze(
             logger.info("Entrada lida de arquivo: %s", raw_input)
         else:
             structured = processor.parse(raw_input, format)
+        progress.complete("Entrada processada")
         logger.info(
             "Input processado: keywords=%s, cards=%d",
             len(structured.keywords) if structured.keywords else 0,
@@ -222,8 +226,11 @@ def run_analyze(
 
         # Fase 2: Análise simbólico-estratégica
         logger.info("Executando análise simbólica")
+        progress = create_progress(description="Analisando símbolos")
+        progress.start()
         engine = AnalysisEngine()
         analysis_result = engine.analyze(structured)
+        progress.complete("Análise simbólica concluída")
         logger.info(
             "Análise concluída: %d temas, %d riscos, %d decisões",
             len(analysis_result.themes),
@@ -233,8 +240,11 @@ def run_analyze(
 
         # Fase 3: Geração do relatório Markdown
         logger.info("Gerando relatório")
+        progress = create_progress(description="Gerando relatório")
+        progress.start()
         generator = ReportGenerator()
         report_md = generator.generate(analysis_result)
+        progress.complete("Relatório gerado")
 
         # Fase 4: Aplicação de guardrails éticos
         logger.info("Aplicando guardrails éticos")
@@ -260,11 +270,15 @@ def run_analyze(
         logger.error("Arquivo não encontrado: %s", e.file_path)
         colored = _get_error_output()
         print(colored.error(f"✗ Erro: {ERROR_MESSAGES['file_not_found']}"), file=sys.stderr)
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
         sys.exit(2)
     except ParseError as e:
         logger.error("Erro no parse da entrada: %s", e)
         colored = _get_error_output()
         print(colored.error(f"✗ Erro: {ERROR_MESSAGES['parse_error']}"), file=sys.stderr)
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
         sys.exit(2)
     except TemplateClarezaError as e:
         logger.error("Template inválido: %s", e.template_name)
@@ -273,31 +287,43 @@ def run_analyze(
         if e.available:
             available_hint = f"\nTemplates disponíveis: {', '.join(e.available)}"
         print(colored.error(f"✗ Erro: Template não encontrado: {e.template_name}{available_hint}"), file=sys.stderr)
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
         sys.exit(2)
     except ValidationClarezaError as e:
         logger.error("Validação falhou: %s", e)
         colored = _get_error_output()
         print(colored.error(f"✗ Erro: {ERROR_MESSAGES['validation_error']}"), file=sys.stderr)
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
         sys.exit(2)
     except ClarezaError as e:
         logger.error("Erro do sistema: %s", e)
         colored = _get_error_output()
         print(colored.error(f"✗ Erro: {e.message}"), file=sys.stderr)
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
         sys.exit(2)
     except ValueError as e:
         logger.error("Valor inválido: %s", e)
         colored = _get_error_output()
         print(colored.error(f"✗ Erro: {ERROR_MESSAGES['validation_error']}"), file=sys.stderr)
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
         sys.exit(2)
     except OSError as e:
         logger.error("Erro de sistema de arquivos: %s", e)
         colored = _get_error_output()
         print(colored.error(f"✗ Erro: {ERROR_MESSAGES['output_write_error']}"), file=sys.stderr)
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
         sys.exit(2)
     except Exception as e:
         logger.exception("Erro inesperado durante análise")
         colored = _get_error_output()
         print(colored.error(f"✗ Erro: {ERROR_MESSAGES['unexpected_error']}"), file=sys.stderr)
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
         sys.exit(1)
 
 
