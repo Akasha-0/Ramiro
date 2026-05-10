@@ -15,7 +15,7 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from src.types import AnalysisResult
+from src.types import AnalysisResult, CrossCardPattern
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,9 @@ REPORT_TEMPLATE = """# Relatório de Análise — {timestamp}
 
 ## Caminhos de Decisão
 {decisions}
+
+## Padrões Cruzados
+{cross_card_patterns}
 
 ## Plano Prático
 {practical_plan}
@@ -90,6 +93,7 @@ class ReportGenerator:
         symbolic_interp = self._format_symbolic_interpretation(analysis)
         risks = self._format_risks(analysis)
         decisions = self._format_decisions(analysis)
+        cross_card_patterns = self._format_cross_card_patterns(analysis)
         practical_plan = self._format_practical_plan(analysis)
 
         # Preencher template
@@ -99,6 +103,7 @@ class ReportGenerator:
             symbolic_interpretation=symbolic_interp,
             risks=risks,
             decisions=decisions,
+            cross_card_patterns=cross_card_patterns,
             practical_plan=practical_plan,
         )
 
@@ -205,6 +210,31 @@ class ReportGenerator:
         for i, decision in enumerate(analysis.decisions, start=1):
             lines.append(f"{i}. {decision}")
         return "\n".join(lines)
+
+    def _format_cross_card_patterns(self, analysis: AnalysisResult) -> str:
+        """Formata a seção de Padrões Cruzados.
+
+        Args:
+            analysis: Resultado da análise.
+
+        Returns:
+            String formatada com os padrões detectados entre múltiplas cartas.
+        """
+        if not analysis.cross_card_patterns:
+            return "*Nenhum padrão cruzado identificado — as cartas não apresentam correlações significativas.*"
+
+        lines: list[str] = []
+        for pattern in analysis.cross_card_patterns:
+            pattern_type_label = pattern.pattern_type.replace("_", " ").title()
+            lines.append(f"### {pattern_type_label}\n")
+            card_ids_str = ", ".join(str(cid) for cid in pattern.card_ids)
+            lines.append(f"**Cartas**: {card_ids_str}")
+            if pattern.strength:
+                lines.append(f"**Intensidade**: {pattern.strength}")
+            lines.append(f"\n{pattern.interpretation}\n")
+            lines.append("")
+
+        return "\n".join(lines).strip()
 
     def _format_practical_plan(self, analysis: AnalysisResult) -> str:
         """Formata a seção de Plano Prático.
