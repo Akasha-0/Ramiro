@@ -53,6 +53,9 @@ ERROR_MESSAGES = {
         "Tente novamente com uma entrada diferente.\n"
         "Se o problema persistir, use --verbose para ver detalhes técnicos."
     ),
+    "no_input": (
+        "Nenhum input fornecido. Use -i ou execute no modo interativo com --interactive."
+    ),
     "output_write_error": (
         "Não foi possível salvar o relatório no caminho especificado.\n"
         "Verifique se você tem permissão de escrita no diretório.\n"
@@ -197,6 +200,13 @@ def run_analyze(
     # Configure verbose logging if requested
     if verbose:
         logging.getLogger().setLevel(logging.DEBUG)
+
+    # Validação: input não pode estar vazio
+    if not raw_input or not raw_input.strip():
+        logger.error("Input vazio fornecido")
+        colored = _get_error_output()
+        print(colored.error("Erro: " + ERROR_MESSAGES["no_input"]), file=sys.stderr)
+        sys.exit(2)
 
     # Validação: --template só é válido com --format spread
     if template is not None and format != "spread":
