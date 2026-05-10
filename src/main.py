@@ -153,6 +153,11 @@ def main() -> None:
         help="Template de tiragem predefinido (3-card, celtic-cross). "
              "Disponível apenas para --format spread.",
     )
+    analyze_parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Ativa output detalhado de debug",
+    )
 
     args = parser.parse_args()
 
@@ -163,7 +168,7 @@ def main() -> None:
         sys.exit(1)
 
     if args.command == "analyze":
-        run_analyze(args.input, args.format, args.output, args.template)
+        run_analyze(args.input, args.format, args.output, args.template, args.verbose)
 
 
 def run_analyze(
@@ -171,6 +176,7 @@ def run_analyze(
     format: str,
     output_path: str | None,
     template: str | None,
+    verbose: bool = False,
 ) -> None:
     """Executa o pipeline completo de análise.
 
@@ -181,7 +187,12 @@ def run_analyze(
         format: Formato de entrada ("text", "spread", "symbols").
         output_path: Caminho opcional para salvar o relatório em .md.
         template: Template de tiragem predefinido (apenas para format="spread").
+        verbose: Se True, ativa logging detalhado (DEBUG level).
     """
+    # Configure verbose logging if requested
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
     # Validação: --template só é válido com --format spread
     if template is not None and format != "spread":
         logger.error("O argumento --template só é válido com --format spread")
