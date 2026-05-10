@@ -65,6 +65,25 @@ class AnalysisResult:
 
 
 @dataclass
+class CrossCardPattern:
+    """Padrão detectado entre múltiplas cartas na tiragem.
+
+    Attributes:
+        pattern_type: Tipo do padrão detectado
+            ("numeric_repeat", "numeric_sequence", "theme_cluster",
+             "elemental_imbalance", "conflict").
+        card_ids: IDs das cartas que formam o padrão.
+        interpretation: Interpretação simbólica do padrão cruzado.
+        strength: Intensidade/significância do padrão (opcional).
+    """
+
+    pattern_type: str
+    card_ids: list[int]
+    interpretation: str
+    strength: Optional[str] = None
+
+
+@dataclass
 class ValidatedOutput:
     """Output validado pelos guardrails éticos.
 
