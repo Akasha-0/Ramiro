@@ -35,6 +35,34 @@ BOX_UP_LEFT = "┘"
 
 
 # ----------------------------------------------------------------------
+# Constantes de contexto
+# ----------------------------------------------------------------------
+
+POSITION_LABELS: dict[str, str] = {
+    "passado": "Passado",
+    "presente": "Presente",
+    "futuro": "Futuro",
+    "futuro-proximo": "Futuro Próximo",
+    "futuro-distante": "Futuro Distante",
+    "desafio": "Desafio",
+    "base": "Base",
+    "possivel": "Possível",
+    "voz-interna": "Voz Interna",
+    "ambiente": "Ambiente",
+    "esperanca": "Esperança",
+    "resultado": "Resultado",
+    "situacao": "Situação",
+    "opcao-a": "Opção A",
+    "opcao-b": "Opção B",
+    "fator-escondido": "Fator Escondido",
+    "resposta": "Resposta",
+    "voce": "Você",
+    "ele-ela": "Ele/Ela",
+    "relacao": "Relação",
+    "passado-recente": "Passado Recente",
+}
+
+# ----------------------------------------------------------------------
 # Formatadores de posição
 # ----------------------------------------------------------------------
 
@@ -48,30 +76,7 @@ def _format_context_label(context: str) -> str:
     Returns:
         Contexto capitalizado para exibição (e.g., "Passado", "Presente").
     """
-    context_map: dict[str, str] = {
-        "passado": "Passado",
-        "presente": "Presente",
-        "futuro": "Futuro",
-        "futuro-proximo": "Futuro Próximo",
-        "futuro-distante": "Futuro Distante",
-        "desafio": "Desafio",
-        "base": "Base",
-        "possivel": "Possível",
-        "voz-interna": "Voz Interna",
-        "ambiente": "Ambiente",
-        "esperanca": "Esperança",
-        "resultado": "Resultado",
-        "situacao": "Situação",
-        "opcao-a": "Opção A",
-        "opcao-b": "Opção B",
-        "fator-escondido": "Fator Escondido",
-        "resposta": "Resposta",
-        "voce": "Você",
-        "ele-ela": "Ele/Ela",
-        "relacao": "Relação",
-        "passado-recente": "Passado Recente",
-    }
-    return context_map.get(context, context.replace("-", " ").title())
+    return POSITION_LABELS.get(context, context.replace("-", " ").title())
 
 
 def _format_card_label(card_name: Optional[str], position: int) -> str:
