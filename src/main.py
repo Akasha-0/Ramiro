@@ -4,12 +4,16 @@ import argparse
 import logging
 import os
 import sys
+import uuid
+from datetime import datetime, timezone
 
 from src.input_processor import InputProcessor, ParseError
 from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
+from src.session_storage import SessionStorage
 from src.logging_utils import create_progress
+from src.types import Session
 from src.exceptions import (
     ClarezaError,
     FileNotFoundClarezaError,
@@ -267,7 +271,24 @@ def run_analyze(
                 validated.disclaimer_flags,
             )
 
-        # Fase 5: Output
+        # Fase 5: Salvar sessão
+        session_id = str(uuid.uuid4())[:8]
+        timestamp = datetime.now(timezone.utc).isoformat()
+        session_tags = [tag] if tag else []
+        session = Session(
+            session_id=session_id,
+            timestamp=timestamp,
+            input_format=format,
+            raw_content=raw_input,
+            analysis_result=analysis_result,
+            tags=session_tags,
+        )
+
+        storage = SessionStorage()
+        storage.save_session(session)
+        logger.info("Sessão salva: %s", session_id)
+
+        # Fase 6: Output
         colored = _get_error_output()
         if output_path:
             _save_report(output_path, validated.content)
