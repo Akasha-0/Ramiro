@@ -178,7 +178,7 @@ class TestGenerateStructure:
         """Timestamp ausente quando include_timestamp=False."""
         report = generator_no_timestamp.generate(analysis_full)
         # Título preserva o em-dash mas sem conteúdo de timestamp após
-        assert report.startswith("# Relatório de Análise — \n\n## Diagnóstico")
+        assert report.startswith("# Relatório de Análise — \n\n## Disposição")
 
 
 # ----------------------------------------------------------------------
