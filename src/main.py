@@ -11,7 +11,7 @@ from src.input_processor import InputProcessor, ParseError
 from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
-from src.session_storage import SessionStorage
+from src.session_storage import SessionStorage, SessionStorageError
 from src.logging_utils import create_progress
 from src.types import Session
 from src.exceptions import (
@@ -170,6 +170,14 @@ def main() -> None:
         help="Tag de sessão para categorização e rastreamento.",
     )
 
+    # subcommand: history
+    history_parser = subparsers.add_parser("history", help="Listar sessões armazenadas")
+    history_parser.add_argument(
+        "--tag", "-t",
+        default=None,
+        help="Filtrar sessões por tag (case-insensitive).",
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -183,6 +191,8 @@ def main() -> None:
 
     if args.command == "analyze":
         run_analyze(args.input, args.format, args.output, args.template, args.tag, verbose)
+    elif args.command == "history":
+        run_history(args.tag, verbose)
 
 
 def run_analyze(
@@ -400,6 +410,70 @@ def _save_report(path: str, content: str) -> None:
         logger.error("Falha ao salvar relatório em %s: %s", path, e)
         print(colored.error(f"✗ Erro: {ERROR_MESSAGES['output_write_error']}"), file=sys.stderr)
         raise
+
+
+def run_history(tag: str | None, verbose: bool = False) -> None:
+    """Lista sessões armazenadas, opcionalmente filtradas por tag.
+
+    Args:
+        tag: Tag para filtrar sessões (case-insensitive). Se None, lista todas.
+        verbose: Se True, ativa logging detalhado (DEBUG level).
+    """
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    try:
+        storage = SessionStorage()
+
+        if tag:
+            sessions = storage.list_sessions_by_tag(tag)
+            logger.info("Listando sessões com tag '%s': %d encontradas", tag, len(sessions))
+        else:
+            sessions = storage.list_sessions()
+            logger.info("Listando todas as sessões: %d encontradas", len(sessions))
+
+        if not sessions:
+            colored = _get_error_output()
+            no_results_msg = f"Nenhuma sessão encontrada"
+            if tag:
+                no_results_msg += f" com tag '{tag}'"
+            print(colored.warning(no_results_msg))
+            return
+
+        # Formata e imprime a lista de sessões
+        colored = _get_error_output()
+        print(colored.info(f"\n=== Histórico de Sessões ({len(sessions)} sessões) ===\n"))
+
+        for session in sessions:
+            # Linha principal com ID e timestamp
+            date_str = session.timestamp.split("T")[0] if session.timestamp else "N/A"
+            time_str = session.timestamp.split("T")[1].split(".")[0] if "T" in str(session.timestamp) else ""
+
+            tags_str = ""
+            if session.tags:
+                tags_str = f" [{', '.join(session.tags)}]"
+
+            print(f"  {colored.bold(session.session_id)}  {date_str} {time_str}{tags_str}")
+
+            # Detalhes adicionais em verbose mode
+            if verbose:
+                print(f"    Formato: {session.input_format}")
+                if session.raw_content:
+                    preview = session.raw_content[:50] + "..." if len(session.raw_content) > 50 else session.raw_content
+                    print(f"    Input: {preview}")
+
+            print()
+
+    except SessionStorageError as e:
+        logger.error("Erro ao acessar armazenamento: %s", e)
+        colored = _get_error_output()
+        print(colored.error(f"✗ Erro: Não foi possível acessar o histórico de sessões."), file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        logger.exception("Erro inesperado ao listar sessões")
+        colored = _get_error_output()
+        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['unexpected_error']}"), file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
