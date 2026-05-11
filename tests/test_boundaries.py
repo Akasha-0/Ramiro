@@ -74,23 +74,23 @@ class TestNormalizeText:
 
 class TestValidateOutput:
     def test_safe_text_returns_true(self) -> None:
-        is_valid, flags = validate_output("Texto normal sobre trabalho e família")
+        is_valid, flags, _ = validate_output("Texto normal sobre trabalho e família")
         assert is_valid is True
         assert flags == []
 
     def test_detects_single_blocked_keyword(self) -> None:
-        is_valid, flags = validate_output("Isso indica morte iminente")
+        is_valid, flags, _ = validate_output("Isso indica morte iminente")
         assert is_valid is False
         assert "morte" in flags
 
     def test_detects_multiple_blocked_keywords(self) -> None:
-        is_valid, flags = validate_output("Você vai morrer e isso é uma profecia")
+        is_valid, flags, _ = validate_output("Você vai morrer e isso é uma profecia")
         assert is_valid is False
         assert "morrer" in flags
         assert "profecia" in flags
 
     def test_case_insensitive_detection(self) -> None:
-        is_valid, flags = validate_output("MORTE MORRER Morte")
+        is_valid, flags, _ = validate_output("MORTE MORRER Morte")
         assert is_valid is False
         assert "morte" in flags
         assert "morrer" in flags
@@ -98,47 +98,47 @@ class TestValidateOutput:
     def test_accent_insensitive_detection(self) -> None:
         """Keywords com acento são detectadas mesmo sem acento no texto."""
         # "morrer" não tem acento, mas funciona se o texto tem
-        is_valid, flags = validate_output("você vai MORRER hoje")
+        is_valid, flags, _ = validate_output("você vai MORRER hoje")
         assert is_valid is False
         assert "morrer" in flags
 
     def test_empty_text_returns_true(self) -> None:
-        is_valid, flags = validate_output("")
+        is_valid, flags, _ = validate_output("")
         assert is_valid is True
         assert flags == []
 
     def test_whitespace_only_returns_true(self) -> None:
-        is_valid, flags = validate_output("   \n\t  ")
+        is_valid, flags, _ = validate_output("   \n\t  ")
         assert is_valid is True
         assert flags == []
 
     def test_detects_deterministic_prediction(self) -> None:
         text = "Isso com certeza vai acontecer inevitavelmente"
-        is_valid, flags = validate_output(text)
+        is_valid, flags, _ = validate_output(text)
         assert is_valid is False
         assert "certamente vai" in flags or "inevitável" in flags
 
     def test_detects_spiritual_authority(self) -> None:
         text = "Eu sou seu guia e sua alma é minha"
-        is_valid, flags = validate_output(text)
+        is_valid, flags, _ = validate_output(text)
         assert is_valid is False
         assert "eu sou seu guia" in flags
 
     def test_detects_financial_guarantee(self) -> None:
         text = "Existe garantia de que isso vai ocorrer"
-        is_valid, flags = validate_output(text)
+        is_valid, flags, _ = validate_output(text)
         assert is_valid is False
         assert "garantia de" in flags
 
     def test_medical_terminal_claim(self) -> None:
         text = "Isso é uma doença terminal"
-        is_valid, flags = validate_output(text)
+        is_valid, flags, _ = validate_output(text)
         assert is_valid is False
         assert "doença terminal" in flags
 
     def test_returns_flags_in_original_form(self) -> None:
         """Flags retornam o texto original da keyword (não normalizado)."""
-        is_valid, flags = validate_output("MAL OLHADO detectado")
+        is_valid, flags, _ = validate_output("MAL OLHADO detectado")
         assert is_valid is False
         # Flag deve ser a keyword original, não a normalizada
         assert "mal olhado" in flags
@@ -391,23 +391,23 @@ class TestApplyGuardrails:
 class TestBoundariesValidator:
     def test_default_is_safe(self) -> None:
         validator = BoundariesValidator()
-        is_safe, flags = validator.validate("Texto normal")
+        is_safe, flags, _ = validator.validate("Texto normal")
         assert is_safe is True
         assert flags == []
 
     def test_detects_blocked_keyword(self) -> None:
         validator = BoundariesValidator()
-        is_safe, flags = validator.validate("Texto com morte")
+        is_safe, flags, _ = validator.validate("Texto com morte")
         assert is_safe is False
         assert "morte" in flags
 
     def test_extra_blocked_keywords(self) -> None:
         validator = BoundariesValidator(extra_blocked=["banana", "abacaxi"])
-        is_safe, flags = validator.validate("Texto com banana")
+        is_safe, flags, _ = validator.validate("Texto com banana")
         assert is_safe is False
         assert "banana" in flags
         # Verifica que keywords padrão ainda funcionam
-        is_safe2, flags2 = validator.validate("Texto com morte")
+        is_safe2, flags2, _ = validator.validate("Texto com morte")
         assert is_safe2 is False
 
     def test_disabled_keywords_are_ignored(self) -> None:
@@ -418,21 +418,21 @@ class TestBoundariesValidator:
             extra_blocked=["palavra_teste_a", "palavra_teste_b"],
             disabled_keywords=["palavra_teste_a"],
         )
-        is_safe, flags = validator.validate("Texto com palavra_teste_a e palavra_teste_b")
+        is_safe, flags, _ = validator.validate("Texto com palavra_teste_a e palavra_teste_b")
         assert is_safe is False
         assert "palavra_teste_b" in flags
         assert "palavra_teste_a" not in flags
 
     def test_disabled_keeps_other_keywords_active(self) -> None:
         validator = BoundariesValidator(disabled_keywords=["morte"])
-        is_safe, flags = validator.validate("Texto com morte e profecia")
+        is_safe, flags, _ = validator.validate("Texto com morte e profecia")
         assert is_safe is False
         assert "morte" not in flags
         assert "profecia" in flags
 
     def test_empty_text(self) -> None:
         validator = BoundariesValidator()
-        is_safe, flags = validator.validate("")
+        is_safe, flags, _ = validator.validate("")
         assert is_safe is True
         assert flags == []
 

@@ -225,7 +225,7 @@ class TestRunAnalyzeSpread:
 
     def test_spread_csv_invalid_line_exits_with_code_2(self) -> None:
         """Linha CSV inválida causa ParseError e sai com código 2."""
-        csv_input = "1,Cruz\ndois,Estrela"
+        csv_input = "1,A Cruz\ndois,A Estrela"
         output, exit_code = capture_stdout(run_analyze, csv_input, "spread", None, None)
         assert exit_code == 2
         assert "Erro:" in output
@@ -315,12 +315,14 @@ class TestRunAnalyzeFileOutput:
 
     def test_output_to_nonexistent_directory_fails(self) -> None:
         """Caminho de arquivo em diretório inexistente causa erro."""
-        nonexistent_path = "/tmp/clareza_nonexistent_dir_12345/report.md"
+        # Use a path that truly fails even for root (readonly directory)
+        nonexistent_path = "/root/readonly/report.md"
         output, exit_code = capture_stdout(
             run_analyze, "texto de teste", "text", nonexistent_path, None
         )
-        assert exit_code == 1
-        assert "Erro interno" in output
+        assert exit_code == 2
+        assert "Erro:" in output
+        assert "permissão" in output.lower() or "salvar" in output.lower()
 
 
 # ----------------------------------------------------------------------
@@ -461,7 +463,7 @@ class TestCLIErrorMessages:
 
     def test_csv_with_invalid_position_shows_parse_error(self) -> None:
         """CSV com posição inválida exibe erro de parse."""
-        output, exit_code = capture_stdout(run_analyze, "999,Cruz", "spread", None, None)
+        output, exit_code = capture_stdout(run_analyze, "-1,A Cruz", "spread", None, None)
         assert exit_code == 2
         assert "Erro:" in output
         assert "não" in output.lower() or "posi" in output.lower()

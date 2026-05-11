@@ -156,39 +156,39 @@ class TestParseFreeText:
 
 class TestParseCsvSpread:
     def test_valid_csv_with_header(self, processor: InputProcessor) -> None:
-        csv_content = "pos,carta\n1,Cruz\n2,Estrela\n3,Café"
+        csv_content = "pos,carta\n1,A Cruz\n2,A Estrela\n3,A Casa"
         result = processor.parse(csv_content, "spread")
         assert result.format == "spread"
         assert result.keywords is None
         assert result.cards is not None
         assert len(result.cards) == 3
         assert result.cards[0].position == 1
-        assert result.cards[0].card_name == "Cruz"
+        assert result.cards[0].card_name == "A Cruz"
         assert result.cards[1].position == 2
-        assert result.cards[1].card_name == "Estrela"
+        assert result.cards[1].card_name == "A Estrela"
         assert result.cards[2].position == 3
-        assert result.cards[2].card_name == "Café"
+        assert result.cards[2].card_name == "A Casa"
 
     def test_valid_csv_without_header(self, processor: InputProcessor) -> None:
-        csv_content = "1,Cruz\n2,Estrela"
+        csv_content = "1,A Cruz\n2,A Estrela"
         result = processor.parse(csv_content, "spread")
         assert result.format == "spread"
         assert len(result.cards) == 2
-        assert result.cards[0].card_name == "Cruz"
+        assert result.cards[0].card_name == "A Cruz"
 
     def test_csv_semicolon_delimiter(self, processor: InputProcessor) -> None:
-        csv_content = "1;Cruz\n2;Estrela"
+        csv_content = "1;A Cruz\n2;A Estrela"
         result = processor.parse(csv_content, "spread")
         assert len(result.cards) == 2
-        assert result.cards[0].card_name == "Cruz"
+        assert result.cards[0].card_name == "A Cruz"
 
     def test_csv_tab_delimiter(self, processor: InputProcessor) -> None:
-        csv_content = "1\tCruz\n2\tEstrela"
+        csv_content = "1\tA Cruz\n2\tA Estrela"
         result = processor.parse(csv_content, "spread")
         assert len(result.cards) == 2
 
     def test_csv_header_english(self, processor: InputProcessor) -> None:
-        csv_content = "position,card\n1,Cruz\n2,Estrela"
+        csv_content = "position,card\n1,A Cruz\n2,A Estrela"
         result = processor.parse(csv_content, "spread")
         assert len(result.cards) == 2
 
@@ -213,22 +213,22 @@ class TestParseCsvSpread:
         self, processor: InputProcessor
     ) -> None:
         with pytest.raises(ParseError) as exc_info:
-            processor.parse("1,Cruz\ndois,Estrela", "spread")
+            processor.parse("1,A Cruz\ndois,A Estrela", "spread")
         assert "inválida" in str(exc_info.value).lower() or "esperado" in str(exc_info.value).lower()
 
     def test_csv_position_zero_raises_parse_error(self, processor: InputProcessor) -> None:
         with pytest.raises(ParseError) as exc_info:
-            processor.parse("0,Cruz", "spread")
+            processor.parse("0,A Cruz", "spread")
         assert "zero" in str(exc_info.value).lower() or "maior" in str(exc_info.value).lower()
 
     def test_csv_negative_position_raises_parse_error(self, processor: InputProcessor) -> None:
         with pytest.raises(ParseError) as exc_info:
-            processor.parse("-1,Cruz", "spread")
+            processor.parse("-1,A Cruz", "spread")
         assert "zero" in str(exc_info.value).lower() or "maior" in str(exc_info.value).lower()
 
     def test_csv_empty_card_name_raises_parse_error(self, processor: InputProcessor) -> None:
         with pytest.raises(ParseError) as exc_info:
-            processor.parse("1,\n2,Cruz", "spread")
+            processor.parse("1,\n2,A Cruz", "spread")
         assert "ausente" in str(exc_info.value).lower() or "vazio" in str(exc_info.value).lower()
 
     def test_csv_all_lines_invalid_raises_parse_error(self, processor: InputProcessor) -> None:
@@ -237,18 +237,18 @@ class TestParseCsvSpread:
         assert "inválida" in str(exc_info.value).lower() or "esperado" in str(exc_info.value).lower()
 
     def test_csv_skips_empty_lines(self, processor: InputProcessor) -> None:
-        csv_content = "1,Cruz\n\n2,Estrela\n  \n3,Café"
+        csv_content = "1,A Cruz\n\n2,A Estrela\n  \n3,A Casa"
         result = processor.parse(csv_content, "spread")
         assert len(result.cards) == 3
 
     def test_csv_fallback_no_separator(self, processor: InputProcessor) -> None:
         """Linha sem separador gera ParseError porque posição não é numérica."""
         with pytest.raises(ParseError) as exc_info:
-            processor.parse("1 Cruz", "spread")
+            processor.parse("1 A Cruz", "spread")
         assert "inválida" in str(exc_info.value).lower() or "esperado" in str(exc_info.value).lower()
 
     def test_csv_raw_content_preserved(self, processor: InputProcessor) -> None:
-        csv_content = "1,Cruz\n2,Estrela"
+        csv_content = "1,A Cruz\n2,A Estrela"
         result = processor.parse(csv_content, "spread")
         assert result.raw_content == csv_content
 
@@ -458,7 +458,7 @@ class TestErrorMessagesWithSuggestions:
         self, processor: InputProcessor
     ) -> None:
         """Erros em CSV devem mostrar número da linha."""
-        csv_with_error = "1,Cruz\ndois,Estrela\n3,Café"
+        csv_with_error = "1,A Cruz\ndois,A Estrela\n3,A Casa"
         with pytest.raises(ParseError) as exc_info:
             processor.parse(csv_with_error, "spread")
         err_str = str(exc_info.value)
@@ -487,7 +487,7 @@ class TestErrorMessagesWithSuggestions:
     def test_csv_without_separator_shows_format_hint(self, processor: InputProcessor) -> None:
         """Linha sem separador deve mostrar hint de formato."""
         with pytest.raises(ParseError) as exc_info:
-            processor.parse("1 Cruz", "spread")
+            processor.parse("1 A Cruz", "spread")
         err_str = str(exc_info.value)
         # Deve sugerir o uso de separadores
         assert "vírgula" in err_str.lower() or "separador" in err_str.lower() or "POSITION,CARD" in err_str
@@ -495,7 +495,7 @@ class TestErrorMessagesWithSuggestions:
     def test_negative_position_shows_recovery(self, processor: InputProcessor) -> None:
         """Posição negativa deve mostrar hint de valores válidos."""
         with pytest.raises(ParseError) as exc_info:
-            processor.parse("-1,Cruz", "spread")
+            processor.parse("-1,A Cruz", "spread")
         err = exc_info.value
         assert err.recovery is not None
         # Deve sugerir valores válidos
@@ -504,7 +504,7 @@ class TestErrorMessagesWithSuggestions:
     def test_zero_position_shows_recovery(self, processor: InputProcessor) -> None:
         """Posição zero deve mostrar hint de valores válidos."""
         with pytest.raises(ParseError) as exc_info:
-            processor.parse("0,Cruz", "spread")
+            processor.parse("0,A Cruz", "spread")
         err = exc_info.value
         assert err.recovery is not None
         # Deve indicar que posições começam em 1
@@ -544,7 +544,7 @@ class TestErrorMessagesWithSuggestions:
     def test_non_numeric_position_shows_format_hint(self, processor: InputProcessor) -> None:
         """Posição não-numérica deve mostrar hint de formato."""
         with pytest.raises(ParseError) as exc_info:
-            processor.parse("abc,Cruz", "spread")
+            processor.parse("abc,A Cruz", "spread")
         err_str = str(exc_info.value)
         # Deve indicar que a primeira coluna deve ser numérica
         assert "número" in err_str.lower() or "inteiro" in err_str.lower() or "POSITION" in err_str
@@ -574,7 +574,7 @@ class TestSuggestionIntegration:
     ) -> None:
         """Cada carta desconhecida deve ter suas próprias sugestões."""
         with pytest.raises(ParseError) as exc_info:
-            processor.parse("1,Xyz\n2,Abc\n3,Cruz", "spread")
+            processor.parse("1,Xyz\n2,Abc\n3,A Cruz", "spread")
         err_str = str(exc_info.value)
         # Primeira carta desconhecida é 'Xyz'
         assert "Xyz" in err_str
