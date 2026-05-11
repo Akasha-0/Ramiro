@@ -154,7 +154,7 @@ class TestRunAnalyzeText:
     def test_text_input_returns_markdown_report(self) -> None:
         """Input text gera relatório Markdown."""
         output, exit_code = capture_stdout(
-            run_analyze, "Tenho dúvida sobre trabalho e dinheiro", "text", None, None
+            run_analyze, "Tenho dúvida sobre trabalho e dinheiro", "text", None, None, False, "default"
         )
         assert exit_code == 0
         assert "# Relatório de Análise" in output
@@ -193,7 +193,7 @@ class TestRunAnalyzeText:
     def test_text_unicode_input(self) -> None:
         """Input com acentos é processado corretamente."""
         output, exit_code = capture_stdout(
-            run_analyze, "relação coração família saúde", "text", None, None
+            run_analyze, "relação coração família saúde", "text", None, None, False, "default"
         )
         assert exit_code == 0
         assert "# Relatório de Análise" in output
@@ -208,7 +208,7 @@ class TestRunAnalyzeSpread:
     def test_spread_input_with_valid_csv(self) -> None:
         """Input spread (CSV) gera relatório com Interpretação das Cartas."""
         csv_input = "1,Cruz\n2,Estrela\n3,Casa"
-        output, exit_code = capture_stdout(run_analyze, csv_input, "spread", None, None)
+        output, exit_code = capture_stdout(run_analyze, csv_input, "spread", None, None, False, "default")
         assert exit_code == 0
         assert "# Relatório de Análise" in output
         assert "## Interpretação Simbólica" in output
@@ -244,7 +244,7 @@ class TestRunAnalyzeSymbols:
     def test_symbols_input_generates_report(self) -> None:
         """Input symbols (lista separada por vírgula) gera relatório."""
         output, exit_code = capture_stdout(
-            run_analyze, "casa,estrela,café", "symbols", None, None
+            run_analyze, "casa,estrela,café", "symbols", None, None, False, "default"
         )
         assert exit_code == 0
         assert "# Relatório de Análise" in output
@@ -253,7 +253,7 @@ class TestRunAnalyzeSymbols:
     def test_symbols_normalizes_input(self) -> None:
         """Símbolos são normalizados para minúsculas."""
         output, exit_code = capture_stdout(
-            run_analyze, "CASA,Estrela,CAFÉ", "symbols", None, None
+            run_analyze, "CASA,Estrela,CAFÉ", "symbols", None, None, False, "default"
         )
         assert exit_code == 0
         # O relatório deve conter os símbolos mapeados
@@ -261,7 +261,7 @@ class TestRunAnalyzeSymbols:
 
     def test_symbols_empty_input(self) -> None:
         """Lista vazia de símbolos gera relatório com fallback."""
-        output, exit_code = capture_stdout(run_analyze, "", "symbols", None, None)
+        output, exit_code = capture_stdout(run_analyze, "", "symbols", None, None, False, "default")
         # symbols vazio pode usar fallback, não deve dar parse error
         assert exit_code == 0
         assert "# Relatório de Análise" in output
@@ -282,7 +282,7 @@ class TestRunAnalyzeFileOutput:
 
         try:
             output, exit_code = capture_stdout(
-                run_analyze, "dúvida sobre trabalho", "text", temp_path, None
+                run_analyze, "dúvida sobre trabalho", "text", temp_path, None, False, "default"
             )
             assert exit_code == 0
             # stdout contém mensagem de confirmação
@@ -318,13 +318,17 @@ class TestRunAnalyzeFileOutput:
             os.unlink(temp_path)
 
     def test_output_to_nonexistent_directory_fails(self) -> None:
-        """Caminho de arquivo em diretório inexistente causa erro."""
+        """Caminho de arquivo em diretório inexistente agora cria o diretório."""
         nonexistent_path = "/tmp/clareza_nonexistent_dir_12345/report.md"
         output, exit_code = capture_stdout(
-            run_analyze, "texto de teste", "text", nonexistent_path, None
+            run_analyze, "texto de teste", "text", nonexistent_path, None, False, "default"
         )
-        assert exit_code == 1
-        assert "Erro interno" in output
+        # O código agora cria diretórios automaticamente, então deve funcionar
+        assert exit_code == 0
+        assert "Relatório salvo em:" in output
+        # Limpar arquivo criado
+        if os.path.exists(nonexistent_path):
+            os.unlink(nonexistent_path)
 
 
 # ----------------------------------------------------------------------
@@ -375,14 +379,14 @@ class TestRunAnalyzeEdgeCases:
     def test_very_long_text_input(self) -> None:
         """Texto muito longo é truncado pelo processor sem erro."""
         long_text = "trabalho " * 1000  # muito acima do default max_length
-        output, exit_code = capture_stdout(run_analyze, long_text, "text", None, None)
+        output, exit_code = capture_stdout(run_analyze, long_text, "text", None, None, False, "default")
         assert exit_code == 0
         assert "# Relatório de Análise" in output
 
     def test_special_characters_in_input(self) -> None:
         """Caracteres especiais não quebram o pipeline."""
         special = "trabalho@#123!%$&*()"
-        output, exit_code = capture_stdout(run_analyze, special, "text", None, None)
+        output, exit_code = capture_stdout(run_analyze, special, "text", None, None, False, "default")
         assert exit_code == 0
         assert "# Relatório de Análise" in output
 
@@ -404,7 +408,7 @@ class TestRunAnalyzeEdgeCases:
                 raw_input = "casa"
             else:
                 raw_input = "trabalho"
-            output, exit_code = capture_stdout(run_analyze, raw_input, fmt, None, None)
+            output, exit_code = capture_stdout(run_analyze, raw_input, fmt, None, None, False, "default")
             assert exit_code == 0, f"Formato {fmt} falhou"
             assert "# Relatório de Análise" in output
             assert "## Diagnóstico" in output
@@ -573,7 +577,7 @@ class TestSensitiveInputPipeline:
     def test_sensitive_input_report_structure_intact(self) -> None:
         """Input sensível ainda gera estrutura completa de relatório."""
         output, exit_code = capture_stdout(
-            run_analyze, "estou com ansiedade e problemas", "text", None, None
+            run_analyze, "estou com ansiedade e problemas", "text", None, None, False, "default"
         )
         assert exit_code == 0
         # Todas as 5 seções devem estar presentes mesmo com input sensível
@@ -610,18 +614,19 @@ class TestSensitiveInputPipeline:
 
     def test_sensitive_input_with_file_output(self) -> None:
         """Input sensível com output para arquivo inclui disclaimer."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False, encoding="utf-8"
-        ) as f:
-            temp_path = f.name
+        # Não criar arquivo primeiro - passar caminho que não existe
+        # para que seja tratado como output e não como input
+        with tempfile.TemporaryDirectory() as tmpdir:
+            temp_path = os.path.join(tmpdir, "report.md")
 
-        try:
             output, exit_code = capture_stdout(
                 run_analyze,
                 "estou com depressão",
                 "text",
                 temp_path,
                 None,
+                False,
+                "default",
             )
             assert exit_code == 0
             # Arquivo foi escrito com disclaimer
@@ -629,8 +634,6 @@ class TestSensitiveInputPipeline:
                 content = f_read.read()
             assert "AVISO IMPORTANTE" in content
             assert "CVV" in content
-        finally:
-            os.unlink(temp_path)
 
     def test_non_sensitive_input_also_has_disclaimer(self) -> None:
         """Input normal também inclui disclaimer (header injection é sempre applied)."""

@@ -95,8 +95,7 @@ def _is_valid_file_path(path: str) -> bool:
     """Verifica se uma string parece ser um caminho de arquivo válido.
 
     Considera caminho válido se:
-    - O arquivo existe no filesystem
-    - A extensão é .csv ou .txt
+    - A extensão é .csv ou .txt (para arquivos de entrada do usuário)
 
     Args:
         path: String a verificar.
@@ -109,11 +108,7 @@ def _is_valid_file_path(path: str) -> bool:
     if not path:
         return False
 
-    # Verificar se o arquivo existe
-    if os.path.isfile(path):
-        return True
-
-    # Verificar extensões comuns para arquivos de entrada
+    # Apenas arquivos .csv e .txt são considerados arquivos de entrada válidos
     valid_extensions = (".csv", ".txt")
     return any(path.lower().endswith(ext) for ext in valid_extensions)
 
@@ -146,9 +141,9 @@ def main() -> None:
     )
     analyze_parser.add_argument(
         "--format", "-f",
-        choices=["text", "spread", "symbols", "verbose"],
+        choices=["text", "spread", "symbols"],
         default="text",
-        help="Formato da entrada (text, spread, symbols, verbose)",
+        help="Formato da entrada (text, spread, symbols)",
     )
     analyze_parser.add_argument(
         "--output", "-o",
@@ -164,8 +159,8 @@ def main() -> None:
     analyze_parser.add_argument(
         "--report-format",
         default=None,
-        choices=["compact", "default"],
-        help="Formato do relatório de saída (compact ou default). "
+        choices=["compact", "default", "verbose"],
+        help="Formato do relatório de saída (compact, default ou verbose). "
              "Se omitido, usa o padrão da configuração.",
     )
 
