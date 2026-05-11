@@ -10,6 +10,7 @@ from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
 from src.logging_utils import create_progress
+from src.config import load_config
 from src.exceptions import (
     ClarezaError,
     FileNotFoundClarezaError,
@@ -160,6 +161,13 @@ def main() -> None:
         help="Template de tiragem predefinido (3-card, celtic-cross). "
              "Disponível apenas para --format spread.",
     )
+    analyze_parser.add_argument(
+        "--report-format",
+        default=None,
+        choices=["compact", "default"],
+        help="Formato do relatório de saída (compact ou default). "
+             "Se omitido, usa o padrão da configuração.",
+    )
 
     args = parser.parse_args()
 
@@ -173,7 +181,7 @@ def main() -> None:
     verbose = getattr(args, 'verbose', False) or getattr(args, 'v', False)
 
     if args.command == "analyze":
-        run_analyze(args.input, args.format, args.output, args.template, verbose)
+        run_analyze(args.input, args.format, args.output, args.template, verbose, args.report_format)
 
 
 def run_analyze(
@@ -182,6 +190,7 @@ def run_analyze(
     output_path: str | None,
     template: str | None,
     verbose: bool = False,
+    report_format: str | None = None,
 ) -> None:
     """Executa o pipeline completo de análise.
 
@@ -193,10 +202,17 @@ def run_analyze(
         output_path: Caminho opcional para salvar o relatório em .md.
         template: Template de tiragem predefinido (apenas para format="spread").
         verbose: Se True, ativa logging detalhado (DEBUG level).
+        report_format: Formato do relatório de saída ("compact" ou "default").
+            Se None, usa config.default_report_format.
     """
     # Configure verbose logging if requested
     if verbose:
         logging.getLogger().setLevel(logging.DEBUG)
+
+    # Carregar configuração e resolver formato do relatório
+    config = load_config()
+    if report_format is None:
+        report_format = config.default_report_format
 
     # Validação: --template só é válido com --format spread
     if template is not None and format != "spread":
@@ -243,7 +259,7 @@ def run_analyze(
         progress = create_progress(description="Gerando relatório")
         progress.start()
         generator = ReportGenerator()
-        report_md = generator.generate(analysis_result)
+        report_md = generator.generate(analysis_result, output_format=report_format)
         progress.complete("Relatório gerado")
 
         # Fase 4: Aplicação de guardrails éticos
