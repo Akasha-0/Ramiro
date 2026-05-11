@@ -228,3 +228,28 @@ class ChapterSummary:
     escalation_detected: bool = False
     resolution_detected: bool = False
     key_insight: str = ""
+
+
+@dataclass
+class SessionAnnotation:
+    """Anotação/reflexão do usuário em resposta a prompts de reflexão guiada.
+
+    Attributes:
+        annotation_id: Identificador único da anotação.
+        session_id: ID da sessão à qual esta anotação pertence.
+        milestone_id: ID do milestone/prompt que originou esta reflexão.
+        content: Texto da reflexão/resposta do usuário.
+        timestamp: Timestamp ISO da anotação.
+        theme_tags: Tags de temas identificados na reflexão.
+        linked_thread_ids: IDs das threads narrativas relacionadas.
+        is_milestone_completed: Indica se o milestone foi marcado como concluído.
+    """
+
+    annotation_id: str
+    session_id: str
+    milestone_id: str
+    content: str
+    timestamp: str
+    theme_tags: list[str] = field(default_factory=list)
+    linked_thread_ids: list[str] = field(default_factory=list)
+    is_milestone_completed: bool = False
