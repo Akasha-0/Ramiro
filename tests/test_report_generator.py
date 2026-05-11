@@ -535,6 +535,33 @@ class TestCompactOutput:
         assert isinstance(report, str)
         assert len(report) > 0
 
+    def test_compact_respects_500_word_limit(
+        self, generator: ReportGenerator
+    ) -> None:
+        """Relatório compacto respeita o limite de 500 palavras."""
+        # Criar análise com conteúdo suficiente para exceder 500 palavras
+        long_text = "Esta é uma frase de teste. " * 200  # ~600 palavras
+        analysis = AnalysisResult(
+            diagnosis=long_text,
+            themes=["trabalho", "mudança"],
+            risks=["risco um", "risco dois"],
+            decisions=["decisão um", "decisão dois"],
+            practical_plan="Passo um. Passo dois. Passo três.",
+        )
+        report = generator.generate(analysis, output_format="compact")
+        word_count = len(report.split())
+        assert word_count <= 500
+
+    def test_compact_under_limit_preserves_content(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Relatório compacto com conteúdo abaixo de 500 palavras preserva tudo."""
+        report = generator.generate(analysis_full, output_format="compact")
+        word_count = len(report.split())
+        assert word_count < 500
+        # Verifica que conteúdo importante foi preservado
+        assert "Você está num momento de transição profissional" in report
+
 
 # ----------------------------------------------------------------------
 # Testes — output_format: json
