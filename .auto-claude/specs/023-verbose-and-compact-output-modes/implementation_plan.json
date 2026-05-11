@@ -281,6 +281,7 @@
   "planStatus": "in_progress",
   "xstateState": "planning",
   "executionPhase": "coding",
-  "updated_at": "2026-05-11T20:15:05.132Z",
-  "last_updated": "2026-05-11T20:09:29.842468+00:00"
+  "updated_at": "2026-05-11T20:45:50.619Z",
+  "last_updated": "2026-05-11T20:09:29.842468+00:00",
+  "recoveryNote": "Task recovered from stuck state at 2026-05-11T20:45:42.842Z"
 }

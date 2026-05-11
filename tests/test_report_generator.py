@@ -638,3 +638,145 @@ class TestJsonOutput:
         data = json.loads(report)
         assert isinstance(data, dict)
         assert len(data) > 0
+
+
+# ----------------------------------------------------------------------
+# Testes — output_format: verbose
+# ----------------------------------------------------------------------
+
+
+class TestVerboseOutput:
+    def test_generate_verbose_format(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """output_format='verbose' gera relatório verboso."""
+        report = generator.generate(analysis_full, output_format="verbose")
+        assert "# Relatório Detalhado de Análise" in report
+        assert "## Seção 1: Diagnóstico" in report
+        assert "## Seção 2: Interpretação Simbólica" in report
+        assert "## Seção 3: Riscos Identificados" in report
+        assert "## Seção 4: Caminhos de Decisão" in report
+        assert "## Seção 5: Padrões Cruzados" in report
+        assert "## Seção 6: Plano Prático" in report
+
+    def test_verbose_title_differs_from_default(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Título verboso difere do padrão e do compacto."""
+        default_report = generator.generate(analysis_full, output_format="default")
+        verbose_report = generator.generate(analysis_full, output_format="verbose")
+        assert default_report.startswith("# Relatório de Análise")
+        assert verbose_report.startswith("# Relatório Detalhado de Análise")
+
+    def test_verbose_contains_all_six_sections(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Relatório verboso contém todas as 6 seções numeradas."""
+        report = generator.generate(analysis_full, output_format="verbose")
+        assert "## Seção 1: Diagnóstico" in report
+        assert "## Seção 2: Interpretação Simbólica" in report
+        assert "## Seção 3: Riscos Identificados" in report
+        assert "## Seção 4: Caminhos de Decisão" in report
+        assert "## Seção 5: Padrões Cruzados" in report
+        assert "## Seção 6: Plano Prático" in report
+
+    def test_verbose_contains_explanatory_blockquotes(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Relatório verboso contém blockquotes explicativos para cada seção."""
+        report = generator.generate(analysis_full, output_format="verbose")
+        # Cada seção tem um blockquote explicativo
+        assert "> **Sobre esta seção:**" in report
+        # Deve haver 6 blockquotes (uma por seção)
+        assert report.count("> **Sobre esta seção:**") >= 6
+
+    def test_verbose_includes_timestamp_by_default(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Relatório verboso inclui timestamp quando include_timestamp=True."""
+        import re
+
+        report = generator.generate(analysis_full, output_format="verbose")
+        assert re.search(r"\d{2}/\d{2}/\d{4}", report) is not None
+
+    def test_verbose_excludes_timestamp_when_disabled(
+        self, generator_no_timestamp: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Relatório verboso sem timestamp."""
+        report = generator_no_timestamp.generate(analysis_full, output_format="verbose")
+        assert report.startswith("# Relatório Detalhado de Análise — \n\n## Seção 1: Diagnóstico")
+
+    def test_verbose_has_footer_disclaimer(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Rodapé de relatório verboso contém disclaimer ético."""
+        report = generator.generate(analysis_full, output_format="verbose")
+        assert "ferramenta de reflexão" in report
+        assert "previsão determinista" in report
+
+    def test_verbose_with_disclaimer(
+        self, generator: ReportGenerator, analysis_minimal: AnalysisResult
+    ) -> None:
+        """Verbose com disclaimer injetado."""
+        disclaimer = "⚠️ Aviso: isso é apenas uma reflexão orientadora."
+        report = generator.generate(analysis_minimal, output_format="verbose", disclaimer=disclaimer)
+        assert disclaimer in report
+
+    def test_verbose_generates_nonempty_string(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """generate() com output_format='verbose' retorna string não-vazia."""
+        report = generator.generate(analysis_full, output_format="verbose")
+        assert isinstance(report, str)
+        assert len(report) > 0
+
+    def test_verbose_contains_diagnosis_content(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Relatório verboso contém conteúdo do diagnóstico."""
+        report = generator.generate(analysis_full, output_format="verbose")
+        assert "Você está num momento de transição profissional" in report
+
+    def test_verbose_contains_symbolic_interpretation(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Relatório verboso contém interpretação simbólica."""
+        report = generator.generate(analysis_full, output_format="verbose")
+        assert "A Casa" in report
+        assert "A Estrela" in report
+
+    def test_verbose_contains_risks(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Relatório verboso contém riscos identificados."""
+        report = generator.generate(analysis_full, output_format="verbose")
+        assert "incerteza prolongada" in report
+        assert "hesitação excessiva" in report
+
+    def test_verbose_contains_decisions(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Relatório verboso contém caminhos de decisão."""
+        report = generator.generate(analysis_full, output_format="verbose")
+        assert "Explorar oportunidades de recolocação" in report
+        assert "Investir em qualificação profissional" in report
+
+    def test_verbose_contains_practical_plan(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """Relatório verboso contém plano prático."""
+        report = generator.generate(analysis_full, output_format="verbose")
+        assert "Atualizar o currículo" in report
+
+    def test_verbose_minimal_analysis(
+        self, generator: ReportGenerator, analysis_minimal: AnalysisResult
+    ) -> None:
+        """Verbose funciona com análise mínima."""
+        report = generator.generate(analysis_minimal, output_format="verbose")
+        assert "# Relatório Detalhado de Análise" in report
+        assert "## Seção 1: Diagnóstico" in report
+        assert "## Seção 2: Interpretação Simbólica" in report
+        assert "## Seção 3: Riscos Identificados" in report
+        assert "## Seção 4: Caminhos de Decisão" in report
+        assert "## Seção 5: Padrões Cruzados" in report
+        assert "## Seção 6: Plano Prático" in report
