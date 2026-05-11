@@ -12,6 +12,7 @@ from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
 from src.session_storage import SessionStorage, SessionStorageError
+from src.session_clustering import SessionClusterer
 from src.logging_utils import create_progress
 from src.types import Session
 from src.exceptions import (
@@ -263,7 +264,30 @@ def run_analyze(
             len(analysis_result.decisions),
         )
 
-        # Fase 3: Geração do relatório Markdown
+        # Fase 3: Busca de sessões relacionadas via clustering
+        logger.info("Buscando sessões relacionadas")
+        progress = create_progress(description="Buscando contexto histórico")
+        progress.start()
+        storage = SessionStorage()
+        clusterer = SessionClusterer(storage)
+        all_sessions = storage.list_sessions()
+        # Criar sessão temporária para busca
+        temp_session = Session(
+            session_id="__current__",
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            input_format=format,
+            raw_content=raw_input,
+            analysis_result=analysis_result,
+            tags=[tag] if tag else [],
+        )
+        related = clusterer.find_related_sessions(temp_session, all_sessions)
+        if related:
+            related_sessions = [r.session for r in related]
+            analysis_result.previous_sessions = related_sessions
+            logger.info("Encontradas %d sessões relacionadas", len(related_sessions))
+        progress.complete("Contexto histórico carregado")
+
+        # Fase 4: Geração do relatório Markdown
         logger.info("Gerando relatório")
         progress = create_progress(description="Gerando relatório")
         progress.start()
@@ -271,7 +295,7 @@ def run_analyze(
         report_md = generator.generate(analysis_result)
         progress.complete("Relatório gerado")
 
-        # Fase 4: Aplicação de guardrails éticos
+        # Fase 5: Aplicação de guardrails éticos
         logger.info("Aplicando guardrails éticos")
         validated = apply_guardrails(report_md, analysis_result)
 
@@ -281,7 +305,7 @@ def run_analyze(
                 validated.disclaimer_flags,
             )
 
-        # Fase 5: Salvar sessão
+        # Fase 6: Salvar sessão
         session_id = str(uuid.uuid4())[:8]
         timestamp = datetime.now(timezone.utc).isoformat()
         session_tags = [tag] if tag else []
@@ -294,11 +318,10 @@ def run_analyze(
             tags=session_tags,
         )
 
-        storage = SessionStorage()
         storage.save_session(session)
         logger.info("Sessão salva: %s", session_id)
 
-        # Fase 6: Output
+        # Fase 7: Output
         colored = _get_error_output()
         if output_path:
             _save_report(output_path, validated.content)
