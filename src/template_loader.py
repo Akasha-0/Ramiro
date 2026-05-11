@@ -49,8 +49,7 @@ def _load_template_yaml(template_path: Path) -> Optional[dict]:
     except yaml.YAMLError as e:
         logger.warning("Erro ao ler YAML de %s: %s", template_path, e)
         raise TemplateClarezaError(
-            "Template YAML inválido",
-            details=f"Erro de parse na linha {getattr(e, 'problem_mark', None) or 'desconhecida'}: {e}"
+            f"Erro de parse na linha {getattr(e, 'problem_mark', None) or 'desconhecida'}: {e}"
         )
 
 
@@ -74,18 +73,15 @@ def _parse_template_sections(sections_data: list[dict]) -> list[TemplateSection]
         # Validar campos obrigatórios
         if "id" not in section_data:
             raise TemplateClarezaError(
-                "Seção inválida",
-                details=f"Seção {i} missing campo 'id'"
+                f"Seção {i} missing campo 'id'"
             )
         if "title" not in section_data:
             raise TemplateClarezaError(
-                "Seção inválida",
-                details=f"Seção '{section_data['id']}' missing campo 'title'"
+                f"Seção '{section_data['id']}' missing campo 'title'"
             )
         if "content_template" not in section_data:
             raise TemplateClarezaError(
-                "Seção inválida",
-                details=f"Seção '{section_data['id']}' missing campo 'content_template'"
+                f"Seção '{section_data['id']}' missing campo 'content_template'"
             )
 
         try:
@@ -101,8 +97,7 @@ def _parse_template_sections(sections_data: list[dict]) -> list[TemplateSection]
             sections.append(section)
         except (ValueError, TypeError) as e:
             raise TemplateClarezaError(
-                "Seção inválida",
-                details=f"Erro ao processar seção '{section_data.get('id', i)}': {e}"
+                f"Erro ao processar seção '{section_data.get('id', i)}': {e}"
             )
 
     # Ordenar por ordem
@@ -211,8 +206,7 @@ class TemplateLoader:
         data = _load_template_yaml(template_path)
         if data is None:
             raise TemplateClarezaError(
-                "Template não encontrado",
-                details=f"Caminho: {template_path}"
+                f"Template não encontrado: {template_path}"
             )
 
         # Validar estrutura
@@ -221,8 +215,7 @@ class TemplateLoader:
         if errors:
             error_msg = "; ".join(errors)
             raise TemplateClarezaError(
-                "Template inválido",
-                details=error_msg
+                f"Template inválido: {error_msg}"
             )
 
         # Construir template
