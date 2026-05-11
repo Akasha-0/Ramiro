@@ -160,6 +160,11 @@ def main() -> None:
         help="Template de tiragem predefinido (3-card, celtic-cross). "
              "Disponível apenas para --format spread.",
     )
+    analyze_parser.add_argument(
+        "--tag", "-g",
+        default=None,
+        help="Tag de sessão para categorização e rastreamento.",
+    )
 
     args = parser.parse_args()
 
@@ -173,7 +178,7 @@ def main() -> None:
     verbose = getattr(args, 'verbose', False) or getattr(args, 'v', False)
 
     if args.command == "analyze":
-        run_analyze(args.input, args.format, args.output, args.template, verbose)
+        run_analyze(args.input, args.format, args.output, args.template, args.tag, verbose)
 
 
 def run_analyze(
@@ -181,6 +186,7 @@ def run_analyze(
     format: str,
     output_path: str | None,
     template: str | None,
+    tag: str | None,
     verbose: bool = False,
 ) -> None:
     """Executa o pipeline completo de análise.
@@ -192,11 +198,16 @@ def run_analyze(
         format: Formato de entrada ("text", "spread", "symbols").
         output_path: Caminho opcional para salvar o relatório em .md.
         template: Template de tiragem predefinido (apenas para format="spread").
+        tag: Tag de sessão para categorização e rastreamento.
         verbose: Se True, ativa logging detalhado (DEBUG level).
     """
     # Configure verbose logging if requested
     if verbose:
         logging.getLogger().setLevel(logging.DEBUG)
+
+    # Log session tag if provided
+    if tag:
+        logger.info("Session tag: %s", tag)
 
     # Validação: --template só é válido com --format spread
     if template is not None and format != "spread":
