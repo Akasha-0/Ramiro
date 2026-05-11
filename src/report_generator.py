@@ -16,7 +16,7 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from src.types import AnalysisResult, CrossCardPattern
+from src.types import AnalysisResult, CardPosition, CrossCardPattern
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,9 @@ logger = logging.getLogger(__name__)
 # ----------------------------------------------------------------------
 
 REPORT_TEMPLATE = """# Relatório de Análise — {timestamp}
+
+## Disposição
+{disposicao}
 
 ## Diagnóstico
 {diagnosis}
@@ -136,6 +139,7 @@ class ReportGenerator:
         risks = self._format_risks(analysis)
         decisions = self._format_decisions(analysis)
         cross_card_patterns = self._format_cross_card_patterns(analysis)
+        disposicao = self._format_disposicao(analysis)
         practical_plan = self._format_practical_plan(analysis)
 
         # Selecionar template ou formato conforme solicitado
@@ -149,11 +153,205 @@ class ReportGenerator:
             )
         else:
             report = self._generate_default_output(
-                timestamp, diagnosis, symbolic_interp, risks, decisions, practical_plan, disclaimer
+                timestamp, diagnosis, symbolic_interp, risks, decisions, cross_card_patterns, practical_plan, disclaimer, disposicao
             )
 
         logger.info("Relatório gerado com %d caracteres", len(report))
         return report
+
+    def generate_with_diagram(
+        self,
+        analysis: AnalysisResult,
+        cards: Optional[list[CardPosition]] = None,
+        disclaimer: Optional[str] = None,
+        output_format: str = "default",
+    ) -> str:
+        """Gera relatório em Markdown com diagrama visual da tiragem.
+
+        Args:
+            analysis: AnalysisResult com diagnóstico, temas, riscos, decisões e plano.
+            cards: Lista opcional de CardPosition para renderizar o diagrama visual.
+            disclaimer: Texto adicional a ser inserido antes do rodapé (opcional).
+            output_format: Formato do relatório — "default" (completo), "compact"
+                (resumido), ou "json" (estruturado). Default: "default".
+
+        Returns:
+            String com relatório no formato solicitado, incluindo diagrama visual se cards fornecidos.
+        """
+        logger.info(
+            "Gerando relatório com diagrama para análise com %d temas (formato=%s, cards=%s)",
+            len(analysis.themes),
+            output_format,
+            len(cards) if cards else 0,
+        )
+
+        # Gerar diagrama visual se cards forem fornecidos
+        diagram = ""
+        if cards:
+            diagram = self._render_card_spread_diagram(cards)
+
+        # Gerar relatório base
+        base_report = self.generate(analysis, disclaimer, output_format)
+
+        # Inserir diagrama no início do relatório (após título)
+        if diagram:
+            # Dividir em título e resto do conteúdo
+            lines = base_report.split("\n")
+            if len(lines) > 0:
+                # Encontrar a primeira linha vazia após o título para inserir o diagrama
+                insert_pos = 0
+                for i, line in enumerate(lines):
+                    if i > 0 and line.strip() == "":
+                        insert_pos = i
+                        break
+                    insert_pos = i + 1
+
+                lines.insert(insert_pos, diagram)
+                base_report = "\n".join(lines)
+
+        return base_report
+
+    def _render_card_spread_diagram(self, cards: list[CardPosition]) -> str:
+        """Renderiza um diagrama visual ASCII da tiragem de cartas.
+
+        Args:
+            cards: Lista de CardPosition representando a tiragem.
+
+        Returns:
+            String com o diagrama visual em formato Markdown.
+        """
+        if not cards:
+            return ""
+
+        logger.debug("Renderizando diagrama de %d cartas", len(cards))
+
+        lines: list[str] = []
+        lines.append("")
+        lines.append("## Mapa da Tiragem")
+        lines.append("")
+        lines.append("```")
+        lines.append("╔════════════════════════════════════════════════════════════════════╗")
+        lines.append("║                    MAPA DA TIRAGEM                              ║")
+        lines.append("╠════════════════════════════════════════════════════════════════════╣")
+
+        # Organizar cartas em grid visual
+        # Para tiragens maiores, usar layout em grid
+        total_cards = len(cards)
+
+        if total_cards <= 3:
+            # Layout horizontal para 1-3 cartas
+            card_width = 30
+            card_height = 7
+            total_width = card_width * total_cards + (total_cards - 1) * 2
+            header = f"║{'═' * total_width}║"
+            lines.append(header)
+
+            # Cards lado a lado
+            for row in range(card_height):
+                row_str = "║"
+                for i, card in enumerate(cards):
+                    if row == 0:
+                        # Número da posição
+                        cell = f" [{card.position}] ".center(card_width)
+                    elif row == 3:
+                        # Nome da carta centralizado
+                        name = f" {card.card_name} "
+                        cell = name.center(card_width)
+                    elif row == 4:
+                        # Contexto da posição (se disponível)
+                        if card.position_context:
+                            cell = f" {card.position_context} ".center(card_width)
+                        else:
+                            cell = " " * card_width
+                    else:
+                        cell = " " * card_width
+                    row_str += cell
+                    if i < total_cards - 1:
+                        row_str += "│"
+                row_str += "║"
+                lines.append(row_str)
+
+            lines.append(f"╚{'═' * total_width}╝")
+
+        elif total_cards <= 6:
+            # Layout 2x3 grid
+            cols = 3
+            rows = 2
+            card_width = 20
+
+            for r in range(rows):
+                if r == 0:
+                    lines.append(f"╔{'═' * (card_width * cols + (cols - 1) * 2)}╗")
+                else:
+                    lines.append(f"╠{'═' * (card_width * cols + (cols - 1) * 2)}╣")
+
+                for row in range(5):
+                    row_str = "║"
+                    for c in range(cols):
+                        idx = r * cols + c
+                        if idx < total_cards:
+                            card = cards[idx]
+                            if row == 0:
+                                cell = f"[{card.position}]".center(card_width)
+                            elif row == 2:
+                                cell = f" {card.card_name} ".center(card_width)
+                            elif row == 3:
+                                ctx = card.position_context or ""
+                                cell = f" {ctx} ".center(card_width)
+                            else:
+                                cell = " " * card_width
+                        else:
+                            cell = " " * card_width
+                        row_str += cell
+                        if c < cols - 1:
+                            row_str += "│"
+                    row_str += "║"
+                    lines.append(row_str)
+
+                if r == rows - 1:
+                    lines.append(f"╚{'═' * (card_width * cols + (cols - 1) * 2)}╝")
+
+        else:
+            # Layout em lista para muitas cartas
+            lines.append(f"╔{'═' * 70}╗")
+            lines.append("║                          MAPA DA TIRAGEM                     ║")
+            lines.append(f"╠{'═' * 70}╣")
+
+            for i, card in enumerate(cards):
+                pos_str = f"[{card.position}]"
+                name_str = card.card_name.center(20)
+                ctx_str = (card.position_context or "").center(15)
+
+                if i == len(cards) - 1:
+                    box_char = "╚"
+                    sep_char = "═"
+                else:
+                    box_char = "╠"
+                    sep_char = "─"
+
+                line1 = f"{box_char} {pos_str} {name_str} {ctx_str} "
+                line1 = line1.ljust(71) + "║"
+                lines.append(line1)
+
+                if i < len(cards) - 1:
+                    lines.append(f"║{'':70}║")
+
+            lines.append(f"╚{'═' * 70}╝")
+
+        lines.append("```")
+        lines.append("")
+
+        # Adicionar legenda
+        lines.append("**Legenda:**")
+        lines.append("")
+        for card in cards:
+            pos_label = f"Posição {card.position}"
+            name_label = card.card_name
+            ctx_label = f"({card.position_context})" if card.position_context else ""
+            lines.append(f"- **{pos_label}**: {name_label} {ctx_label}")
+        lines.append("")
+
+        return "\n".join(lines)
 
     def _generate_default_output(
         self,
@@ -162,12 +360,15 @@ class ReportGenerator:
         symbolic_interp: str,
         risks: str,
         decisions: str,
+        cross_card_patterns: str,
         practical_plan: str,
         disclaimer: Optional[str],
+        disposicao: str = "",
     ) -> str:
         """Gera relatório no formato padrão (completo)."""
         report = REPORT_TEMPLATE.format(
             timestamp=timestamp,
+            disposicao=disposicao or "*Disposição não disponível.*",
             diagnosis=diagnosis,
             symbolic_interpretation=symbolic_interp,
             risks=risks,
@@ -245,6 +446,25 @@ class ReportGenerator:
             String formatada com o diagnóstico.
         """
         return analysis.diagnosis or "*Diagnóstico não disponível.*"
+
+    def _format_disposicao(self, analysis: AnalysisResult) -> str:
+        """Formata a seção de Disposição (mapa visual da tiragem).
+
+        Args:
+            analysis: Resultado da análise.
+
+        Returns:
+            String formatada com a disposição visual das cartas ou placeholder.
+        """
+        if analysis.cards and len(analysis.cards) > 0:
+            lines: list[str] = []
+            for card in analysis.cards:
+                pos_label = f"Posição {card.position}"
+                name_label = card.card_name
+                ctx_label = f"({card.position_context})" if card.position_context else ""
+                lines.append(f"- **{pos_label}**: {name_label} {ctx_label}")
+            return "\n".join(lines)
+        return ""
 
     def _format_symbolic_interpretation(self, analysis: AnalysisResult) -> str:
         """Formata a seção de Interpretação Simbólica.
