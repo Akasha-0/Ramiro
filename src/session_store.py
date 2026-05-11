@@ -356,7 +356,7 @@ class SessionStore:
         Returns:
             Dicionário com dados da sessão.
         """
-        return {
+        data = {
             "session_id": session.session_id,
             "timestamp": session.timestamp,
             "input_format": session.input_format,
@@ -364,6 +364,21 @@ class SessionStore:
             "unresolved_threads": session.unresolved_threads,
             "tags": session.tags,
         }
+
+        # Serialize analysis_result if present
+        if session.analysis_result is not None:
+            analysis = session.analysis_result
+            data["analysis_result"] = {
+                "diagnosis": analysis.diagnosis,
+                "themes": analysis.themes,
+                "risks": analysis.risks,
+                "decisions": analysis.decisions,
+                "practical_plan": analysis.practical_plan,
+                "card_interpretations": analysis.card_interpretations,
+                "symbolic_mappings": analysis.symbolic_mappings,
+            }
+
+        return data
 
     def _dict_to_session(self, data: dict) -> Session:
         """Converte dicionário para sessão.
@@ -374,12 +389,28 @@ class SessionStore:
         Returns:
             Sessão reconstruída.
         """
+        from src.types import AnalysisResult
+
+        # Deserialize analysis_result if present
+        analysis_result = None
+        if "analysis_result" in data and data["analysis_result"] is not None:
+            ar_data = data["analysis_result"]
+            analysis_result = AnalysisResult(
+                diagnosis=ar_data.get("diagnosis", ""),
+                themes=ar_data.get("themes", []),
+                risks=ar_data.get("risks", []),
+                decisions=ar_data.get("decisions", []),
+                practical_plan=ar_data.get("practical_plan", ""),
+                card_interpretations=ar_data.get("card_interpretations"),
+                symbolic_mappings=ar_data.get("symbolic_mappings"),
+            )
+
         return Session(
             session_id=data["session_id"],
             timestamp=data["timestamp"],
             input_format=data["input_format"],
             raw_content=data["raw_content"],
-            analysis_result=None,
+            analysis_result=analysis_result,
             unresolved_threads=data.get("unresolved_threads", []),
             tags=data.get("tags", []),
         )
