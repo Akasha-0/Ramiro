@@ -469,6 +469,103 @@ class SpreadDiagramGenerator:
 
         return "\n".join(lines)
 
+    def generate_celtic_cross(self, cards: list[tuple[str, str, str]]) -> str:
+        """Gera diagrama visual para tiragem Celtic Cross (10 posições).
+
+        Layout da Cruz Celta:
+            [4]   [3]   [2]
+                   [10]
+            [5]   [1]    [9]
+                   [8]
+            [6]   [7]
+
+        Args:
+            cards: Lista de tuplas (position, context, card_name).
+                   Ex: [('1', 'Presente', 'Estrela'), ('2', 'Desafio', 'Cruz'), ...]
+
+        Returns:
+            String contendo o diagrama visual em ASCII.
+        """
+        if not cards:
+            logger.warning("generate_celtic_cross chamado com lista vazia")
+            return "## Disposição\n\n[Nenhuma carta disponível]\n"
+
+        logger.debug("Gerando diagrama Celtic Cross para %d cartas", len(cards))
+
+        # Mapear cartas por posição
+        card_map: dict[int, tuple[str, str]] = {}
+        for card in cards:
+            try:
+                pos_idx = int(card[0])
+                card_map[pos_idx] = (card[1], card[2])  # (context, card_name)
+            except (ValueError, IndexError):
+                logger.warning(" carta com posição inválida: %s", card)
+
+        lines = ["## Disposição", ""]
+
+        # Células de tamanho fixo para as 10 posições do Celtic Cross
+        # Layout: posições de cima (4,3,2), posição 10 central, meio (5,1,9), posição 8, baixo (6,7)
+        cell_width = 16
+
+        def get_card(pos_idx: int) -> str:
+            """Obtém o nome da carta para uma posição."""
+            if pos_idx in card_map:
+                name = card_map[pos_idx][1]
+                # Se a carta é um nome real, mostrar "Posição X: Nome"
+                if name:
+                    return f"Posição {pos_idx}: {name}"
+            return f"Posição {pos_idx}"
+
+        def get_context(pos_idx: int) -> str:
+            """Obtém o contexto para uma posição."""
+            if pos_idx in card_map:
+                return _format_context_label(card_map[pos_idx][0])
+            return ""
+
+        # Linhas horizontais reutilizáveis
+        h_border = BOX_HORIZONTAL * (cell_width - 2)
+        top_border = BOX_DOWN_RIGHT + h_border
+        mid_border = BOX_UP_RIGHT + h_border
+        sep_cross = BOX_CROSS + h_border
+        sep_t_down = BOX_T_DOWN + h_border
+        sep_t_up = BOX_T_UP + h_border
+
+        # Linha superior: 4 - 3 - 2
+        lines.append(f"       {top_border}{BOX_T_DOWN}{h_border}{BOX_T_DOWN}{h_border}{BOX_DOWN_LEFT}")
+
+        # Nomes das cartas do topo
+        lines.append(f"       {BOX_VERTICAL} {get_card(4):<{cell_width - 2}} {BOX_VERTICAL} {get_card(3):<{cell_width - 2}} {BOX_VERTICAL} {get_card(2):<{cell_width - 2}} {BOX_VERTICAL}")
+
+        # Posição 10 (cruzando acima da posição 1)
+        lines.append(f"       {mid_border}{BOX_CROSS}{h_border}{BOX_CROSS}{h_border}{BOX_UP_LEFT}")
+
+        # Nome da posição 10 (centralizado) - alinhado com as células do meio
+        lines.append(f"              {BOX_VERTICAL} {get_card(10):<{cell_width - 2}} {BOX_VERTICAL}")
+
+        # Linha divisória inferior da posição 10
+        lines.append(f"       {top_border}{BOX_T_DOWN}{h_border}{BOX_T_DOWN}{h_border}{BOX_DOWN_LEFT}")
+
+        # Linha do meio: 5 - 1 - 9
+        lines.append(f"       {BOX_VERTICAL} {get_card(5):<{cell_width - 2}} {BOX_VERTICAL} {get_card(1):<{cell_width - 2}} {BOX_VERTICAL} {get_card(9):<{cell_width - 2}} {BOX_VERTICAL}")
+
+        # Linha inferior das posições do meio
+        lines.append(f"       {mid_border}{BOX_T_UP}{h_border}{BOX_T_UP}{h_border}{BOX_UP_LEFT}")
+
+        # Posição 8 (centralizado)
+        lines.append(f"              {BOX_VERTICAL} {get_card(8):<{cell_width - 2}} {BOX_VERTICAL}")
+
+        # Linha divisória para posição 8
+        lines.append(f"       {top_border}{BOX_T_DOWN}{h_border}{BOX_T_DOWN}{h_border}{BOX_DOWN_LEFT}")
+
+        # Posições 6 e 7 (inferior esquerdo)
+        lines.append(f"       {BOX_VERTICAL} {get_card(6):<{cell_width - 2}} {BOX_VERTICAL} {get_card(7):<{cell_width - 2}} {BOX_VERTICAL}")
+
+        # Linha final
+        lines.append(f"       {mid_border}{BOX_UP_LEFT}   {mid_border}{BOX_UP_LEFT}")
+        lines.append("")
+
+        return "\n".join(lines)
+
     def _generate_linear_diagram(self, template: SpreadTemplate) -> str:
         """Gera diagrama linear genérico para templates não específicos."""
         lines = ["## Disposição", ""]
