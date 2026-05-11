@@ -132,6 +132,40 @@ class ReportGenerator:
             logger.warning("Formato desconhecido '%s', usando 'default'", output_format)
             output_format = "default"
 
+        # Se houver cartas disponíveis no AnalysisResult, gerar com diagrama visual
+        if analysis.cards and len(analysis.cards) > 0:
+            # Renderiza diagrama visual
+            diagram = self._render_card_spread_diagram(analysis.cards)
+            # Montar campos do template
+            timestamp = self._get_timestamp()
+            diagnosis = self._format_diagnosis(analysis)
+            symbolic_interp = self._format_symbolic_interpretation(analysis)
+            risks = self._format_risks(analysis)
+            decisions = self._format_decisions(analysis)
+            cross_card_patterns = self._format_cross_card_patterns(analysis)
+            disposicao = self._format_disposicao(analysis)
+            practical_plan = self._format_practical_plan(analysis)
+
+            # Gerar relatório com diagrama
+            report = self._generate_default_output(
+                timestamp, diagnosis, symbolic_interp, risks, decisions, cross_card_patterns, practical_plan, disclaimer, disposicao
+            )
+
+            # Inserir diagrama no início do relatório (após título)
+            if diagram:
+                lines = report.split("\n")
+                insert_pos = 0
+                for i, line in enumerate(lines):
+                    if i > 0 and line.strip() == "":
+                        insert_pos = i
+                        break
+                    insert_pos = i + 1
+                lines.insert(insert_pos, diagram)
+                report = "\n".join(lines)
+
+            logger.info("Relatório com diagrama gerado com %d caracteres", len(report))
+            return report
+
         # Montar campos do template
         timestamp = self._get_timestamp()
         diagnosis = self._format_diagnosis(analysis)

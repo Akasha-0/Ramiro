@@ -56,6 +56,7 @@ class AnalysisResult:
         card_interpretations: Interpretações por carta (para tiragens).
         symbolic_mappings: Mapeamentos simbólicos individuais.
         cross_card_patterns: Padrões detectados entre múltiplas cartas.
+        cards: Lista de CardPosition da tiragem (opcional).
     """
 
     diagnosis: str
@@ -66,6 +67,7 @@ class AnalysisResult:
     card_interpretations: Optional[list[str]] = None
     symbolic_mappings: Optional[dict[str, str]] = None
     cross_card_patterns: list["CrossCardPattern"] = field(default_factory=list)
+    cards: Optional[list["CardPosition"]] = None
 
 
 @dataclass

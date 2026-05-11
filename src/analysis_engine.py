@@ -951,6 +951,7 @@ class AnalysisEngine:
             card_interpretations=card_interpretations,
             symbolic_mappings=symbolic_mappings,
             cross_card_patterns=cross_card_patterns,
+            cards=input_data.cards,
         )
 
         logger.info(
