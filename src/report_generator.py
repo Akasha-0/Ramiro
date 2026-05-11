@@ -259,18 +259,18 @@ class ReportGenerator:
         practical_plan: str,
         disclaimer: Optional[str],
     ) -> str:
-        """Gera relatório no formato compacto."""
+        """Gera relatório no formato compacto com limite de 500 palavras."""
         report = COMPACT_TEMPLATE.format(
             timestamp=timestamp,
-            diagnosis=diagnosis,
-            symbolic_interpretation=symbolic_interp,
-            risks=risks,
-            decisions=decisions,
-            practical_plan=practical_plan,
+            diagnosis=self._truncate_to_words(diagnosis, 100),
+            symbolic_interpretation=self._truncate_to_words(symbolic_interp, 100),
+            risks=self._truncate_to_words(risks, 100),
+            decisions=self._truncate_to_words(decisions, 100),
+            practical_plan=self._truncate_to_words(practical_plan, 100),
         )
         if disclaimer:
             report = report.rstrip() + "\n\n" + disclaimer + "\n"
-        return report
+        return self._truncate_to_words(report, 500)
 
     def _generate_json_output(
         self,
@@ -434,6 +434,32 @@ class ReportGenerator:
     # ------------------------------------------------------------------
     # Utilitários de formatação
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _truncate_to_words(text: str, max_words: int) -> str:
+        """Trunca texto para no máximo max_words palavras.
+
+        Args:
+            text: Texto a ser truncado.
+            max_words: Número máximo de palavras permitido.
+
+        Returns:
+            Texto truncado se exceder max_words, caso contrário o texto original.
+        """
+        words = text.split()
+        if len(words) <= max_words:
+            return text
+        truncated = " ".join(words[:max_words])
+        # Evitar cortar no meio de uma frase马尔
+        last_punct = max(
+            truncated.rfind("."),
+            truncated.rfind("!"),
+            truncated.rfind("?"),
+            truncated.rfind(";"),
+        )
+        if last_punct > max_words // 2:
+            return truncated[: last_punct + 1]
+        return truncated + "…"
 
     @staticmethod
     def format_list(items: list[str], bullet: str = "-") -> str:
