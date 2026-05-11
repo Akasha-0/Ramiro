@@ -1,0 +1,284 @@
+{
+  "feature": "Verbose and compact output modes",
+  "workflow_type": "simple",
+  "workflow_rationale": "Single-service feature (CLI output formatting) with clear scope and well-defined patterns already present in codebase. No multi-service dependencies or complex orchestration needed.",
+  "phases": [
+    {
+      "id": "phase-1-cli",
+      "name": "CLI Enhancement",
+      "type": "implementation",
+      "description": "Add verbose to format choices and integrate config default_report_format into CLI",
+      "depends_on": [],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-1-1",
+          "description": "Add verbose to format choices in CLI",
+          "service": "backend",
+          "files_to_modify": [
+            "src/main.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/main.py"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "python -m src.main --help",
+            "expected": "verbose"
+          },
+          "status": "completed"
+        },
+        {
+          "id": "subtask-1-2",
+          "description": "Integrate config default_report_format into run_analyze",
+          "service": "backend",
+          "files_to_modify": [
+            "src/main.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/config.py"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "python -c \"from src.config import load_config; c = load_config(); print(c.default_report_format)\"",
+            "expected": "compact"
+          },
+          "status": "completed",
+          "notes": "Successfully integrated config default_report_format into run_analyze. Added --report-format CLI argument, load_config() call, and passing output_format to ReportGenerator. Also fixed a bug in report_generator.py where _generate_default_output was missing the cross_card_patterns parameter.",
+          "updated_at": "2026-05-11T20:09:29.842450+00:00"
+        }
+      ]
+    },
+    {
+      "id": "phase-2-report-generator",
+      "name": "Report Generator Enhancement",
+      "type": "implementation",
+      "description": "Add VERBOSE_TEMPLATE with explanatory section headers and enforce 500-word limit on compact mode",
+      "depends_on": [],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-2-1",
+          "description": "Add VERBOSE_TEMPLATE with explanatory headers",
+          "service": "backend",
+          "files_to_modify": [
+            "src/report_generator.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/report_generator.py"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "python -c \"from src.report_generator import ReportGenerator, VERBOSE_TEMPLATE; print('VERBOSE_TEMPLATE' in dir())\"",
+            "expected": "True"
+          },
+          "status": "completed",
+          "notes": "Added VERBOSE_TEMPLATE with explanatory headers for each section and _generate_verbose_output method. Updated valid_formats to include 'verbose'.",
+          "updated_at": "2026-05-11T20:10:00.000000+00:00"
+        },
+        {
+          "id": "subtask-2-2",
+          "description": "Implement verbose output format in generate()",
+          "service": "backend",
+          "files_to_modify": [
+            "src/report_generator.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/report_generator.py"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "python -c \"from src.report_generator import ReportGenerator; from src.types import AnalysisResult; g = ReportGenerator(); r = g.generate(AnalysisResult(diagnosis='Test'), output_format='verbose'); print('# Verbose' in r or '# Análise' in r)\"",
+            "expected": "True"
+          },
+          "status": "completed",
+          "notes": "Verbose output format is already implemented in generate() method via _generate_verbose_output(). The generate() method routes to _generate_verbose_output() when output_format='verbose', using VERBOSE_TEMPLATE with section headers. Verification confirmed all expected patterns present (Relatório, Seção, Sobre, Detalhado).",
+          "updated_at": "2026-05-11T20:15:00.000000+00:00"
+        },
+        {
+          "id": "subtask-2-3",
+          "description": "Enforce 500-word limit on compact mode",
+          "service": "backend",
+          "files_to_modify": [
+            "src/report_generator.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "src/report_generator.py"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "python -c \"from src.report_generator import ReportGenerator; from src.types import AnalysisResult; g = ReportGenerator(); r = g.generate(AnalysisResult(diagnosis='Test'), output_format='compact'); words = len(r.split()); print(f'Word count: {words}'); assert words <= 500, f'Too many words: {words}'\"",
+            "expected": "Word count:"
+          },
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase-3-tests",
+      "name": "Tests",
+      "type": "implementation",
+      "description": "Add tests for verbose and compact output modes",
+      "depends_on": [
+        "phase-1-cli",
+        "phase-2-report-generator"
+      ],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-3-1",
+          "description": "Add CLI tests for verbose and compact format options",
+          "service": "backend",
+          "files_to_modify": [
+            "tests/test_cli.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "tests/test_cli.py"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "python -m pytest tests/test_cli.py -v -k \"verbose or compact\" 2>&1 | head -30",
+            "expected": "PASSED"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-3-2",
+          "description": "Add ReportGenerator tests for verbose format",
+          "service": "backend",
+          "files_to_modify": [
+            "tests/test_report_generator.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "tests/test_report_generator.py"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "python -m pytest tests/test_report_generator.py -v -k \"verbose\" 2>&1 | head -30",
+            "expected": "PASSED"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-3-3",
+          "description": "Add test for compact mode 500-word limit",
+          "service": "backend",
+          "files_to_modify": [
+            "tests/test_report_generator.py"
+          ],
+          "files_to_create": [],
+          "patterns_from": [
+            "tests/test_report_generator.py"
+          ],
+          "verification": {
+            "type": "command",
+            "command": "python -m pytest tests/test_report_generator.py -v -k \"compact\" 2>&1 | head -30",
+            "expected": "PASSED"
+          },
+          "status": "pending"
+        }
+      ]
+    }
+  ],
+  "verification_strategy": {
+    "risk_level": "medium",
+    "skip_validation": false,
+    "test_creation_phase": "post_implementation",
+    "test_types_required": [
+      "unit",
+      "integration"
+    ],
+    "security_scanning_required": false,
+    "staging_deployment_required": false,
+    "acceptance_criteria": [
+      "All existing tests pass",
+      "New code has test coverage",
+      "--format verbose includes explanatory headers",
+      "--format compact produces under 500 words",
+      "verbose and compact modes documented in --help"
+    ],
+    "verification_steps": [
+      {
+        "name": "Unit Tests",
+        "command": "python -m pytest tests/test_report_generator.py tests/test_cli.py -v",
+        "expected_outcome": "All tests pass",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "CLI Help Check",
+        "command": "python -m src.main analyze --help",
+        "expected_outcome": "verbose and compact modes shown in help",
+        "type": "manual",
+        "required": true,
+        "blocking": false
+      }
+    ],
+    "reasoning": "Medium risk change requires unit and integration test coverage"
+  },
+  "summary": {
+    "total_phases": 3,
+    "total_subtasks": 8,
+    "services_involved": [
+      "backend"
+    ],
+    "parallelism": {
+      "max_parallel_phases": 2,
+      "parallel_groups": [
+        {
+          "phases": [
+            "phase-1-cli",
+            "phase-2-report-generator"
+          ],
+          "reason": "Both depend only on existing patterns, no file conflicts"
+        }
+      ],
+      "recommended_workers": 2,
+      "speedup_estimate": "1.2x faster than sequential"
+    },
+    "startup_command": "source .venv/bin/activate && python -m src.main analyze -i \"teste\" -f verbose"
+  },
+  "qa_acceptance": {
+    "unit_tests": {
+      "required": true,
+      "commands": [
+        "python -m pytest tests/test_report_generator.py -v",
+        "python -m pytest tests/test_cli.py -v"
+      ],
+      "minimum_coverage": null
+    },
+    "integration_tests": {
+      "required": false,
+      "commands": [],
+      "services_to_test": []
+    },
+    "e2e_tests": {
+      "required": false,
+      "commands": [],
+      "flows": []
+    },
+    "browser_verification": {
+      "required": false,
+      "pages": []
+    },
+    "database_verification": {
+      "required": false,
+      "checks": []
+    }
+  },
+  "qa_signoff": null,
+  "status": "in_progress",
+  "planStatus": "in_progress",
+  "xstateState": "planning",
+  "executionPhase": "coding",
+  "updated_at": "2026-05-11T20:10:54.215Z",
+  "last_updated": "2026-05-11T20:09:29.842468+00:00"
+}
