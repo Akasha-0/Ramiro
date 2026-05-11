@@ -185,7 +185,8 @@
             "command": "python -m pytest tests/test_report_generator.py -v -k \"compact\" 2>&1 | head -30",
             "expected": "PASSED"
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "Added 2 tests: test_compact_respects_500_word_limit (verifies 500-word limit with long content) and test_compact_under_limit_preserves_content (verifies content preservation when under limit)."
         }
       ]
     }
