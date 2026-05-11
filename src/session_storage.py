@@ -14,7 +14,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
 
-from src.types import Session
+from src.types import Session, AnalysisResult, CrossCardPattern
 
 logger = logging.getLogger(__name__)
 
@@ -130,12 +130,44 @@ class SessionStorage:
                     f"Dados de sessão incompletos: campo '{field}' ausente"
                 )
 
+        # Reconstruir AnalysisResult se existir como dict
+        analysis_result = None
+        if data.get("analysis_result") is not None:
+            ar_data = data["analysis_result"]
+            if isinstance(ar_data, dict):
+                # Reconstruir cross_card_patterns
+                cross_card_patterns = []
+                for pattern in ar_data.get("cross_card_patterns", []):
+                    if isinstance(pattern, dict):
+                        cross_card_patterns.append(CrossCardPattern(
+                            pattern_type=str(pattern.get("pattern_type", "")),
+                            card_ids=pattern.get("card_ids", []),
+                            interpretation=str(pattern.get("interpretation", "")),
+                            strength=pattern.get("strength"),
+                        ))
+                    else:
+                        cross_card_patterns.append(pattern)
+
+                analysis_result = AnalysisResult(
+                    diagnosis=str(ar_data.get("diagnosis", "")),
+                    themes=ar_data.get("themes", []),
+                    risks=ar_data.get("risks", []),
+                    decisions=ar_data.get("decisions", []),
+                    practical_plan=str(ar_data.get("practical_plan", "")),
+                    card_interpretations=ar_data.get("card_interpretations"),
+                    symbolic_mappings=ar_data.get("symbolic_mappings"),
+                    cross_card_patterns=cross_card_patterns,
+                    previous_sessions=ar_data.get("previous_sessions"),
+                )
+            else:
+                analysis_result = ar_data
+
         return Session(
             session_id=str(data["session_id"]),
             timestamp=str(data["timestamp"]),
             input_format=str(data["input_format"]),
             raw_content=str(data["raw_content"]),
-            analysis_result=data.get("analysis_result"),
+            analysis_result=analysis_result,
             unresolved_threads=data.get("unresolved_threads", []),
             tags=data.get("tags", []),
         )
