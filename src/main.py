@@ -161,6 +161,25 @@ def main() -> None:
              "Disponível apenas para --format spread.",
     )
 
+    # subcommand: arc
+    arc_parser = subparsers.add_parser("arc", help="Visualizar arco narrativo entre sessões")
+    arc_parser.add_argument(
+        "--sessions", "-s",
+        default=None,
+        help="Lista de caminhos de arquivos de relatório separados por vírgula",
+    )
+    arc_parser.add_argument(
+        "--output", "-o",
+        default=None,
+        help="Caminho do arquivo .md para salvar a visualização",
+    )
+    arc_parser.add_argument(
+        "--format", "-f",
+        choices=["text", "chart"],
+        default="text",
+        help="Formato de saída (text, chart)",
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -174,6 +193,8 @@ def main() -> None:
 
     if args.command == "analyze":
         run_analyze(args.input, args.format, args.output, args.template, verbose)
+    elif args.command == "arc":
+        run_arc(args.sessions, args.output, args.format, verbose)
 
 
 def run_analyze(
@@ -325,6 +346,55 @@ def run_analyze(
         if 'progress' in locals():
             progress.error("Erro no processamento")
         sys.exit(1)
+
+
+def run_arc(
+    sessions: str | None,
+    output_path: str | None,
+    format: str,
+    verbose: bool = False,
+) -> None:
+    """Exibe o arco narrativo entre sessões de análise.
+
+    Args:
+        sessions: Lista separada por vírgula de caminhos de arquivos de relatório.
+        output_path: Caminho opcional para salvar a visualização em .md.
+        format: Formato de saída ("text" ou "chart").
+        verbose: Se True, ativa logging detalhado (DEBUG level).
+    """
+    # Configure verbose logging if requested
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    colored = _get_error_output()
+
+    if not sessions:
+        print(colored.error("Erro: --sessions é obrigatório para o comando arc."), file=sys.stderr)
+        sys.exit(2)
+
+    # Parse session paths
+    session_paths = [s.strip() for s in sessions.split(",") if s.strip()]
+
+    if len(session_paths) < 2:
+        print(
+            colored.error("Erro: Mínimo de 2 sessões necessárias para visualizar o arco narrativo."),
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    logger.info("Processando %d sessões para visualização do arco narrativo", len(session_paths))
+
+    # Placeholder - actual implementation will be in arc_visualizer.py
+    if format == "chart":
+        output_content = f"## Arco Narrativo\n\nVisualização em formato chart para {len(session_paths)} sessões."
+    else:
+        output_content = f"## Arco Narrativo\n\nAnálise textual do arco entre {len(session_paths)} sessões."
+
+    if output_path:
+        _save_report(output_path, output_content)
+        print(colored.success(f"✓ Visualização salva em: {output_path}"), file=sys.stderr)
+    else:
+        print(output_content)
 
 
 def _save_report(path: str, content: str) -> None:
