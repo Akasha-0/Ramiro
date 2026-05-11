@@ -16,7 +16,7 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from src.types import AnalysisResult, CrossCardPattern
+from src.types import AnalysisResult, CrossCardPattern, Session
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,9 @@ REPORT_TEMPLATE = """# Relatório de Análise — {timestamp}
 
 ## Padrões Cruzados
 {cross_card_patterns}
+
+## Contexto de Sessões Anteriores
+{session_context}
 
 ## Plano Prático
 {practical_plan}
@@ -102,6 +105,7 @@ class ReportGenerator:
         analysis: AnalysisResult,
         disclaimer: Optional[str] = None,
         output_format: str = "default",
+        previous_sessions: Optional[list["Session"]] = None,
     ) -> str:
         """Gera relatório em Markdown (ou outro formato) a partir do resultado da análise.
 
@@ -110,6 +114,7 @@ class ReportGenerator:
             disclaimer: Texto adicional a ser inserido antes do rodapé (opcional).
             output_format: Formato do relatório — "default" (completo), "compact"
                 (resumido), ou "json" (estruturado). Default: "default".
+            previous_sessions: Lista de sessões anteriores para contexto (opcional).
 
         Returns:
             String com relatório no formato solicitado.
@@ -137,6 +142,7 @@ class ReportGenerator:
         decisions = self._format_decisions(analysis)
         cross_card_patterns = self._format_cross_card_patterns(analysis)
         practical_plan = self._format_practical_plan(analysis)
+        session_context = self._format_previous_sessions(previous_sessions or [])
 
         # Selecionar template ou formato conforme solicitado
         if output_format == "json":
@@ -149,7 +155,7 @@ class ReportGenerator:
             )
         else:
             report = self._generate_default_output(
-                timestamp, diagnosis, symbolic_interp, risks, decisions, practical_plan, disclaimer
+                timestamp, diagnosis, symbolic_interp, risks, decisions, cross_card_patterns, practical_plan, session_context, disclaimer
             )
 
         logger.info("Relatório gerado com %d caracteres", len(report))
@@ -162,7 +168,9 @@ class ReportGenerator:
         symbolic_interp: str,
         risks: str,
         decisions: str,
+        cross_card_patterns: str,
         practical_plan: str,
+        session_context: str,
         disclaimer: Optional[str],
     ) -> str:
         """Gera relatório no formato padrão (completo)."""
@@ -174,6 +182,7 @@ class ReportGenerator:
             decisions=decisions,
             cross_card_patterns=cross_card_patterns,
             practical_plan=practical_plan,
+            session_context=session_context,
         )
         if disclaimer:
             report = report.rstrip() + "\n\n" + disclaimer + "\n"
@@ -360,6 +369,36 @@ class ReportGenerator:
             return "*Plano prático não disponível — a análise não gerou recomendações.*"
 
         return analysis.practical_plan
+
+    def _format_previous_sessions(self, sessions: list["Session"]) -> str:
+        """Formata a seção de Contexto de Sessões Anteriores.
+
+        Args:
+            sessions: Lista de sessões anteriores.
+
+        Returns:
+            String formatada com o contexto das sessões anteriores.
+        """
+        if not sessions:
+            return "*Nenhuma sessão anterior encontrada — contexto de histórico indisponível.*"
+
+        lines: list[str] = []
+        for session in sessions:
+            lines.append(f"### Sessão de {session.timestamp}\n")
+            if session.tags:
+                tags_str = ", ".join(f"_{tag}_" for tag in session.tags)
+                lines.append(f"**Tags**: {tags_str}\n")
+            if session.raw_content:
+                content_preview = session.raw_content[:100] + "..." if len(session.raw_content) > 100 else session.raw_content
+                lines.append(f"**Input**: {content_preview}\n")
+            if session.analysis_result and session.analysis_result.themes:
+                themes_str = ", ".join(f"*{t}*" for t in session.analysis_result.themes)
+                lines.append(f"**Temas**: {themes_str}\n")
+            if session.unresolved_threads:
+                lines.append(f"**Threads pendentes**: {', '.join(session.unresolved_threads)}\n")
+            lines.append("")
+
+        return "\n".join(lines).strip()
 
     # ------------------------------------------------------------------
     # Utilitários de formatação
