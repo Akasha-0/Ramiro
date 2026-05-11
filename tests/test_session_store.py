@@ -67,6 +67,7 @@ def sample_session() -> Session:
         raw_content="Teste de conteúdo",
         analysis_result=None,
         unresolved_threads=[],
+        tags=["teste"],
     )
 
 
@@ -214,6 +215,7 @@ class TestSaveSession:
             raw_content="Novo conteúdo",
             analysis_result=None,
             unresolved_threads=[],
+            tags=[],
         )
         session_store.save_session(session)
         assert session_store.session_exists("new-session")
@@ -500,6 +502,21 @@ class TestSerialization:
         assert data["raw_content"] == "teste"
         assert data["input_format"] == "text"
         assert "unresolved_threads" in data
+        assert "tags" in data
+
+    def test_session_to_dict_includes_tags(self, session_store: SessionStore) -> None:
+        from src.types import Session
+        session = Session(
+            session_id="with-tags",
+            timestamp="2024-01-01T00:00:00",
+            input_format="text",
+            raw_content="Teste",
+            analysis_result=None,
+            unresolved_threads=[],
+            tags=["carreira", "trabalho"],
+        )
+        data = session_store._session_to_dict(session)
+        assert data["tags"] == ["carreira", "trabalho"]
 
     def test_dict_to_session(self, session_store: SessionStore) -> None:
         raw_data = {
@@ -527,10 +544,112 @@ class TestSerialization:
         session = session_store._dict_to_session(raw_data)
         assert session.unresolved_threads == []
 
+    def test_dict_to_session_defaults_unresolved_threads(self, session_store: SessionStore) -> None:
+        raw_data = {
+            "session_id": "no-threads",
+            "timestamp": "2024-01-01T00:00:00",
+            "input_format": "text",
+            "raw_content": "Sem threads",
+        }
+        session = session_store._dict_to_session(raw_data)
+        assert session.unresolved_threads == []
+
+    def test_dict_to_session_includes_tags(self, session_store: SessionStore) -> None:
+        raw_data = {
+            "session_id": "with-tags",
+            "timestamp": "2024-01-01T00:00:00",
+            "input_format": "text",
+            "raw_content": "Com tags",
+            "unresolved_threads": [],
+            "tags": ["carreira", "trabalho"],
+        }
+        session = session_store._dict_to_session(raw_data)
+        assert session.tags == ["carreira", "trabalho"]
+
+    def test_dict_to_session_defaults_tags_to_empty(self, session_store: SessionStore) -> None:
+        raw_data = {
+            "session_id": "no-tags",
+            "timestamp": "2024-01-01T00:00:00",
+            "input_format": "text",
+            "raw_content": "Sem tags",
+        }
+        session = session_store._dict_to_session(raw_data)
+        assert session.tags == []
+
 
 # ----------------------------------------------------------------------
-# Testes — permissões e erros de IO
+# Testes — get_sessions_by_tag()
 # ----------------------------------------------------------------------
+
+
+class TestGetSessionsByTag:
+    def test_get_sessions_by_tag_empty_store(self, session_store: SessionStore) -> None:
+        result = session_store.get_sessions_by_tag("carreira")
+        assert result == []
+
+    def test_get_sessions_by_tag_finds_matching(self, session_store: SessionStore) -> None:
+        session_store.create_session("texto1", "text")
+        # Adicionar tag manualmente
+        s2 = session_store.create_session("texto2", "text")
+        from src.types import Session
+        updated = Session(
+            session_id=s2.session_id,
+            timestamp=s2.timestamp,
+            input_format=s2.input_format,
+            raw_content=s2.raw_content,
+            analysis_result=None,
+            unresolved_threads=[],
+            tags=["carreira"],
+        )
+        session_store.save_session(updated)
+
+        result = session_store.get_sessions_by_tag("carreira")
+        assert len(result) == 1
+        assert result[0].session_id == s2.session_id
+
+    def test_get_sessions_by_tag_case_insensitive(self, session_store: SessionStore) -> None:
+        s1 = session_store.create_session("texto1", "text")
+        from src.types import Session
+        updated = Session(
+            session_id=s1.session_id,
+            timestamp=s1.timestamp,
+            input_format=s1.input_format,
+            raw_content=s1.raw_content,
+            analysis_result=None,
+            unresolved_threads=[],
+            tags=["Carreira"],
+        )
+        session_store.save_session(updated)
+
+        result = session_store.get_sessions_by_tag("CARREIRA")
+        assert len(result) == 1
+
+    def test_get_sessions_by_tag_sorted_by_timestamp(self, session_store: SessionStore) -> None:
+        from datetime import timedelta
+        from src.types import Session
+
+        base_time = "2024-01-01T00:00:00"
+        for i, tag in enumerate(["carreira", "relacionamento", "carreira"]):
+            s = session_store.create_session(f"texto{i}", "text")
+            # Ajustar timestamp para simular diferentes horas
+            timestamp_parts = base_time.split("T")
+            hour = 10 + i
+            timestamp = f"{timestamp_parts[0]}T{hour:02d}:00:00"
+            updated = Session(
+                session_id=s.session_id,
+                timestamp=timestamp,
+                input_format=s.input_format,
+                raw_content=s.raw_content,
+                analysis_result=None,
+                unresolved_threads=[],
+                tags=[tag],
+            )
+            session_store.save_session(updated)
+
+        result = session_store.get_sessions_by_tag("carreira")
+        assert len(result) == 2
+        # Deve estar ordenado por timestamp
+        assert result[0].timestamp < result[1].timestamp
 
 
 class TestIOPermissions:

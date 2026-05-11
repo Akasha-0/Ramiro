@@ -219,6 +219,24 @@ class SessionStore:
         """
         return len(self._sessions)
 
+    def get_sessions_by_tag(self, tag: str) -> list[Session]:
+        """Retorna sessões filtradas por tag.
+
+        Args:
+            tag: Tag para filtrar as sessões.
+
+        Returns:
+            Lista de sessões que possuem a tag especificada,
+            ordenadas por timestamp.
+        """
+        matching = [
+            session for session in self._sessions.values()
+            if tag.lower() in [t.lower() for t in session.tags]
+        ]
+        matching.sort(key=lambda s: s.timestamp)
+        logger.debug("Sessões com tag '%s': %d", tag, len(matching))
+        return matching
+
     # ------------------------------------------------------------------
     # Persistência JSON
     # ------------------------------------------------------------------
@@ -344,6 +362,7 @@ class SessionStore:
             "input_format": session.input_format,
             "raw_content": session.raw_content,
             "unresolved_threads": session.unresolved_threads,
+            "tags": session.tags,
         }
 
     def _dict_to_session(self, data: dict) -> Session:
@@ -362,4 +381,5 @@ class SessionStore:
             raw_content=data["raw_content"],
             analysis_result=None,
             unresolved_threads=data.get("unresolved_threads", []),
+            tags=data.get("tags", []),
         )
