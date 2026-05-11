@@ -145,9 +145,9 @@ def main() -> None:
     )
     analyze_parser.add_argument(
         "--format", "-f",
-        choices=["text", "spread", "symbols"],
+        choices=["text", "spread", "symbols", "verbose"],
         default="text",
-        help="Formato da entrada (text, spread, symbols)",
+        help="Formato da entrada (text, spread, symbols, verbose)",
     )
     analyze_parser.add_argument(
         "--output", "-o",
