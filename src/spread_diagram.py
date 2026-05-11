@@ -165,6 +165,86 @@ class SpreadDiagramGenerator:
         )
         return self.generate(template)
 
+    def generate_linear(self, cards: list[tuple[str, str, str]]) -> str:
+        """Gera diagrama linear para lista simples de cartas.
+
+        Método utilitário que aceita uma lista de tuplas com (posição, contexto, nome_da_carta)
+        e gera um diagrama visual linear sem necessidade de criar um SpreadTemplate.
+
+        Args:
+            cards: Lista de tuplas (position, context, card_name).
+                   Ex: [('1', 'Passado', 'Estrela'), ('2', 'Presente', 'Cruz')]
+
+        Returns:
+            String contendo o diagrama visual em ASCII.
+        """
+        if not cards:
+            logger.warning("generate_linear chamado com lista vazia")
+            return "## Disposição\n\n[Nenhuma carta disponível]\n"
+
+        logger.debug("Gerando diagrama linear para %d cartas", len(cards))
+
+        lines = ["## Disposição", ""]
+
+        # Calcular largura máxima do conteúdo
+        max_card_len = max(len(card[2]) for card in cards)
+        max_context_len = max(len(card[1]) for card in cards)
+        cell_width = max(max_card_len + 2, max_context_len + 2, 10)
+
+        # Cabeçalho com contextos (se habilitado)
+        if self.include_context:
+            context_parts = [f"[{card[1]:^{cell_width - 2}}]" for card in cards]
+            # Usar mesmo padrão de conector: ├──┼──┘
+            connector = "─" * 3
+            if len(context_parts) == 1:
+                header_line = "   " + connector + "   "
+            else:
+                header_line = "   " + connector + "┼" + connector.join([""] * (len(context_parts) - 1)) + "   "
+            lines.append(header_line)
+            lines.append("   " + "  ".join(context_parts))
+            lines.append("")
+
+        # Construir boxes horizontais conectados
+        # Primeira célula: ├──
+        # Células intermediárias: ├── (para n > 2)
+        # Última célula: ┘
+        if len(cards) == 1:
+            top_line = "   " + BOX_DOWN_RIGHT + BOX_HORIZONTAL * (cell_width - 2) + BOX_DOWN_LEFT
+            bottom_line = "   " + BOX_UP_RIGHT + BOX_HORIZONTAL * (cell_width - 2) + BOX_UP_LEFT
+        else:
+            # Primeira parte: ├── (T_DOWN na junção)
+            top_parts = [BOX_T_RIGHT + BOX_HORIZONTAL * (cell_width - 2)]
+            # Partes do meio: +── (para n > 2)
+            for _ in range(len(cards) - 2):
+                top_parts.append(BOX_CROSS + BOX_HORIZONTAL * (cell_width - 2))
+            # Última parte: ┘
+            top_parts.append(BOX_DOWN_LEFT)
+            top_line = "   " + "".join(top_parts)
+
+            # Linha inferior
+            bottom_parts = [BOX_T_RIGHT + BOX_HORIZONTAL * (cell_width - 2)]
+            for _ in range(len(cards) - 2):
+                bottom_parts.append(BOX_CROSS + BOX_HORIZONTAL * (cell_width - 2))
+            bottom_parts.append(BOX_UP_LEFT)
+            bottom_line = "   " + "".join(bottom_parts)
+
+        lines.append(top_line)
+
+        # Linhas de conteúdo (nome da carta)
+        content_line = "   " + BOX_VERTICAL
+        for card in cards:
+            # Usar card_name completo com padding para alinhar
+            card_label = card[2]
+            # Garantir alinhamento: padding para a largura máxima da carta
+            card_padded = f" {card_label:<{max_card_len}} "
+            content_line += card_padded + BOX_VERTICAL
+        lines.append(content_line)
+
+        lines.append(bottom_line)
+        lines.append("")
+
+        return "\n".join(lines)
+
     # ------------------------------------------------------------------
     # Diagramas específicos por template
     # ------------------------------------------------------------------
