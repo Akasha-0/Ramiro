@@ -638,3 +638,413 @@ class TestJsonOutput:
         data = json.loads(report)
         assert isinstance(data, dict)
         assert len(data) > 0
+
+
+# ----------------------------------------------------------------------
+# Testes — _render_card_spread_diagram()
+# ----------------------------------------------------------------------
+
+
+class TestRenderCardSpreadDiagram:
+    """Testes para renderização de diagrama visual ASCII da tiragem."""
+
+    def test_diagram_empty_cards_returns_empty(self, generator: ReportGenerator) -> None:
+        """Lista vazia de cartas retorna string vazia."""
+        result = generator._render_card_spread_diagram([])
+        assert result == ""
+
+    def test_diagram_single_card_renders(self, generator: ReportGenerator) -> None:
+        """Uma carta renderiza corretamente."""
+        cards = [CardPosition(position=1, card_name="Casa", interpretation="Estabilidade")]
+        result = generator._render_card_spread_diagram(cards)
+        assert "Casa" in result
+        assert "[1]" in result
+        assert "MAPA DA TIRAGEM" in result
+        assert "```" in result  # bloco de código
+
+    def test_diagram_two_cards_horizontal_layout(self, generator: ReportGenerator) -> None:
+        """Duas cartas usam layout horizontal."""
+        cards = [
+            CardPosition(position=1, card_name="Casa"),
+            CardPosition(position=2, card_name="Estrela"),
+        ]
+        result = generator._render_card_spread_diagram(cards)
+        assert "Casa" in result
+        assert "Estrela" in result
+        assert "[1]" in result
+        assert "[2]" in result
+
+    def test_diagram_three_cards_horizontal_layout(self, generator: ReportGenerator) -> None:
+        """Três cartas usam layout horizontal."""
+        cards = [
+            CardPosition(position=1, card_name="Casa"),
+            CardPosition(position=2, card_name="Estrela"),
+            CardPosition(position=3, card_name="Cruz"),
+        ]
+        result = generator._render_card_spread_diagram(cards)
+        assert "Casa" in result
+        assert "Estrela" in result
+        assert "Cruz" in result
+
+    def test_diagram_four_cards_grid_layout(self, generator: ReportGenerator) -> None:
+        """Quatro cartas usam grid 2x2."""
+        cards = [
+            CardPosition(position=1, card_name="Casa"),
+            CardPosition(position=2, card_name="Estrela"),
+            CardPosition(position=3, card_name="Cruz"),
+            CardPosition(position=4, card_name="Café"),
+        ]
+        result = generator._render_card_spread_diagram(cards)
+        assert "Casa" in result
+        assert "Estrela" in result
+        assert "Cruz" in result
+        assert "Café" in result
+
+    def test_diagram_six_cards_2x3_grid(self, generator: ReportGenerator) -> None:
+        """Seis cartas usam grid 2x3."""
+        cards = [
+            CardPosition(position=1, card_name="Casa"),
+            CardPosition(position=2, card_name="Estrela"),
+            CardPosition(position=3, card_name="Cruz"),
+            CardPosition(position=4, card_name="Café"),
+            CardPosition(position=5, card_name="Montanha"),
+            CardPosition(position=6, card_name="Flor"),
+        ]
+        result = generator._render_card_spread_diagram(cards)
+        for i in range(1, 7):
+            assert f"[{i}]" in result
+
+    def test_diagram_seven_cards_list_layout(self, generator: ReportGenerator) -> None:
+        """Sete ou mais cartas usam layout em lista."""
+        cards = [
+            CardPosition(position=i, card_name=f"Carta{i}")
+            for i in range(1, 8)
+        ]
+        result = generator._render_card_spread_diagram(cards)
+        for i in range(1, 8):
+            assert f"[{i}]" in result
+
+    def test_diagram_with_position_context(self, generator: ReportGenerator) -> None:
+        """Cartas com contexto de posição são renderizadas."""
+        cards = [
+            CardPosition(position=1, card_name="Casa", position_context="passado"),
+            CardPosition(position=2, card_name="Estrela", position_context="presente"),
+            CardPosition(position=3, card_name="Cruz", position_context="futuro"),
+        ]
+        result = generator._render_card_spread_diagram(cards)
+        assert "passado" in result
+        assert "presente" in result
+        assert "futuro" in result
+
+    def test_diagram_legend_section(self, generator: ReportGenerator) -> None:
+        """Diagrama inclui seção de legenda."""
+        cards = [
+            CardPosition(position=1, card_name="Casa", position_context="passado"),
+            CardPosition(position=2, card_name="Estrela"),
+        ]
+        result = generator._render_card_spread_diagram(cards)
+        assert "**Legenda:**" in result
+        assert "Posição 1" in result
+        assert "Posição 2" in result
+
+    def test_diagram_returns_markdown_code_block(self, generator: ReportGenerator) -> None:
+        """Diagrama é renderizado como bloco de código Markdown."""
+        cards = [CardPosition(position=1, card_name="Casa")]
+        result = generator._render_card_spread_diagram(cards)
+        # Deve começar com ``` e terminar com ```
+        assert "```" in result
+        # Verifica que é um bloco de código (duas ocorrências de ```)
+        assert result.count("```") >= 2
+
+
+# ----------------------------------------------------------------------
+# Testes — generate(): relatório com diagrama automático
+# ----------------------------------------------------------------------
+
+
+class TestGenerateWithDiagram:
+    """Testes para geração automática de relatório com diagrama quando há cartas."""
+
+    def test_generate_with_cards_includes_diagram(
+        self, generator: ReportGenerator
+    ) -> None:
+        """generate() inclui diagrama quando analysis.cards está presente."""
+        analysis = AnalysisResult(
+            diagnosis="Diagnóstico com tiragem.",
+            cards=[
+                CardPosition(position=1, card_name="Casa"),
+                CardPosition(position=2, card_name="Estrela"),
+            ],
+        )
+        report = generator.generate(analysis)
+        assert "MAPA DA TIRAGEM" in report
+        assert "Casa" in report
+        assert "Estrela" in report
+        assert "[1]" in report
+        assert "[2]" in report
+
+    def test_generate_without_cards_no_diagram(
+        self, generator: ReportGenerator, analysis_full: AnalysisResult
+    ) -> None:
+        """generate() sem cartas não inclui seção de diagrama."""
+        report = generator.generate(analysis_full)
+        assert "MAPA DA TIRAGEM" not in report
+
+    def test_generate_with_cards_preserves_all_sections(
+        self, generator: ReportGenerator
+    ) -> None:
+        """Relatório com diagrama mantém todas as 5 seções."""
+        analysis = AnalysisResult(
+            diagnosis="Diagnóstico",
+            themes=["trabalho"],
+            risks=["risco"],
+            decisions=["decisão"],
+            practical_plan="Plano",
+            cards=[
+                CardPosition(position=1, card_name="Casa"),
+                CardPosition(position=2, card_name="Estrela"),
+            ],
+        )
+        report = generator.generate(analysis)
+        assert "## Diagnóstico" in report
+        assert "## Interpretação Simbólica" in report
+        assert "## Riscos Identificados" in report
+        assert "## Caminhos de Decisão" in report
+        assert "## Plano Prático" in report
+
+    def test_generate_with_cards_preserves_footer(
+        self, generator: ReportGenerator
+    ) -> None:
+        """Relatório com diagrama mantém disclaimer no rodapé."""
+        analysis = AnalysisResult(
+            diagnosis="Diagnóstico",
+            cards=[
+                CardPosition(position=1, card_name="Casa"),
+            ],
+        )
+        report = generator.generate(analysis)
+        assert "ferramenta de reflexão" in report
+        assert "previsão determinista" in report
+
+    def test_generate_with_cards_timestamp_present(
+        self, generator: ReportGenerator
+    ) -> None:
+        """Relatório com diagrama inclui timestamp quando ativo."""
+        import re
+
+        analysis = AnalysisResult(
+            diagnosis="Diagnóstico",
+            cards=[
+                CardPosition(position=1, card_name="Casa"),
+            ],
+        )
+        report = generator.generate(analysis)
+        assert re.search(r"\d{2}/\d{2}/\d{4}", report) is not None
+
+    def test_generate_with_cards_timestamp_absent_when_disabled(
+        self, generator_no_timestamp: ReportGenerator
+    ) -> None:
+        """Relatório com diagrama sem timestamp quando desabilitado."""
+        analysis = AnalysisResult(
+            diagnosis="Diagnóstico",
+            cards=[
+                CardPosition(position=1, card_name="Casa"),
+            ],
+        )
+        report = generator_no_timestamp.generate(analysis)
+        # Título deve terminar sem timestamp
+        assert report.startswith("# Relatório de Análise — \n")
+
+    def test_generate_with_cards_compact_format(
+        self, generator: ReportGenerator
+    ) -> None:
+        """output_format='compact' com cartas ainda inclui diagrama."""
+        analysis = AnalysisResult(
+            diagnosis="Diagnóstico",
+            cards=[
+                CardPosition(position=1, card_name="Casa"),
+                CardPosition(position=2, card_name="Estrela"),
+            ],
+        )
+        report = generator.generate(analysis, output_format="compact")
+        assert "MAPA DA TIRAGEM" in report
+        # Nota: formato compact com cards usa output default internamente
+
+    def test_generate_with_cards_json_format_includes_diagram(
+        self, generator: ReportGenerator
+    ) -> None:
+        """output_format='json' com cartas inclui diagrama (comportamento atual)."""
+        analysis = AnalysisResult(
+            diagnosis="Diagnóstico",
+            cards=[
+                CardPosition(position=1, card_name="Casa"),
+            ],
+        )
+        # Quando há cartas, o generate() retorna Markdown com diagrama
+        report = generator.generate(analysis, output_format="json")
+        # Verificar que o diagrama foi inserido
+        assert "MAPA DA TIRAGEM" in report
+        assert "Casa" in report
+        assert "## Mapa da Tiragem" in report
+
+    def test_generate_with_disclaimer_and_cards(
+        self, generator: ReportGenerator
+    ) -> None:
+        """Disclaimer é inserido corretamente com relatório que tem diagrama."""
+        analysis = AnalysisResult(
+            diagnosis="Diagnóstico",
+            cards=[
+                CardPosition(position=1, card_name="Casa"),
+            ],
+        )
+        disclaimer = "⚠️ Aviso: reflexão orientadora."
+        report = generator.generate(analysis, disclaimer=disclaimer)
+        assert disclaimer in report
+        assert "MAPA DA TIRAGEM" in report
+
+    def test_generate_with_many_cards(self, generator: ReportGenerator) -> None:
+        """Relatório com muitas cartas (7+) renderiza corretamente."""
+        analysis = AnalysisResult(
+            diagnosis="Diagnóstico",
+            cards=[
+                CardPosition(position=i, card_name=f"Carta{i}")
+                for i in range(1, 10)
+            ],
+        )
+        report = generator.generate(analysis)
+        assert "MAPA DA TIRAGEM" in report
+        for i in range(1, 10):
+            assert f"[{i}]" in report
+
+
+# ----------------------------------------------------------------------
+# Testes — generate_with_diagram()
+# ----------------------------------------------------------------------
+
+
+class TestGenerateWithDiagramMethod:
+    """Testes para o método explícito generate_with_diagram()."""
+
+    def test_generate_with_diagram_includes_diagram(
+        self, generator: ReportGenerator
+    ) -> None:
+        """generate_with_diagram() inclui diagrama quando cards fornecidos."""
+        analysis = AnalysisResult(diagnosis="Diagnóstico")
+        cards = [
+            CardPosition(position=1, card_name="Casa"),
+            CardPosition(position=2, card_name="Estrela"),
+        ]
+        report = generator.generate_with_diagram(analysis, cards=cards)
+        assert "MAPA DA TIRAGEM" in report
+        assert "Casa" in report
+        assert "Estrela" in report
+
+    def test_generate_with_diagram_empty_cards_no_diagram(
+        self, generator: ReportGenerator
+    ) -> None:
+        """generate_with_diagram() sem cards não inclui diagrama."""
+        analysis = AnalysisResult(diagnosis="Diagnóstico")
+        report = generator.generate_with_diagram(analysis, cards=[])
+        assert "MAPA DA TIRAGEM" not in report
+
+    def test_generate_with_diagram_none_cards_no_diagram(
+        self, generator: ReportGenerator
+    ) -> None:
+        """generate_with_diagram() com cards=None não inclui diagrama."""
+        analysis = AnalysisResult(diagnosis="Diagnóstico")
+        report = generator.generate_with_diagram(analysis, cards=None)
+        assert "MAPA DA TIRAGEM" not in report
+
+    def test_generate_with_diagram_preserves_all_sections(
+        self, generator: ReportGenerator
+    ) -> None:
+        """generate_with_diagram() mantém todas as seções."""
+        analysis = AnalysisResult(
+            diagnosis="Diagnóstico",
+            themes=["trabalho"],
+            risks=["risco"],
+            decisions=["decisão"],
+            practical_plan="Plano",
+        )
+        cards = [CardPosition(position=1, card_name="Casa")]
+        report = generator.generate_with_diagram(analysis, cards=cards)
+        assert "## Diagnóstico" in report
+        assert "## Interpretação Simbólica" in report
+        assert "## Riscos Identificados" in report
+        assert "## Caminhos de Decisão" in report
+        assert "## Plano Prático" in report
+
+    def test_generate_with_diagram_with_disclaimer(
+        self, generator: ReportGenerator
+    ) -> None:
+        """generate_with_diagram() com disclaimer injetado."""
+        analysis = AnalysisResult(diagnosis="Diagnóstico")
+        cards = [CardPosition(position=1, card_name="Casa")]
+        disclaimer = "⚠️ Aviso personalizado."
+        report = generator.generate_with_diagram(analysis, cards=cards, disclaimer=disclaimer)
+        assert disclaimer in report
+        assert "MAPA DA TIRAGEM" in report
+
+    def test_generate_with_diagram_compact_format(
+        self, generator: ReportGenerator
+    ) -> None:
+        """generate_with_diagram() com output_format='compact'."""
+        analysis = AnalysisResult(diagnosis="Diagnóstico")
+        cards = [
+            CardPosition(position=1, card_name="Casa"),
+            CardPosition(position=2, card_name="Estrela"),
+        ]
+        report = generator.generate_with_diagram(analysis, cards=cards, output_format="compact")
+        assert "MAPA DA TIRAGEM" in report
+        assert "# Análise" in report
+
+    def test_generate_with_diagram_json_format(
+        self, generator: ReportGenerator
+    ) -> None:
+        """generate_with_diagram() com output_format='json' inclui diagrama (comportamento atual)."""
+        analysis = AnalysisResult(diagnosis="Diagnóstico")
+        cards = [CardPosition(position=1, card_name="Casa")]
+        report = generator.generate_with_diagram(analysis, cards=cards, output_format="json")
+        # Verificar que diagrama foi inserido
+        assert "MAPA DA TIRAGEM" in report
+        assert "Casa" in report
+
+    def test_generate_with_diagram_timestamp_enabled(
+        self, generator: ReportGenerator
+    ) -> None:
+        """generate_with_diagram() com timestamp ativo."""
+        import re
+
+        analysis = AnalysisResult(diagnosis="Diagnóstico")
+        cards = [CardPosition(position=1, card_name="Casa")]
+        report = generator.generate_with_diagram(analysis, cards=cards)
+        assert re.search(r"\d{2}/\d{2}/\d{4}", report) is not None
+
+    def test_generate_with_diagram_timestamp_disabled(
+        self, generator_no_timestamp: ReportGenerator
+    ) -> None:
+        """generate_with_diagram() com timestamp desabilitado."""
+        analysis = AnalysisResult(diagnosis="Diagnóstico")
+        cards = [CardPosition(position=1, card_name="Casa")]
+        report = generator_no_timestamp.generate_with_diagram(analysis, cards=cards)
+        assert report.startswith("# Relatório de Análise — \n")
+
+    def test_generate_with_diagram_returns_nonempty_string(
+        self, generator: ReportGenerator
+    ) -> None:
+        """generate_with_diagram() retorna string não-vazia."""
+        analysis = AnalysisResult(diagnosis="Diagnóstico")
+        cards = [CardPosition(position=1, card_name="Casa")]
+        report = generator.generate_with_diagram(analysis, cards=cards)
+        assert isinstance(report, str)
+        assert len(report) > 0
+
+    def test_generate_with_diagram_returns_markdown(
+        self, generator: ReportGenerator
+    ) -> None:
+        """generate_with_diagram() retorna formato Markdown."""
+        analysis = AnalysisResult(diagnosis="Diagnóstico")
+        cards = [CardPosition(position=1, card_name="Casa")]
+        report = generator.generate_with_diagram(analysis, cards=cards)
+        # Deve conter pelo menos um H2 para cada seção
+        assert report.count("## ") >= 5
