@@ -115,7 +115,8 @@
             "command": "python -c \"from src.report_generator import ReportGenerator; from src.types import AnalysisResult; g = ReportGenerator(); r = g.generate(AnalysisResult(diagnosis='Test'), output_format='compact'); words = len(r.split()); print(f'Word count: {words}'); assert words <= 500, f'Too many words: {words}'\"",
             "expected": "Word count:"
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "Added _truncate_to_words() helper method and applied it in _generate_compact_output() to enforce 500-word limit. Each section is limited to 100 words, with final output also truncated to 500 words."
         }
       ]
     },
@@ -146,7 +147,8 @@
             "command": "python -m pytest tests/test_cli.py -v -k \"verbose or compact\" 2>&1 | head -30",
             "expected": "PASSED"
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "Added 8 tests: 4 for verbose mode (--verbose/-v flag, CLI acceptance) and 4 for report-format (compact/default, CLI acceptance, content verification). Fixed _StringIO class to support isatty() and flush() methods needed by progress indicator."
         },
         {
           "id": "subtask-3-2",
@@ -279,6 +281,6 @@
   "planStatus": "in_progress",
   "xstateState": "planning",
   "executionPhase": "coding",
-  "updated_at": "2026-05-11T20:14:06.397Z",
+  "updated_at": "2026-05-11T20:15:05.132Z",
   "last_updated": "2026-05-11T20:09:29.842468+00:00"
 }
