@@ -17,7 +17,7 @@ from typing import Optional
 
 import pytest
 
-from src.config import (
+from clareza.config import (
     ClarezaConfig,
     ConfigValidationError,
     ConfigValidator,
@@ -338,7 +338,7 @@ class TestLoadConfig:
 
     def test_yaml_values_override_defaults(self, temp_yaml_file: Path, monkeypatch) -> None:
         monkeypatch.setattr(
-            "src.config.DEFAULT_CONFIG_PATH",
+            "clareza.config.DEFAULT_CONFIG_PATH",
             temp_yaml_file,
         )
         temp_yaml_file.write_text(
@@ -352,7 +352,7 @@ class TestLoadConfig:
 
     def test_env_overrides_yaml(self, temp_yaml_file: Path, monkeypatch) -> None:
         monkeypatch.setattr(
-            "src.config.DEFAULT_CONFIG_PATH",
+            "clareza.config.DEFAULT_CONFIG_PATH",
             temp_yaml_file,
         )
         temp_yaml_file.write_text(
@@ -367,7 +367,7 @@ class TestLoadConfig:
 
     def test_invalid_yaml_format_uses_default(self, temp_yaml_file: Path, monkeypatch) -> None:
         monkeypatch.setattr(
-            "src.config.DEFAULT_CONFIG_PATH",
+            "clareza.config.DEFAULT_CONFIG_PATH",
             temp_yaml_file,
         )
         temp_yaml_file.write_text("invalid yaml content", encoding="utf-8")
@@ -382,7 +382,7 @@ class TestLoadConfig:
 
     def test_invalid_language_in_yaml_ignored(self, temp_yaml_file: Path, monkeypatch) -> None:
         monkeypatch.setattr(
-            "src.config.DEFAULT_CONFIG_PATH",
+            "clareza.config.DEFAULT_CONFIG_PATH",
             temp_yaml_file,
         )
         temp_yaml_file.write_text(
@@ -395,7 +395,7 @@ class TestLoadConfig:
 
     def test_invalid_format_in_yaml_ignored(self, temp_yaml_file: Path, monkeypatch) -> None:
         monkeypatch.setattr(
-            "src.config.DEFAULT_CONFIG_PATH",
+            "clareza.config.DEFAULT_CONFIG_PATH",
             temp_yaml_file,
         )
         temp_yaml_file.write_text(

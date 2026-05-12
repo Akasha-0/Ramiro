@@ -18,8 +18,8 @@ Cobertura:
 
 import pytest
 
-from src.report_generator import REPORT_TEMPLATE, ReportGenerator
-from src.types import AnalysisResult, CardPosition
+from clareza.report_generator import REPORT_TEMPLATE, ReportGenerator
+from clareza.types import AnalysisResult, CardPosition
 
 
 def bold(text: str) -> str:

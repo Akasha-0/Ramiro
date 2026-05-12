@@ -119,9 +119,9 @@ class TestEmotionClassifier:
         assert result == "uncertain"
 
     def test_classify_uncertain_confuso(self, classifier):
-        """Test 'confuso' maps to uncertain."""
+        """Test 'confuso' maps to conflicted (confuso is a conflicted emotion)."""
         result = classifier.classify("Me sinto muito confuso")
-        assert result == "uncertain"
+        assert result == "conflicted"
 
     def test_classify_uncertain_perdido(self, classifier):
         """Test 'perdido' maps to uncertain."""

@@ -23,7 +23,7 @@ Cobertura:
 
 import pytest
 
-from src.plano_rules import (
+from clareza.plano_rules import (
     ActionTemplate,
     EscalationLevel,
     PlanoRules,
@@ -49,7 +49,7 @@ from src.plano_rules import (
     generate_recommendations,
     load_plano_rules,
 )
-from src.symbols import get_symbol_by_name
+from clareza.symbols import get_symbol_by_name
 
 
 # ----------------------------------------------------------------------
@@ -457,7 +457,7 @@ class TestValidatePlanoRules:
 
     def test_theme_without_card_ids_raises(self) -> None:
         """Theme com card_ids vazio levanta exceção na validação."""
-        from src.plano_rules import (
+        from clareza.plano_rules import (
             PlanoRules,
             _parse_urgency_escalation,
             ThemeActions,
@@ -494,7 +494,7 @@ class TestValidatePlanoRules:
 
     def test_validate_missing_timeframes_raises(self) -> None:
         """Validação falha quando timeframes obrigatórios faltam."""
-        from src.plano_rules import (
+        from clareza.plano_rules import (
             PlanoRules,
             _parse_urgency_escalation,
             _validate_plano_rules,
@@ -1013,7 +1013,7 @@ class TestEdgeCases:
 
     def test_validate_empty_card_ids_still_raises(self) -> None:
         """card_ids vazio ainda levanta exceção na validação."""
-        from src.plano_rules import (
+        from clareza.plano_rules import (
             PlanoRules,
             _parse_urgency_escalation,
             ThemeActions,

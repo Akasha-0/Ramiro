@@ -18,7 +18,7 @@ Cobertura:
 
 import pytest
 
-from src.analysis_engine import (
+from clareza.analysis_engine import (
     _DECISION_DESCRIPTIONS,
     _RISK_DESCRIPTIONS,
     _detect_cross_card_patterns,
@@ -36,8 +36,8 @@ from src.analysis_engine import (
     _map_keyword_to_symbol,
     _symbol_to_action,
 )
-from src.symbols import CiganoSymbol, get_symbol_by_name, get_all_symbols
-from src.types import AnalysisResult, CardPosition, StructuredInput
+from clareza.symbols import CiganoSymbol, get_symbol_by_name, get_all_symbols
+from clareza.types import AnalysisResult, CardPosition, StructuredInput
 
 
 # ----------------------------------------------------------------------

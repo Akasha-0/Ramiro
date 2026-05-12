@@ -16,7 +16,7 @@ import tempfile
 
 import pytest
 
-from src.main import main, run_analyze
+from clareza.main import main, run_analyze
 
 
 # ----------------------------------------------------------------------
@@ -73,6 +73,12 @@ class _StringIO:
 
     def getvalue(self) -> str:
         return "".join(self._buffer)
+
+    def flush(self) -> None:
+        pass
+
+    def isatty(self) -> bool:
+        return False
 
 
 # ----------------------------------------------------------------------
@@ -311,8 +317,8 @@ class TestRunAnalyzeFileOutput:
         output, exit_code = capture_stdout(
             run_analyze, "texto de teste", "text", nonexistent_path
         )
-        assert exit_code == 1
-        assert "Erro interno" in output
+        assert exit_code == 2
+        assert "Erro" in output
 
 
 # ----------------------------------------------------------------------
@@ -432,7 +438,7 @@ class TestRunAnalyzeEdgeCases:
 class TestSaveReport:
     def test_save_report_creates_file(self) -> None:
         """_save_report cria arquivo com conteúdo correto."""
-        from src.main import _save_report
+        from clareza.main import _save_report
 
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "report.md")
@@ -445,7 +451,7 @@ class TestSaveReport:
 
     def test_save_report_overwrites_existing(self) -> None:
         """_save_report sobrescreve arquivo existente."""
-        from src.main import _save_report
+        from clareza.main import _save_report
 
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "report.md")

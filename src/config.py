@@ -40,6 +40,7 @@ class ClarezaConfig:
         session_history_dir: Diretório para histórico de sessões.
         auto_save_sessions: Se True, salva sessões automaticamente.
         quiet_mode: Se True, reduz output verbose.
+        template_path: Caminho para template customizado de relatório (opcional).
     """
 
     default_output_dir: Path = field(default_factory=lambda: Path.cwd())
@@ -48,6 +49,7 @@ class ClarezaConfig:
     session_history_dir: Path = field(default_factory=lambda: DEFAULT_DATA_DIR / "sessions")
     auto_save_sessions: bool = False
     quiet_mode: bool = False
+    template_path: Optional[Path] = None
 
 
 # Configuração padrão global (singleton em memória)
@@ -115,6 +117,7 @@ def _load_env_overrides() -> dict:
         CLAREZA_HISTORY_DIR: Diretório para histórico de sessões.
         CLAREZA_AUTO_SAVE: Se "1" ou "true", ativa auto-save.
         CLAREZA_QUIET: Se "1" ou "true", ativa modo silencioso.
+        CLAREZA_TEMPLATE_PATH: Caminho para template customizado.
 
     Returns:
         Dicionário com campos que devem sobrescrever a configuração.
@@ -154,6 +157,13 @@ def _load_env_overrides() -> dict:
     env_quiet = os.environ.get("CLAREZA_QUIET")
     if env_quiet:
         overrides["quiet_mode"] = env_quiet.lower() in ("1", "true", "yes")
+
+    # CLAREZA_TEMPLATE_PATH
+    env_template_path = os.environ.get("CLAREZA_TEMPLATE_PATH")
+    if env_template_path:
+        parsed = _parse_path(env_template_path)
+        if parsed is not None:
+            overrides["template_path"] = parsed
 
     if overrides:
         logger.debug("Overrides de ambiente aplicados: %s", list(overrides.keys()))
@@ -212,6 +222,11 @@ def load_config() -> ClarezaConfig:
 
     if "quiet_mode" in config_data:
         kwargs["quiet_mode"] = bool(config_data["quiet_mode"])
+
+    if "template_path" in config_data:
+        parsed = _parse_path(config_data["template_path"])
+        if parsed is not None:
+            kwargs["template_path"] = parsed
 
     # Aplicar overrides de ambiente (maior precedência)
     kwargs.update(env_overrides)

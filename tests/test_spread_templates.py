@@ -11,7 +11,7 @@ Cobertura:
 
 import pytest
 
-from src.spread_templates import (
+from clareza.spread_templates import (
     TEMPLATES,
     SpreadPosition,
     SpreadTemplate,

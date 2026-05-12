@@ -11,7 +11,7 @@ Cobertura:
 
 import pytest
 
-from src.input_processor import (
+from clareza.input_processor import (
     InputProcessor,
     ParseError,
 )

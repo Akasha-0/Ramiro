@@ -1,0 +1,530 @@
+"""CLI entry point — Sistema de Clareza Simbólico-Estratégica."""
+
+import argparse
+import logging
+import os
+import sys
+
+from clareza.input_processor import InputProcessor, ParseError
+from clareza.analysis_engine import AnalysisEngine
+from clareza.boundaries import apply_guardrails
+from clareza.report_generator import ReportGenerator
+from clareza.session_store import SessionStore
+from clareza.arc_generator import ArcGenerator
+from clareza.logging_utils import create_progress
+from clareza.exceptions import (
+    ClarezaError,
+    FileNotFoundClarezaError,
+    ParseClarezaError,
+    TemplateClarezaError,
+    ValidationClarezaError,
+)
+
+# ----------------------------------------------------------------------
+# Error messages — mensagens de erro em português com orientação
+# ----------------------------------------------------------------------
+
+ERROR_MESSAGES = {
+    "no_command": (
+        "Nenhum comando especificado. Use 'clareza analyze' para começar.\n"
+        "Execute 'clareza --help' para ver os comandos disponíveis."
+    ),
+    "template_requires_spread": (
+        "O argumento --template só é válido com --format spread.\n"
+        "Solução: Use --format spread junto com --template, ou omita --template.\n"
+        "Exemplo: clareza analyze -i 'trabalho família' -f spread -t 3-card"
+    ),
+    "file_not_found": (
+        "Arquivo não encontrado. Verifique se o caminho está correto.\n"
+        "Dica: Caminhos válidos devem ter extensão .csv ou .txt\n"
+        "Exemplo: clareza analyze -i dados/tiragem.csv -f spread"
+    ),
+    "parse_error": (
+        "Não foi possível processar a entrada. Verifique o formato.\n"
+        "Para texto livre: clareza analyze -i 'sua pergunta aqui' -f text\n"
+        "Para símbolos: clareza analyze -i 'Casa, Estrela, Sol' -f symbols\n"
+        "Para tiragem CSV:clareza analyze -i arquivo.csv -f spread"
+    ),
+    "validation_error": (
+        "A entrada contém dados inválidos que não puderam ser processados.\n"
+        "Verifique se os símbolos ou formato estão corretos.\n"
+        "Use --verbose para ver detalhes técnicos do erro."
+    ),
+    "unexpected_error": (
+        "Ocorreu um erro inesperado durante a análise.\n"
+        "Tente novamente com uma entrada diferente.\n"
+        "Se o problema persistir, use --verbose para ver detalhes técnicos."
+    ),
+    "output_write_error": (
+        "Não foi possível salvar o relatório no caminho especificado.\n"
+        "Verifique se você tem permissão de escrita no diretório.\n"
+        "Dica: Tente usar um caminho absoluto ou um diretório diferente."
+    ),
+}
+
+# ----------------------------------------------------------------------
+# Output styling — suporte a cores para mensagens de erro e output
+# ----------------------------------------------------------------------
+
+def _get_error_output() -> 'ColoredOutput':
+    """Retorna instância de ColoredOutput para mensagens de erro.
+
+    Returns:
+        ColoredOutput configurado com base no ambiente atual.
+    """
+    from clareza.logging_utils import ColoredOutput
+    return ColoredOutput()
+
+
+# ----------------------------------------------------------------------
+# Logging configuration
+# ----------------------------------------------------------------------
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+
+# ----------------------------------------------------------------------
+# Helper functions
+# ----------------------------------------------------------------------
+
+
+def _is_valid_file_path(path: str) -> bool:
+    """Verifica se uma string parece ser um caminho de arquivo válido.
+
+    Considera caminho válido se:
+    - O arquivo existe no filesystem
+    - A extensão é .csv ou .txt
+
+    Args:
+        path: String a verificar.
+
+    Returns:
+        True se parece ser um caminho de arquivo CSV/TXT válido.
+    """
+    import os
+
+    if not path:
+        return False
+
+    # Reject very short strings that cannot be file paths
+    if len(path) < 5:
+        return False
+
+    # Reject strings that look like natural language text (have spaces + lowercase letters)
+    # File paths typically don't have spaces mixed with lowercase words
+    if " " in path and any(c.islower() for c in path):
+        # Check if it looks like a sentence rather than a path
+        words = path.split()
+        if len(words) >= 2 and all(any(c.isalpha() for c in w) for w in words[:3]):
+            return False
+
+    # Verificar se o arquivo existe
+    if os.path.isfile(path):
+        return True
+
+    # Verificar extensões comuns para arquivos de entrada
+    valid_extensions = (".csv", ".txt")
+    return any(path.lower().endswith(ext) for ext in valid_extensions)
+
+
+# ----------------------------------------------------------------------
+# CLI implementation
+# ----------------------------------------------------------------------
+
+
+def main() -> None:
+    """Orquestra a análise simbólico-estratégica via CLI."""
+    parser = argparse.ArgumentParser(
+        description="Sistema de Clareza Simbólico-Estratégica",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    # Global flag for verbose mode - can be placed before or after subcommand
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Ativa output detalhado de debug",
+    )
+    subparsers = parser.add_subparsers(dest="command", help="Comandos disponíveis")
+
+    # subcommand: analyze
+    analyze_parser = subparsers.add_parser("analyze", help="Analisar entrada e gerar relatório")
+    analyze_parser.add_argument(
+        "--input", "-i",
+        required=True,
+        help="Texto, caminho para CSV, ou lista de símbolos separados por vírgula",
+    )
+    analyze_parser.add_argument(
+        "--format", "-f",
+        choices=["text", "spread", "symbols"],
+        default="text",
+        help="Formato da entrada (text, spread, symbols)",
+    )
+    analyze_parser.add_argument(
+        "--output", "-o",
+        default=None,
+        help="Caminho do arquivo .md para salvar o relatório",
+    )
+    analyze_parser.add_argument(
+        "--template", "-t",
+        default=None,
+        help="Template de tiragem predefinido (3-card, celtic-cross). "
+             "Disponível apenas para --format spread.",
+    )
+    analyze_parser.add_argument(
+        "--tag", "-g",
+        default=None,
+        help="Tag para categorizar a sessão (ex: carreira, relacionamento). "
+             "A sessão será armazenada para visualização futura do arco narrativo.",
+    )
+
+    # subcommand: arc
+    arc_parser = subparsers.add_parser("arc", help="Visualizar arco narrativo entre sessões")
+    arc_parser.add_argument(
+        "--sessions", "-s",
+        default=None,
+        help="Lista de caminhos de arquivos de relatório separados por vírgula",
+    )
+    arc_parser.add_argument(
+        "--tag", "-t",
+        default=None,
+        help="Tag para filtrar sessões (ex: carreira, relacionamento)",
+    )
+    arc_parser.add_argument(
+        "--output", "-o",
+        default=None,
+        help="Caminho do arquivo .md para salvar a visualização",
+    )
+    arc_parser.add_argument(
+        "--format", "-f",
+        choices=["text", "chart"],
+        default="text",
+        help="Formato de saída (text, chart)",
+    )
+
+    args = parser.parse_args()
+
+    if args.command is None:
+        parser.print_help()
+        colored = _get_error_output()
+        print(colored.error("Erro: " + ERROR_MESSAGES["no_command"]), file=sys.stderr)
+        sys.exit(1)
+
+    # Get verbose from main parser (allows --verbose before or after subcommand)
+    verbose = getattr(args, 'verbose', False) or getattr(args, 'v', False)
+
+    if args.command == "analyze":
+        run_analyze(args.input, args.format, args.output, args.template, verbose, args.tag)
+    elif args.command == "arc":
+        run_arc(args.sessions, args.output, args.format, verbose, args.tag)
+
+
+def run_analyze(
+    raw_input: str,
+    format: str,
+    output_path: str | None,
+    template: str | None = None,
+    verbose: bool = False,
+    tag: str | None = None,
+) -> None:
+    """Executa o pipeline completo de análise.
+
+    Pipeline: input_processor → analysis_engine → boundaries → report_generator
+
+    Args:
+        raw_input: Conteúdo bruto de entrada.
+        format: Formato de entrada ("text", "spread", "symbols").
+        output_path: Caminho opcional para salvar o relatório em .md.
+        template: Template de tiragem predefinido (apenas para format="spread").
+        verbose: Se True, ativa logging detalhado (DEBUG level).
+        tag: Tag opcional para categorizar a sessão.
+    """
+    # Configure verbose logging if requested
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    # Validação: --template só é válido com --format spread
+    if template is not None and format != "spread":
+        logger.error("O argumento --template só é válido com --format spread")
+        colored = _get_error_output()
+        print(colored.error("Erro: " + ERROR_MESSAGES["template_requires_spread"]), file=sys.stderr)
+        sys.exit(2)
+
+    try:
+        # Fase 1: Parse e estruturação do input
+        logger.info("Processando entrada: format=%s, length=%d", format, len(raw_input))
+        progress = create_progress(description="Processando entrada")
+        progress.start()
+        processor = InputProcessor()
+        # Verificar se raw_input é um caminho de arquivo válido
+        if _is_valid_file_path(raw_input):
+            structured = processor.parse_from_file(raw_input, template)
+            logger.info("Entrada lida de arquivo: %s", raw_input)
+        else:
+            structured = processor.parse(raw_input, format)
+        progress.complete("Entrada processada")
+        logger.info(
+            "Input processado: keywords=%s, cards=%d",
+            len(structured.keywords) if structured.keywords else 0,
+            len(structured.cards) if structured.cards else 0,
+        )
+
+        # Fase 2: Análise simbólico-estratégica
+        logger.info("Executando análise simbólica")
+        progress = create_progress(description="Analisando símbolos")
+        progress.start()
+        engine = AnalysisEngine()
+        analysis_result = engine.analyze(structured)
+        progress.complete("Análise simbólica concluída")
+        logger.info(
+            "Análise concluída: %d temas, %d riscos, %d decisões",
+            len(analysis_result.themes),
+            len(analysis_result.risks),
+            len(analysis_result.decisions),
+        )
+
+        # Fase 3: Geração do relatório Markdown
+        logger.info("Gerando relatório")
+        progress = create_progress(description="Gerando relatório")
+        progress.start()
+        generator = ReportGenerator()
+        report_md = generator.generate(analysis_result)
+        progress.complete("Relatório gerado")
+
+        # Fase 4: Aplicação de guardrails éticos
+        logger.info("Aplicando guardrails éticos")
+        validated = apply_guardrails(report_md, analysis_result)
+
+        if validated.disclaimer_flags:
+            logger.warning(
+                "Disclaimer ético aplicado — flags detectadas: %s",
+                validated.disclaimer_flags,
+            )
+
+        # Fase 5: Salvar sessão se tag foi especificada
+        if tag:
+            logger.info("Salvando sessão com tag: %s", tag)
+            store = SessionStore()
+            session = store.create_session(
+                raw_content=raw_input,
+                input_format=format,
+            )
+            # Atualizar sessão com análise e tags
+            from clareza.types import Session as SessionType
+            updated_session = SessionType(
+                session_id=session.session_id,
+                timestamp=session.timestamp,
+                input_format=session.input_format,
+                raw_content=session.raw_content,
+                analysis_result=analysis_result,
+                unresolved_threads=[],
+                tags=[tag],
+            )
+            store.save_session(updated_session)
+            logger.info("Sessão '%s' salva com tag '%s'", session.session_id[:8], tag)
+
+        # Fase 6: Output
+        colored = _get_error_output()
+        if output_path:
+            _save_report(output_path, validated.content)
+            print(colored.success(f"✓ Relatório salvo em: {output_path}"), file=sys.stderr)
+            sys.exit(0)
+        else:
+            print(validated.content)
+            sys.exit(0)
+
+    except FileNotFoundClarezaError as e:
+        logger.error("Arquivo não encontrado: %s", e.file_path)
+        colored = _get_error_output()
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
+        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['file_not_found']}"), file=sys.stderr)
+        sys.exit(2)
+    except ParseError as e:
+        logger.error("Erro no parse da entrada: %s", e)
+        colored = _get_error_output()
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
+        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['parse_error']}"), file=sys.stderr)
+        sys.exit(2)
+    except TemplateClarezaError as e:
+        logger.error("Template inválido: %s", e.template_name)
+        colored = _get_error_output()
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
+        available_hint = ""
+        if e.available:
+            available_hint = f"\nTemplates disponíveis: {', '.join(e.available)}"
+        print(colored.error(f"✗ Erro: Template não encontrado: {e.template_name}{available_hint}"), file=sys.stderr)
+        sys.exit(2)
+    except ValidationClarezaError as e:
+        logger.error("Validação falhou: %s", e)
+        colored = _get_error_output()
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
+        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['validation_error']}"), file=sys.stderr)
+        sys.exit(2)
+    except ClarezaError as e:
+        logger.error("Erro do sistema: %s", e)
+        colored = _get_error_output()
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
+        print(colored.error(f"✗ Erro: {e.message}"), file=sys.stderr)
+        sys.exit(2)
+    except ValueError as e:
+        logger.error("Valor inválido: %s", e)
+        colored = _get_error_output()
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
+        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['validation_error']}"), file=sys.stderr)
+        sys.exit(2)
+    except OSError as e:
+        logger.error("Erro de sistema de arquivos: %s", e)
+        colored = _get_error_output()
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
+        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['output_write_error']}"), file=sys.stderr)
+        sys.exit(2)
+    except Exception as e:
+        logger.exception("Erro inesperado durante análise")
+        colored = _get_error_output()
+        if 'progress' in locals():
+            progress.error("Erro no processamento")
+        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['unexpected_error']}"), file=sys.stderr)
+        sys.exit(1)
+
+
+def run_arc(
+    sessions: str | None,
+    output_path: str | None,
+    format: str,
+    verbose: bool = False,
+    tag: str | None = None,
+) -> None:
+    """Exibe o arco narrativo entre sessões de análise.
+
+    Args:
+        sessions: Lista separada por vírgula de caminhos de arquivos de relatório.
+        output_path: Caminho opcional para salvar a visualização em .md.
+        format: Formato de saída ("text" ou "chart").
+        verbose: Se True, ativa logging detalhado (DEBUG level).
+        tag: Tag para filtrar sessões do storage.
+    """
+    # Configure verbose logging if requested
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    colored = _get_error_output()
+
+    # Carregar sessões do storage se tag foi especificada
+    if tag:
+        logger.info("Filtrando sessões por tag: %s", tag)
+        store = SessionStore()
+        tagged_sessions = store.get_sessions_by_tag(tag)
+
+        if not tagged_sessions:
+            empty_msg = (
+                f"# Arco Narrativo — Tag: {tag}\n\n"
+                f"*Nenhuma sessão encontrada com a tag '{tag}'.\n"
+                "Continue suas reflexões para construir um arco narrativo ao longo do tempo.*\n\n"
+                "--- generated by Sistema de Clareza Simbólico-Estratégica v0.0.1.*"
+            )
+            if output_path:
+                _save_report(output_path, empty_msg)
+                print(colored.success(f"✓ Arco salvo em: {output_path}"), file=sys.stderr)
+            else:
+                print(empty_msg)
+            return
+
+        # Gerar arco usando ArcGenerator
+        arc_gen = ArcGenerator()
+        arc_content = arc_gen.generate(tagged_sessions, arc_name=f"Tag: {tag}")
+
+        if output_path:
+            _save_report(output_path, arc_content)
+            print(colored.success(f"✓ Arco salvo em: {output_path}"), file=sys.stderr)
+        else:
+            print(arc_content)
+        return
+
+    # Fallback: usar arquivos de relatório se --sessions foi especificado
+    if not sessions:
+        print(
+            colored.error("Erro: --sessions ou --tag é obrigatório para o comando arc."),
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    # Parse session paths
+    session_paths = [s.strip() for s in sessions.split(",") if s.strip()]
+
+    if len(session_paths) < 2:
+        print(
+            colored.error("Erro: Mínimo de 2 sessões necessárias para visualizar o arco narrativo."),
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    logger.info("Processando %d sessões para visualização do arco narrativo", len(session_paths))
+
+    # Placeholder - actual implementation will be in arc_visualizer.py
+    if format == "chart":
+        output_content = f"## Arco Narrativo\n\nVisualização em formato chart para {len(session_paths)} sessões."
+    else:
+        output_content = f"## Arco Narrativo\n\nAnálise textual do arco entre {len(session_paths)} sessões."
+
+    if output_path:
+        _save_report(output_path, output_content)
+        print(colored.success(f"✓ Visualização salva em: {output_path}"), file=sys.stderr)
+    else:
+        print(output_content)
+
+
+def _save_report(path: str, content: str) -> None:
+    """Salva o relatório em um arquivo Markdown.
+
+    Args:
+        path: Caminho do arquivo de destino.
+        content: Conteúdo Markdown a salvar.
+    """
+    import os
+
+    colored = _get_error_output()
+
+    # Verificar se o diretório existe ou pode ser criado
+    dir_path = os.path.dirname(path)
+    if dir_path and not os.path.isdir(dir_path):
+        try:
+            os.makedirs(dir_path, exist_ok=True)
+        except OSError as e:
+            logger.error("Não foi possível criar o diretório %s: %s", dir_path, e)
+            print(
+                colored.error(f"✗ Erro: Não foi possível criar o diretório {dir_path!r}.\n"
+                "Verifique se o caminho está correto e se você tem permissão."),
+                file=sys.stderr,
+            )
+            raise
+
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+        logger.info("Relatório salvo em %s (%d bytes)", path, len(content))
+    except PermissionError as e:
+        logger.error("Sem permissão para escrever em %s: %s", path, e)
+        print(
+            colored.error(f"✗ Erro: Sem permissão para salvar em {path!r}.\n"
+            "Verifique as permissões do diretório."),
+            file=sys.stderr,
+        )
+        raise
+    except OSError as e:
+        logger.error("Falha ao salvar relatório em %s: %s", path, e)
+        print(colored.error(f"✗ Erro: {ERROR_MESSAGES['output_write_error']}"), file=sys.stderr)
+        raise
+
+
+if __name__ == "__main__":
+    main()

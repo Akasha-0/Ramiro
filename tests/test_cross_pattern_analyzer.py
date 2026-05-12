@@ -17,7 +17,7 @@ Cobertura:
 
 import pytest
 
-from src.cross_pattern_analyzer import (
+from clareza.cross_pattern_analyzer import (
     _CONFLICT_PAIRS,
     _ELEMENT_MAP,
     _ELEMENT_TRIGGERS,
@@ -31,8 +31,8 @@ from src.cross_pattern_analyzer import (
     detect_numeric_sequences,
     detect_theme_clusters,
 )
-from src.symbols import get_symbol_by_name
-from src.types import CardPosition, CrossCardPattern
+from clareza.symbols import get_symbol_by_name
+from clareza.types import CardPosition, CrossCardPattern
 
 
 # ----------------------------------------------------------------------

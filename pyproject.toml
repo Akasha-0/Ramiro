@@ -35,8 +35,7 @@ dev = [
 ]
 
 [project.scripts]
-clareza = "src.main:main"
-clareza.benchmark = "src.main:benchmark"
+clareza = "clareza.main:main"
 
 [project.urls]
 Homepage = "https://github.com/clareza/clareza-core"
@@ -44,10 +43,10 @@ Repository = "https://github.com/clareza/clareza-core"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*"]
+include = ["clareza*"]
 
 [tool.setuptools.package-data]
-src = []
+clareza = ["**/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
