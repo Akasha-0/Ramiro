@@ -193,6 +193,11 @@ def main() -> None:
         action="store_true",
         help="Marcar milestone como concluído",
     )
+    reflect_parser.add_argument(
+        "--skip", "-k",
+        action="store_true",
+        help="Pular prompt de milestone graciosamente",
+    )
 
     args = parser.parse_args()
 
@@ -210,7 +215,7 @@ def main() -> None:
     elif args.command == "history":
         run_history(args.tag)
     elif args.command == "reflect":
-        run_reflect(args.session, args.text, args.milestone, args.completed)
+        run_reflect(args.session, args.text, args.milestone, args.completed, args.skip)
 
 
 def run_analyze(
@@ -460,9 +465,11 @@ def run_reflect(
     text: Optional[str],
     milestone_id: Optional[str],
     completed: bool,
+    skip: bool = False,
 ) -> None:
     """Exibe prompt de milestone e salva reflexão em uma sessão.
 
+    Se --skip for fornecido, apenas exibe confirmação e retorna.
     Se --text for fornecido, salva a reflexão diretamente.
     Se --text não for fornecido, exibe o prompt de milestone para o usuário
     responder interativamente.
@@ -472,8 +479,14 @@ def run_reflect(
         text: Texto da reflexão/resposta do usuário (opcional para prompt).
         milestone_id: ID do milestone/prompt que originou a reflexão (opcional).
         completed: Se True, marca o milestone como concluído.
+        skip: Se True, pula o prompt graciosamente.
     """
     logger.info("Processando reflexão para sessão %s", session_id)
+
+    # Se --skip foi fornecido, exibir confirmação e retornar (sem verificar sessão)
+    if skip:
+        print("skip")
+        sys.exit(0)
 
     try:
         db = HistoryDB()
