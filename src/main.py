@@ -4,12 +4,14 @@ import argparse
 import logging
 import os
 import sys
+from typing import Optional
 
 from src.input_processor import InputProcessor, ParseError
 from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
 from src.logging_utils import create_progress
+from src.history_db import HistoryDB
 from src.exceptions import (
     ClarezaError,
     FileNotFoundClarezaError,
@@ -161,6 +163,14 @@ def main() -> None:
              "Disponível apenas para --format spread.",
     )
 
+    # subcommand: history
+    history_parser = subparsers.add_parser("history", help="Listar sessões anteriores")
+    history_parser.add_argument(
+        "--tag", "-t",
+        default=None,
+        help="Filtrar por tag ou tema específico",
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -174,6 +184,8 @@ def main() -> None:
 
     if args.command == "analyze":
         run_analyze(args.input, args.format, args.output, args.template, verbose)
+    elif args.command == "history":
+        run_history(args.tag)
 
 
 def run_analyze(
@@ -324,6 +336,54 @@ def run_analyze(
         print(colored.error(f"✗ Erro: {ERROR_MESSAGES['unexpected_error']}"), file=sys.stderr)
         if 'progress' in locals():
             progress.error("Erro no processamento")
+        sys.exit(1)
+
+
+def run_history(tag: Optional[str] = None) -> None:
+    """Lista sessões anteriores do banco de dados.
+
+    Args:
+        tag: Tag ou tema opcional para filtrar sessões.
+    """
+    logger.info("Listando sessões históricas (tag=%s)", tag)
+
+    try:
+        db = HistoryDB()
+        sessions = db.list_sessions(tag=tag)
+
+        if not sessions:
+            if tag:
+                print(f"Nenhuma sessão encontrada com a tag '{tag}'.")
+            else:
+                print("Nenhuma sessão encontrada. Execute 'clareza analyze' para criar uma.")
+            return
+
+        # Exibir sessões
+        print(f"# Sessões Anteriores ({len(sessions)} sessão{'es' if len(sessions) != 1 else ''})")
+        print()
+
+        for session in sessions:
+            session_id = session.get("session_id", "desconhecido")
+            timestamp = session.get("timestamp", "desconhecido")
+            input_format = session.get("input_format", "desconhecido")
+
+            # Carregar sessão para obter contagem de anotações
+            full_session = db.get_session(session_id)
+            annotation_count = len(full_session.annotations) if full_session else 0
+
+            print(f"## {session_id}")
+            print(f"- **Data:** {timestamp}")
+            print(f"- **Formato:** {input_format}")
+            if annotation_count > 0:
+                print(f"- **Anotações:** {annotation_count}")
+            print()
+
+        logger.info("Listadas %d sessões", len(sessions))
+
+    except Exception as e:
+        logger.exception("Erro ao listar sessões")
+        colored = _get_error_output()
+        print(colored.error(f"✗ Erro ao listar sessões: {e}"), file=sys.stderr)
         sys.exit(1)
 
 
