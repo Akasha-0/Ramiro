@@ -155,6 +155,7 @@ class Session:
     analysis_result: Optional[AnalysisResult] = None
     unresolved_threads: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
+    annotations: list = field(default_factory=list)
 
 
 @dataclass

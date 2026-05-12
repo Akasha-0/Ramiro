@@ -17,12 +17,12 @@ from typing import Optional
 
 import pytest
 
-from src.history_db import (
+from clareza.history_db import (
     HistoryDB,
     HistoryDBError,
     SessionNotFoundError,
 )
-from src.types import (
+from clareza.types import (
     AnalysisResult,
     Arc,
     ChapterSummary,

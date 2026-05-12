@@ -16,7 +16,7 @@ Cobertura:
 
 import pytest
 
-from src.milestone_prompts import (
+from clareza.milestone_prompts import (
     FOLLOW_UP_GENERIC,
     FOLLOW_UP_TEMPLATES,
     MILESTONE_PROMPT_TEMPLATE,
@@ -24,7 +24,7 @@ from src.milestone_prompts import (
     SKIP_MESSAGE,
     MilestonePromptGenerator,
 )
-from src.types import AnalysisResult, Session
+from clareza.types import AnalysisResult, Session
 
 
 # ----------------------------------------------------------------------
