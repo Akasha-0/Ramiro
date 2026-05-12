@@ -17,6 +17,7 @@ from src.exceptions import (
     TemplateClarezaError,
     ValidationClarezaError,
 )
+from benchmarks.regression import RegressionChecker
 
 # ----------------------------------------------------------------------
 # Error messages — mensagens de erro em português com orientação
@@ -161,6 +162,23 @@ def main() -> None:
              "Disponível apenas para --format spread.",
     )
 
+    # subcommand: check (regression check for benchmarks)
+    check_parser = subparsers.add_parser(
+        "check",
+        help="Verificar regressões de performance em benchmarks",
+    )
+    check_parser.add_argument(
+        "--threshold", "-t",
+        type=float,
+        default=None,
+        help="Threshold de regressão em porcentagem (ex: 20 para 20%%)",
+    )
+    check_parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Mostrar detalhes de cada benchmark",
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -174,6 +192,104 @@ def main() -> None:
 
     if args.command == "analyze":
         run_analyze(args.input, args.format, args.output, args.template, verbose)
+    elif args.command == "check":
+        run_check(args.threshold, args.verbose)
+
+
+def run_check(threshold: float | None, verbose: bool = False) -> None:
+    """Executa verificação de regressões de performance.
+
+    Args:
+        threshold: Threshold opcional de regressão em porcentagem.
+        verbose: Se True, mostra detalhes de cada benchmark.
+    """
+    import time
+
+    checker = RegressionChecker(threshold=threshold / 100.0 if threshold else None)
+
+    # Import benchmark test functions
+    from benchmarks.input_processor_bench import (
+        test_parse_text,
+        test_parse_spread,
+        test_parse_symbols,
+    )
+    from benchmarks.analysis_engine_bench import (
+        test_analyze_text,
+        test_analyze_spread,
+        test_analyze_spread_large,
+    )
+    from benchmarks.report_generator_bench import (
+        test_generate_simple,
+        test_generate_spread,
+        test_generate_patterns,
+    )
+    from benchmarks.symbols_bench import (
+        test_match_keyword_exact,
+        test_match_keyword_partial,
+        test_get_symbol_by_name_valid,
+        test_get_symbol_by_id_valid,
+        test_get_symbols_by_theme,
+    )
+
+    # Run all benchmarks and collect results
+    benchmarks = [
+        # Input processor benchmarks
+        ("input_processor.text", test_parse_text),
+        ("input_processor.spread", test_parse_spread),
+        ("input_processor.symbols", test_parse_symbols),
+        # Analysis engine benchmarks
+        ("analysis_engine.single", test_analyze_text),
+        ("analysis_engine.mixed", test_analyze_spread),
+        ("analysis_engine.full", test_analyze_spread_large),
+        # Report generator benchmarks
+        ("report_generator.short", test_generate_simple),
+        ("report_generator.medium", test_generate_spread),
+        ("report_generator.long", test_generate_patterns),
+        # Symbols benchmarks
+        ("symbols.keyword", test_match_keyword_exact),
+        ("symbols.partial_name", test_match_keyword_partial),
+        ("symbols.card_name", test_get_symbol_by_name_valid),
+        ("symbols.card_id", test_get_symbol_by_id_valid),
+        ("symbols.theme", test_get_symbols_by_theme),
+    ]
+
+    results = []
+    iterations = 5
+
+    for name, func in benchmarks:
+        times = []
+        for _ in range(iterations):
+            start = time.perf_counter()
+            func()
+            end = time.perf_counter()
+            times.append(end - start)
+        mean_time = sum(times) / len(times)
+        from benchmarks.runner import BenchmarkResult
+        results.append(BenchmarkResult(
+            name=name,
+            mean=mean_time,
+            min=min(times),
+            max=max(times),
+            std_dev=0.0,  # Simplified for CLI
+            iterations=iterations,
+        ))
+
+    from benchmarks.runner import BenchmarkSuiteResult
+    suite_result = BenchmarkSuiteResult(
+        suite_name="clareza-regression",
+        results=results,
+        timestamp="",
+    )
+
+    # Check for regressions
+    report = checker.check(suite_result)
+
+    # Format and display report
+    output = checker.format_report(report, verbose=verbose)
+    print(output)
+
+    exit_code = checker.get_exit_code(report)
+    sys.exit(exit_code)
 
 
 def run_analyze(
