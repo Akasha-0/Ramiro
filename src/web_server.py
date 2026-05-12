@@ -317,6 +317,10 @@ class WebServer:
         return self.server is not None
 
 
+# Alias para compatibilidade com verificação
+ClarezaHandler = ClarezaRequestHandler
+
+
 # ----------------------------------------------------------------------
 # CLI para servidor
 # ----------------------------------------------------------------------
