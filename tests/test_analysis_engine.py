@@ -1282,9 +1282,10 @@ class TestCrossCardPatterns:
             CardPosition(position=2, card_name="Lua"),
         ]
         patterns = _detect_cross_card_patterns(cards)
-        assert len(patterns) == 1
-        assert isinstance(patterns[0].interpretation, str)
-        assert len(patterns[0].interpretation) > 10
+        repeat_patterns = [p for p in patterns if p.pattern_type == "numeric_repeat"]
+        assert len(repeat_patterns) == 1
+        assert isinstance(repeat_patterns[0].interpretation, str)
+        assert len(repeat_patterns[0].interpretation) > 10
 
     def test_pattern_includes_strength(self) -> None:
         """Padrão inclui strength válido."""
@@ -1293,8 +1294,9 @@ class TestCrossCardPatterns:
             CardPosition(position=2, card_name="Lua"),
         ]
         patterns = _detect_cross_card_patterns(cards)
-        assert len(patterns) == 1
-        assert patterns[0].strength in ("forte", "moderado")
+        repeat_patterns = [p for p in patterns if p.pattern_type == "numeric_repeat"]
+        assert len(repeat_patterns) == 1
+        assert repeat_patterns[0].strength in ("forte", "moderado")
 
     def test_combined_patterns(self) -> None:
         """Múltiplos tipos de padrão são detectados juntos."""

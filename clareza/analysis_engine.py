@@ -18,6 +18,10 @@ from clareza.symbol_catalog import (
     detect_named_pair,
     detect_named_sequence,
     detect_opposition,
+    get_cluster_for_card,
+    get_cluster_interaction,
+    get_position_significance,
+    get_adjacent_influence,
 )
 from clareza.symbols import (
     CiganoSymbol,
@@ -651,6 +655,18 @@ def _detect_cross_card_patterns(
     opposition_patterns = _detect_oppositions(cards)
     patterns.extend(opposition_patterns)
 
+    # 8. Detectar interações entre clusters arquetípicos (water+earth, fire+air...)
+    cluster_interaction_patterns = _enrich_with_cluster_interactions(cards)
+    patterns.extend(cluster_interaction_patterns)
+
+    # 9. Enriquecer com significado posicional (passado/presente/futuro/etc)
+    position_significance_patterns = _enrich_with_position_significance(cards)
+    patterns.extend(position_significance_patterns)
+
+    # 10. Detectar influências entre cartas adjacentes (amplificação/mitigação/contraste)
+    adjacent_influence_patterns = _enrich_with_adjacent_influence(cards)
+    patterns.extend(adjacent_influence_patterns)
+
     logger.debug("Padrões cruzados detectados: %d", len(patterns))
     return patterns
 
@@ -889,6 +905,165 @@ def _detect_elemental_imbalances(cards: list[CardPosition]) -> list[CrossCardPat
                 interpretation=interpretation,
                 strength="moderado",
             ))
+
+    return patterns
+
+
+# ----------------------------------------------------------------------
+# Helpers
+# ----------------------------------------------------------------------
+
+
+def _get_card_id(card_name: str) -> Optional[int]:
+    """Resolve card_id from card_name using the symbol registry."""
+    sym = get_symbol_by_name(card_name)
+    return sym.id if sym else None
+
+
+# ----------------------------------------------------------------------
+# Cluster interaction enrichment
+# ----------------------------------------------------------------------
+
+
+def _enrich_with_cluster_interactions(
+    cards: list[CardPosition],
+) -> list[CrossCardPattern]:
+    """Detecta interações entre clusters arquetípicos das cartas.
+
+    Usa cluster_interactions do symbol_catalog para enriquecer
+    a interpretação com advice contextual entre elementos.
+    """
+    patterns: list[CrossCardPattern] = []
+    if len(cards) < 2:
+        return patterns
+
+    seen_pairs: set[tuple[str, str]] = set()
+
+    for i in range(len(cards)):
+        for j in range(i + 1, len(cards)):
+            cid_i = _get_card_id(cards[i].card_name)
+            cid_j = _get_card_id(cards[j].card_name)
+
+            if cid_i is None or cid_j is None:
+                continue
+
+            cluster_i = get_cluster_for_card(cid_i)
+            cluster_j = get_cluster_for_card(cid_j)
+
+            if not cluster_i or not cluster_j:
+                continue
+
+            id_i = cluster_i["id"]
+            id_j = cluster_j["id"]
+            pair_key = tuple(sorted([id_i, id_j]))
+            if pair_key in seen_pairs:
+                continue
+            seen_pairs.add(pair_key)
+
+            interaction = get_cluster_interaction(id_i, id_j)
+            if interaction:
+                desc = interaction.get("description", "")
+                advice = interaction.get("advice", "")
+                interpretation = (
+                    f"Interação arquetípica: **{cluster_i['name']}** + **{cluster_j['name']}**. "
+                    f"{desc} {advice}"
+                )
+                patterns.append(CrossCardPattern(
+                    pattern_type="cluster_interaction",
+                    card_ids=[cards[i].position, cards[j].position],
+                    interpretation=interpretation,
+                    strength="moderado",
+                ))
+
+    return patterns
+
+
+# ----------------------------------------------------------------------
+# Position significance enrichment
+# ----------------------------------------------------------------------
+
+
+def _enrich_with_position_significance(
+    cards: list[CardPosition],
+) -> list[CrossCardPattern]:
+    """Enriquece cartas individuais com significado posicional.
+
+    Usa position_significance do symbol_catalog para adicionar
+    nuance based na posição da carta no spread (passado/presente/futuro/etc).
+    """
+    patterns: list[CrossCardPattern] = []
+    if not cards:
+        return patterns
+
+    for card in cards:
+        significance = get_position_significance(card.position)
+        if significance:
+            pos_name = significance.get("name", "")
+            interp = significance.get("interpretation", "")
+            advice = significance.get("advice", "")
+            interpretation = (
+                f"Posição **{pos_name}** (carta {card.position}): "
+                f"{interp} {advice}"
+            )
+            patterns.append(CrossCardPattern(
+                pattern_type="position_significance",
+                card_ids=[card.position],
+                interpretation=interpretation,
+                strength="leve",
+            ))
+
+    return patterns
+
+
+# ----------------------------------------------------------------------
+# Adjacent card influence enrichment
+# ----------------------------------------------------------------------
+
+
+def _enrich_with_adjacent_influence(
+    cards: list[CardPosition],
+) -> list[CrossCardPattern]:
+    """Detecta influências entre cartas adjacentes no spread.
+
+    Usa adjacent_card_influence do symbol_catalog para identificar
+    relações de amplificação, mitigação, contraste e causa-efeito.
+    """
+    patterns: list[CrossCardPattern] = []
+    if len(cards) < 2:
+        return patterns
+
+    sorted_by_pos = sorted(cards, key=lambda c: c.position)
+    seen_influences: set[str] = set()
+
+    for idx in range(len(sorted_by_pos)):
+        center = sorted_by_pos[idx]
+        left = sorted_by_pos[idx - 1] if idx > 0 else None
+        right = sorted_by_pos[idx + 1] if idx < len(sorted_by_pos) - 1 else None
+
+        left_dict = {"card_name": left.card_name} if left else None
+        center_dict = {"card_name": center.card_name}
+        right_dict = {"card_name": right.card_name} if right else None
+
+        influences = get_adjacent_influence(left_dict, center_dict, right_dict)
+
+        for influence in influences:
+            if influence not in seen_influences:
+                seen_influences.add(influence)
+                card_ids = [center.position]
+                if left:
+                    card_ids.append(left.position)
+                if right:
+                    card_ids.append(right.position)
+
+                interpretation = (
+                    f"Influência adjacente em **{center.card_name}**: {influence}"
+                )
+                patterns.append(CrossCardPattern(
+                    pattern_type="adjacent_influence",
+                    card_ids=sorted(card_ids),
+                    interpretation=interpretation,
+                    strength="moderado",
+                ))
 
     return patterns
 
