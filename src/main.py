@@ -12,6 +12,7 @@ from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
 from src.logging_utils import create_progress
 from src.history_db import HistoryDB, HistoryDBError, SessionNotFoundError
+from src.config import load_config
 from src.exceptions import (
     ClarezaError,
     FileNotFoundClarezaError,
@@ -298,7 +299,29 @@ def run_analyze(
                 validated.disclaimer_flags,
             )
 
-        # Fase 5: Output
+        # Fase 5: Auto-save session if enabled
+        config = load_config()
+        if config.auto_save_sessions:
+            logger.info("Auto-save de sessão ativado — salvando sessão")
+            try:
+                db = HistoryDB()
+                from src.types import Session as SessionModel
+                from datetime import datetime
+                session_model = SessionModel(
+                    session_id=f"session-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+                    timestamp=datetime.now().isoformat(),
+                    input_format=format,
+                    raw_content=raw_input,
+                    analysis_result=analysis_result,
+                )
+                db.save_session(session_model)
+                logger.info("Sessão %s salva automaticamente", session_model.session_id)
+                colored = _get_error_output()
+                print(colored.success("✓ Sessão salva"), file=sys.stderr)
+            except HistoryDBError as e:
+                logger.warning("Falha ao salvar sessão automaticamente: %s", e)
+
+        # Fase 6: Output
         colored = _get_error_output()
         if output_path:
             _save_report(output_path, validated.content)
