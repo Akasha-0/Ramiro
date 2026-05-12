@@ -13,6 +13,11 @@ import logging
 from typing import Optional
 
 from clareza.plano_rules import generate_recommendations
+from clareza.symbol_catalog import (
+    detect_named_pair,
+    detect_named_sequence,
+    detect_opposition,
+)
 from clareza.symbols import (
     CiganoSymbol,
     get_all_symbols,
@@ -633,6 +638,18 @@ def _detect_cross_card_patterns(
     elemental_imbalances = _detect_elemental_imbalances(cards)
     patterns.extend(elemental_imbalances)
 
+    # 5. Detectar pares nomeados do symbol_catalog (e.g., Casa+Estrela)
+    named_pair_patterns = _detect_named_pairs(cards)
+    patterns.extend(named_pair_patterns)
+
+    # 6. Detectar sequências nomeadas do symbol_catalog (e.g., Casa→Árvore→Florista)
+    named_sequence_patterns = _detect_named_sequences(cards)
+    patterns.extend(named_sequence_patterns)
+
+    # 7. Detectar oposições do symbol_catalog (e.g., Cão vs. Lobo)
+    opposition_patterns = _detect_oppositions(cards)
+    patterns.extend(opposition_patterns)
+
     logger.debug("Padrões cruzados detectados: %d", len(patterns))
     return patterns
 
@@ -871,6 +888,103 @@ def _detect_elemental_imbalances(cards: list[CardPosition]) -> list[CrossCardPat
                 interpretation=interpretation,
                 strength="moderado",
             ))
+
+    return patterns
+
+
+# ----------------------------------------------------------------------
+# Named pattern detection from symbol_catalog
+# ----------------------------------------------------------------------
+
+
+def _detect_named_pairs(cards: list[CardPosition]) -> list[CrossCardPattern]:
+    """Detecta pares nomeados do symbol_catalog (e.g., Casa+Estrela)."""
+    patterns: list[CrossCardPattern] = []
+    if len(cards) < 2:
+        return patterns
+
+    # Build list of card dicts for symbol_catalog functions
+    card_dicts = [{"card_name": c.card_name} for c in cards]
+    found_ids: set[str] = set()
+
+    for i in range(len(card_dicts)):
+        for j in range(i + 1, len(card_dicts)):
+            pair_result = detect_named_pair([card_dicts[i], card_dicts[j]])
+            if pair_result and pair_result.get("id") not in found_ids:
+                found_ids.add(pair_result["id"])
+                interpretation = pair_result.get("interpretation", "")
+                advice = pair_result.get("advice", "")
+                card_names = [cards[i].card_name, cards[j].card_name]
+                full_interpretation = (
+                    f"Padrão detectado: **{cards[i].card_name}** + **{cards[j].card_name}**. "
+                    f"{interpretation} {advice}"
+                )
+                patterns.append(CrossCardPattern(
+                    pattern_type="named_pair",
+                    card_ids=[cards[i].position, cards[j].position],
+                    interpretation=full_interpretation,
+                    strength="moderado",
+                ))
+
+    return patterns
+
+
+def _detect_named_sequences(cards: list[CardPosition]) -> list[CrossCardPattern]:
+    """Detecta sequências nomeadas do symbol_catalog."""
+    patterns: list[CrossCardPattern] = []
+    if len(cards) < 3:
+        return patterns
+
+    sorted_cards = sorted(cards, key=lambda c: c.position)
+    card_dicts = [{"card_name": c.card_name} for c in sorted_cards]
+    seq_result = detect_named_sequence(card_dicts)
+
+    if seq_result:
+        card_ids = [c.position for c in sorted_cards]
+        card_names = [c.card_name for c in sorted_cards]
+        interpretation = seq_result.get("interpretation", "")
+        advice = seq_result.get("advice", "")
+        full_interpretation = (
+            f"Sequência detectada: **{' → '.join(card_names)}**. "
+            f"{interpretation} {advice}"
+        )
+        patterns.append(CrossCardPattern(
+            pattern_type="named_sequence",
+            card_ids=card_ids,
+            interpretation=full_interpretation,
+            strength="forte",
+        ))
+
+    return patterns
+
+
+def _detect_oppositions(cards: list[CardPosition]) -> list[CrossCardPattern]:
+    """Detecta oposições do symbol_catalog (e.g., Cão vs. Lobo)."""
+    patterns: list[CrossCardPattern] = []
+    if len(cards) < 2:
+        return patterns
+
+    card_dicts = [{"card_name": c.card_name} for c in cards]
+    found_ids: set[str] = set()
+
+    for i in range(len(card_dicts)):
+        for j in range(i + 1, len(card_dicts)):
+            opp_result = detect_opposition([card_dicts[i], card_dicts[j]])
+            if opp_result and opp_result.get("id") not in found_ids:
+                found_ids.add(opp_result["id"])
+                opp_desc = opp_result.get("description", "")
+                opp_interp = opp_result.get("interpretation", "")
+                resolution = opp_result.get("resolution", "")
+                full_interpretation = (
+                    f"Oposição detectada: **{cards[i].card_name}** × **{cards[j].card_name}**. "
+                    f"{opp_desc} {opp_interp} {resolution}"
+                )
+                patterns.append(CrossCardPattern(
+                    pattern_type="opposition",
+                    card_ids=[cards[i].position, cards[j].position],
+                    interpretation=full_interpretation,
+                    strength="forte",
+                ))
 
     return patterns
 
