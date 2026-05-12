@@ -177,7 +177,7 @@ class PluginManager:
 
     def get_extended_sections(
         self,
-    ) -> list[tuple[str, Callable[..., str]]:
+    ) -> list[tuple[str, Callable[..., str]]]:
         """Retorna geradores de seções customizadas de plugins.
 
         Retorna tuplas de (nome_da_seção, função_geradora) para cada

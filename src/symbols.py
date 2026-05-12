@@ -15,7 +15,7 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 
 logger = logging.getLogger(__name__)
 
@@ -546,6 +546,102 @@ def get_symbol_count() -> int:
         Contagem de símbolos (deve ser 36).
     """
     return len(_CIGANO_DECK)
+
+
+# ----------------------------------------------------------------------
+# Registro de cartas de plugins (extensões do baralho base)
+# ----------------------------------------------------------------------
+
+# Dict que armazena cartas registradas por plugins
+# Chave: "plugin_name:card_name", Valor: dict com dados da carta
+plugin_card_registry: dict[str, dict[str, Any]] = {}
+
+
+def register_plugin_cards(
+    cards: list[dict[str, Any]],
+    plugin_name: str,
+) -> int:
+    """Registra cartas de um plugin no catálogo de símbolos.
+
+    Args:
+        cards: Lista de dicts com dados das cartas (cada dict deve ter
+            pelo menos 'name' e 'keywords').
+        plugin_name: Nome do plugin que está registrando as cartas.
+
+    Returns:
+        Número de cartas registradas com sucesso.
+    """
+    count = 0
+    for card in cards:
+        if not isinstance(card, dict) or "name" not in card:
+            logger.warning(
+                "Carta ignorada (formato inválido) no plugin %s",
+                plugin_name,
+            )
+            continue
+
+        card_name = card["name"]
+        unique_key = f"{plugin_name}:{card_name}"
+
+        plugin_card_registry[unique_key] = {
+            **card,
+            "_plugin_source": plugin_name,
+        }
+        count += 1
+        logger.debug(
+            "Carta de plugin registrada: %s (de %s)",
+            card_name,
+            plugin_name,
+        )
+
+    logger.info(
+        "Registro de plugins atualizado: %d cartas de '%s'",
+        count,
+        plugin_name,
+    )
+    return count
+
+
+def get_all_cards_including_plugins() -> list[CiganoSymbol]:
+    """Retorna todas as cartas incluindo as do baralho base e plugins.
+
+    Combina as 36 cartas oficiais do Baralho Cigano com cartas
+    registradas por plugins (via register_plugin_cards).
+
+    Returns:
+        Lista de CiganoSymbol (base + plugins).
+    """
+    base_cards = get_all_symbols()
+    plugin_cards: list[CiganoSymbol] = []
+
+    for card_data in plugin_card_registry.values():
+        # Converte dict de carta em CiganoSymbol
+        try:
+            plugin_card = CiganoSymbol(
+                id=card_data.get("id", 0),  # 0 indica ID de plugin
+                name=card_data.get("name", ""),
+                name_pt=card_data.get("name_pt", card_data.get("name", "")),
+                keywords=card_data.get("keywords", []),
+                theme=card_data.get("theme", "plugin"),
+                interpretation=card_data.get(
+                    "interpretation",
+                    "Carta de plugin customizado.",
+                ),
+                advice=card_data.get(
+                    "advice",
+                    "Consulte a documentação do plugin.",
+                ),
+                reversed_meaning=card_data.get("reversed_meaning"),
+            )
+            plugin_cards.append(plugin_card)
+        except (TypeError, ValueError) as e:
+            logger.warning(
+                "Falha ao converter carta de plugin '%s': %s",
+                card_data.get("name", "?"),
+                e,
+            )
+
+    return base_cards + plugin_cards
 
 
 # ----------------------------------------------------------------------
