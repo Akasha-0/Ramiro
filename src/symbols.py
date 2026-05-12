@@ -466,6 +466,7 @@ def get_symbol_by_name(name: str) -> Optional[CiganoSymbol]:
     """Retorna o símbolo correspondente ao nome fornecido.
 
     A busca é case-insensitive e normaliza espaços.
+    Primeiro busca no catálogo base, depois nos plugins.
 
     Args:
         name: Nome da carta (ex: "Estrela", "A Casa", "Cruz").
@@ -474,9 +475,41 @@ def get_symbol_by_name(name: str) -> Optional[CiganoSymbol]:
         CiganoSymbol correspondente ou None se não encontrado.
     """
     normalized = name.lower().strip()
+
+    # Busca no catálogo base
     for symbol in _CIGANO_DECK:
         if symbol.name.lower() == normalized or symbol.name_pt.lower() == normalized:
             return symbol
+
+    # Busca nas cartas de plugins
+    for card_data in plugin_card_registry.values():
+        card_name = card_data.get("name", "").lower()
+        card_name_pt = card_data.get("name_pt", "").lower()
+        if card_name == normalized or card_name_pt == normalized:
+            try:
+                return CiganoSymbol(
+                    id=card_data.get("id", 0),
+                    name=card_data.get("name", ""),
+                    name_pt=card_data.get("name_pt", card_data.get("name", "")),
+                    keywords=card_data.get("keywords", []),
+                    theme=card_data.get("theme", "plugin"),
+                    interpretation=card_data.get(
+                        "interpretation",
+                        "Carta de plugin customizado.",
+                    ),
+                    advice=card_data.get(
+                        "advice",
+                        "Consulte a documentação do plugin.",
+                    ),
+                    reversed_meaning=card_data.get("reversed_meaning"),
+                )
+            except (TypeError, ValueError) as e:
+                logger.warning(
+                    "Falha ao converter carta de plugin '%s': %s",
+                    card_data.get("name", "?"),
+                    e,
+                )
+
     return None
 
 
