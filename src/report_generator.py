@@ -87,11 +87,21 @@ class ReportGenerator:
 
     Attributes:
         include_timestamp: Se True, inclui timestamp no relatório (default True).
+        include_plugin_sections: Se True, permite inclusão de seções de plugins (default False).
     """
 
-    def __init__(self, include_timestamp: bool = True) -> None:
+    def __init__(
+        self,
+        include_timestamp: bool = True,
+        include_plugin_sections: bool = False,
+    ) -> None:
         self.include_timestamp = include_timestamp
-        logger.debug("ReportGenerator inicializado, timestamp=%s", include_timestamp)
+        self.include_plugin_sections = include_plugin_sections
+        logger.debug(
+            "ReportGenerator inicializado, timestamp=%s, plugin_sections=%s",
+            include_timestamp,
+            include_plugin_sections,
+        )
 
     # ------------------------------------------------------------------
     # API pública
