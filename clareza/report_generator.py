@@ -16,7 +16,7 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from clareza.types import AnalysisResult, CrossCardPattern
+from clareza.types import AnalysisResult, CrossCardPattern, ReportTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +75,47 @@ COMPACT_TEMPLATE = """# Análise — {timestamp}
 
 
 # ----------------------------------------------------------------------
+# Template verboso — com cabeçalhos explicativos para cada seção
+# ----------------------------------------------------------------------
+
+VERBOSE_TEMPLATE = """# Relatório Detalhado de Análise — {timestamp}
+
+## Seção 1: Diagnóstico
+{diagnosis}
+
+> **Sobre esta seção:** O diagnóstico apresenta a síntese da situação atual conforme extraída da sua descrição. Não é uma afirmação de fatos, mas sim uma leitura interpretativa dos elementos simbólicos e narrativos identificados.
+
+## Seção 2: Interpretação Simbólica
+{symbolic_interpretation}
+
+> **Sobre esta seção:** Aqui exploramos o significado dos símbolos, cartas e palavras-chave identificados. Cada elemento é contextualizado dentro de padrões mais amplos de significado espiritual e estratégico.
+
+## Seção 3: Riscos Identificados
+{risks}
+
+> **Sobre esta seção:** Esta seção sinaliza áreas de atenção ou potencial adversidade. São pontos que merecem cautela ou preparação, não certezas de desfechos negativos.
+
+## Seção 4: Caminhos de Decisão
+{decisions}
+
+> **Sobre esta seção:** Apresentamos rotas possíveis de ação ou reflexão. A escolha final permanece consigo — estas são possibilidades, não obrigações.
+
+## Seção 5: Padrões Cruzados
+{cross_card_patterns}
+
+> **Sobre esta seção:** Padrões cruzados revelam correlações entre múltiplos elementos (cartas, símbolos, temas). Quando identificados, indicam dinâmicas mais profundas ou tendências amplas.
+
+## Seção 6: Plano Prático
+{practical_plan}
+
+> **Sobre esta seção:** Recomendações concretas de ações, reflexões ou próximos passos. São ferramentas de autoconhecimento, não prescrições deterministas.
+
+---
+*Relatório gerado por Sistema de Clareza Simbólico-Estratégica v0.0.1 — use como ferramenta de reflexão, não como previsão determinista.*
+"""
+
+
+# ----------------------------------------------------------------------
 # Gerador de relatórios
 # ----------------------------------------------------------------------
 
@@ -102,6 +143,7 @@ class ReportGenerator:
         analysis: AnalysisResult,
         disclaimer: Optional[str] = None,
         output_format: str = "default",
+        custom_template: Optional["ReportTemplate"] = None,
     ) -> str:
         """Gera relatório em Markdown (ou outro formato) a partir do resultado da análise.
 
@@ -109,7 +151,10 @@ class ReportGenerator:
             analysis: AnalysisResult com diagnóstico, temas, riscos, decisões e plano.
             disclaimer: Texto adicional a ser inserido antes do rodapé (opcional).
             output_format: Formato do relatório — "default" (completo), "compact"
-                (resumido), ou "json" (estruturado). Default: "default".
+                (resumido), "verbose" (detalhado), ou "json" (estruturado). Default: "default".
+            custom_template: Template customizado (opcional). Quando fornecido, usa
+                TemplateEngine para renderizar com o template customizado ao invés do
+                template built-in.
 
         Returns:
             String com relatório no formato solicitado.
@@ -124,7 +169,7 @@ class ReportGenerator:
         )
 
         # Validar formato
-        valid_formats = {"default", "compact", "json"}
+        valid_formats = {"default", "compact", "json", "verbose"}
         if output_format not in valid_formats:
             logger.warning("Formato desconhecido '%s', usando 'default'", output_format)
             output_format = "default"
@@ -147,6 +192,10 @@ class ReportGenerator:
             report = self._generate_compact_output(
                 timestamp, diagnosis, symbolic_interp, risks, decisions, practical_plan, disclaimer
             )
+        elif output_format == "verbose":
+            report = self._generate_verbose_output(
+                timestamp, diagnosis, symbolic_interp, risks, decisions, cross_card_patterns, practical_plan, disclaimer
+            )
         else:
             report = self._generate_default_output(
                 timestamp, diagnosis, symbolic_interp, risks, decisions, cross_card_patterns, practical_plan, disclaimer
@@ -168,6 +217,31 @@ class ReportGenerator:
     ) -> str:
         """Gera relatório no formato padrão (completo)."""
         report = REPORT_TEMPLATE.format(
+            timestamp=timestamp,
+            diagnosis=diagnosis,
+            symbolic_interpretation=symbolic_interp,
+            risks=risks,
+            decisions=decisions,
+            cross_card_patterns=cross_card_patterns,
+            practical_plan=practical_plan,
+        )
+        if disclaimer:
+            report = report.rstrip() + "\n\n" + disclaimer + "\n"
+        return report
+
+    def _generate_verbose_output(
+        self,
+        timestamp: str,
+        diagnosis: str,
+        symbolic_interp: str,
+        risks: str,
+        decisions: str,
+        cross_card_patterns: str,
+        practical_plan: str,
+        disclaimer: Optional[str],
+    ) -> str:
+        """Gera relatório no formato verboso com cabeçalhos explicativos."""
+        report = VERBOSE_TEMPLATE.format(
             timestamp=timestamp,
             diagnosis=diagnosis,
             symbolic_interpretation=symbolic_interp,

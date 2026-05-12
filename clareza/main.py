@@ -180,6 +180,12 @@ def main() -> None:
         help="Tag para categorizar a sessão (ex: carreira, relacionamento). "
              "A sessão será armazenada para visualização futura do arco narrativo.",
     )
+    analyze_parser.add_argument(
+        "--report-format", "-r",
+        choices=["default", "compact", "verbose", "json"],
+        default="default",
+        help="Formato do relatório de saída (default, compact, verbose, json)",
+    )
 
     # subcommand: arc
     arc_parser = subparsers.add_parser("arc", help="Visualizar arco narrativo entre sessões")
@@ -217,7 +223,7 @@ def main() -> None:
     verbose = getattr(args, 'verbose', False) or getattr(args, 'v', False)
 
     if args.command == "analyze":
-        run_analyze(args.input, args.format, args.output, args.template, verbose, args.tag)
+        run_analyze(args.input, args.format, args.output, args.template, verbose, args.tag, args.report_format)
     elif args.command == "arc":
         run_arc(args.sessions, args.output, args.format, verbose, args.tag)
 
@@ -229,6 +235,7 @@ def run_analyze(
     template: str | None = None,
     verbose: bool = False,
     tag: str | None = None,
+    report_format: str = "default",
 ) -> None:
     """Executa o pipeline completo de análise.
 
@@ -291,7 +298,7 @@ def run_analyze(
         progress = create_progress(description="Gerando relatório")
         progress.start()
         generator = ReportGenerator()
-        report_md = generator.generate(analysis_result)
+        report_md = generator.generate(analysis_result, output_format=report_format)
         progress.complete("Relatório gerado")
 
         # Fase 4: Aplicação de guardrails éticos
