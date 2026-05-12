@@ -1,0 +1,2 @@
+[console_scripts]
+clareza = clareza.main:main

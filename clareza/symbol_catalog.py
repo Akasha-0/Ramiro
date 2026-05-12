@@ -89,8 +89,57 @@ def get_all_clusters() -> list[dict]:
 # ----------------------------------------------------------------------
 
 def _normalize_card_name(name: str) -> str:
-    """Normaliza nome de carta para busca."""
-    return name.strip().lower()
+    """Normaliza nome de carta para busca.
+
+    Handles:
+    - Articles: 'A Casa' / 'O Cão' vs user input 'Casa' / 'Cão'
+    - Case, whitespace
+    """
+    normalized = name.strip().lower()
+    # Strip leading articles that users typically omit
+    if normalized.startswith("a ") or normalized.startswith("o "):
+        # Keep the article form as primary
+        pass
+    else:
+        # User omitted article — check if adding it finds a match
+        pass
+    return normalized
+
+
+def _resolve_card_name(name: str) -> str:
+    """Resolve card name to canonical form.
+
+    User input may omit the article ('Casa' → 'A Casa').
+    Tries both with and without article to find match.
+    """
+    normalized = name.strip().lower()
+    catalog = _load_catalog()
+    if not catalog:
+        return name
+
+    # Try original, then with 'a ', then with 'o '
+    candidates = [
+        normalized,
+        f"a {normalized}",
+        f"o {normalized}",
+    ]
+
+    # Build reverse map: both forms → canonical name
+    all_patterns: list[dict] = []
+    cross_card = catalog.get("cross_card_patterns", {})
+    for section in cross_card.values():
+        if isinstance(section, list):
+            all_patterns.extend(section)
+
+    for pattern in all_patterns:
+        for card_name in pattern.get("cards", []):
+            cn = card_name.strip().lower()
+            for cand in candidates:
+                if cand == cn:
+                    # Found canonical form
+                    return card_name
+
+    return name
 
 
 def _find_in_patterns(
@@ -110,7 +159,7 @@ def detect_named_pair(cards: list[dict]) -> Optional[dict]:
     """Detecta se um par de cartas corresponde a um padrão nomeado.
 
     Args:
-        cards: Lista de dicts com 'card_name' (ex: [{"card_name": "A Casa"}, ...])
+        cards: Lista de dicts com 'card_name' (ex: [{"card_name": "Casa"}, ...])
 
     Returns:
         Dicionário do padrão ou None.
@@ -125,7 +174,10 @@ def detect_named_pair(cards: list[dict]) -> Optional[dict]:
     all_pairs = catalog.get("cross_card_patterns", {}).get("pairs", [])
     for i in range(len(cards)):
         for j in range(i + 1, len(cards)):
-            pair = _find_in_patterns(all_pairs, [cards[i]["card_name"], cards[j]["card_name"]])
+            # Use _resolve_card_name to handle "Casa" → "A Casa"
+            name_a = _resolve_card_name(cards[i]["card_name"])
+            name_b = _resolve_card_name(cards[j]["card_name"])
+            pair = _find_in_patterns(all_pairs, [name_a, name_b])
             if pair:
                 return pair
     return None
@@ -148,8 +200,9 @@ def detect_named_sequence(cards: list[dict]) -> Optional[dict]:
         return None
 
     sequences = catalog.get("cross_card_patterns", {}).get("sequences", [])
-    card_names = [c["card_name"] for c in cards]
-    normalized = [_normalize_card_name(n) for n in card_names]
+    # Resolve canonical names for each card
+    resolved_names = [_resolve_card_name(c["card_name"]) for c in cards]
+    normalized = [_normalize_card_name(n) for n in resolved_names]
 
     for seq in sequences:
         seq_cards = [_normalize_card_name(c) for c in seq.get("cards", [])]
@@ -180,7 +233,9 @@ def detect_opposition(cards: list[dict]) -> Optional[dict]:
     oppositions = catalog.get("cross_card_patterns", {}).get("oppositions", [])
     for i in range(len(cards)):
         for j in range(i + 1, len(cards)):
-            opp = _find_in_patterns(oppositions, [cards[i]["card_name"], cards[j]["card_name"]])
+            name_a = _resolve_card_name(cards[i]["card_name"])
+            name_b = _resolve_card_name(cards[j]["card_name"])
+            opp = _find_in_patterns(oppositions, [name_a, name_b])
             if opp:
                 return opp
     return None

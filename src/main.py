@@ -168,6 +168,12 @@ def main() -> None:
         help="Template de tiragem predefinido (3-card, celtic-cross). "
              "Disponível apenas para --format spread.",
     )
+    analyze_parser.add_argument(
+        "--report-format", "-r",
+        choices=["default", "compact", "verbose", "json"],
+        default="default",
+        help="Formato do relatório de saída (default, compact, verbose, json)",
+    )
 
     # subcommand: check (regression check for benchmarks)
     check_parser = subparsers.add_parser(
@@ -209,7 +215,7 @@ def main() -> None:
     verbose = getattr(args, 'verbose', False) or getattr(args, 'v', False)
 
     if args.command == "analyze":
-        run_analyze(args.input, args.format, args.output, args.template, verbose)
+        run_analyze(args.input, args.format, args.output, args.template, args.report_format, verbose)
     elif args.command == "check":
         run_check(args.threshold, args.verbose)
     elif args.command == "template":
@@ -317,6 +323,7 @@ def run_analyze(
     format: str,
     output_path: str | None,
     template: str | None,
+    report_format: str = "default",
     verbose: bool = False,
 ) -> None:
     """Executa o pipeline completo de análise.
@@ -393,7 +400,7 @@ def run_analyze(
             logger.debug("Usando template padrão: %s", e)
 
         generator = ReportGenerator()
-        report_md = generator.generate(analysis_result, custom_template=custom_template)
+        report_md = generator.generate(analysis_result, custom_template=custom_template, output_format=report_format)
         progress.complete("Relatório gerado")
 
         # Fase 4: Aplicação de guardrails éticos

@@ -312,10 +312,11 @@ class TestRunAnalyzeFileOutput:
             os.unlink(temp_path)
 
     def test_output_to_nonexistent_directory_fails(self) -> None:
-        """Caminho de arquivo em diretório inexistente causa erro."""
-        nonexistent_path = "/tmp/clareza_nonexistent_dir_12345/report.md"
+        """Caminho de arquivo em diretório sem permissão causa erro."""
+        # Usa /proc readonly — ninguém pode criar diretórios lá
+        readonly_path = "/proc/clareza_nonexistent_dir_12345/report.md"
         output, exit_code = capture_stdout(
-            run_analyze, "texto de teste", "text", nonexistent_path
+            run_analyze, "texto de teste", "text", readonly_path
         )
         assert exit_code == 2
         assert "Erro" in output

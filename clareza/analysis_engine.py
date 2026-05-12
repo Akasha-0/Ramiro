@@ -14,6 +14,7 @@ from typing import Optional
 
 from clareza.plano_rules import generate_recommendations
 from clareza.symbol_catalog import (
+    _resolve_card_name,
     detect_named_pair,
     detect_named_sequence,
     detect_opposition,
@@ -903,20 +904,22 @@ def _detect_named_pairs(cards: list[CardPosition]) -> list[CrossCardPattern]:
     if len(cards) < 2:
         return patterns
 
-    # Build list of card dicts for symbol_catalog functions
-    card_dicts = [{"card_name": c.card_name} for c in cards]
+    # Resolve canonical names so catalog lookups match (handles "Casa" → "A Casa")
+    canonical_names = [_resolve_card_name(c.card_name) for c in cards]
     found_ids: set[str] = set()
 
-    for i in range(len(card_dicts)):
-        for j in range(i + 1, len(card_dicts)):
-            pair_result = detect_named_pair([card_dicts[i], card_dicts[j]])
+    for i in range(len(cards)):
+        for j in range(i + 1, len(cards)):
+            pair_result = detect_named_pair([
+                {"card_name": canonical_names[i]},
+                {"card_name": canonical_names[j]},
+            ])
             if pair_result and pair_result.get("id") not in found_ids:
                 found_ids.add(pair_result["id"])
                 interpretation = pair_result.get("interpretation", "")
                 advice = pair_result.get("advice", "")
-                card_names = [cards[i].card_name, cards[j].card_name]
                 full_interpretation = (
-                    f"Padrão detectado: **{cards[i].card_name}** + **{cards[j].card_name}**. "
+                    f"Padrão detectado: **{canonical_names[i]}** + **{canonical_names[j]}**. "
                     f"{interpretation} {advice}"
                 )
                 patterns.append(CrossCardPattern(
@@ -936,16 +939,16 @@ def _detect_named_sequences(cards: list[CardPosition]) -> list[CrossCardPattern]
         return patterns
 
     sorted_cards = sorted(cards, key=lambda c: c.position)
-    card_dicts = [{"card_name": c.card_name} for c in sorted_cards]
+    canonical_names = [_resolve_card_name(c.card_name) for c in sorted_cards]
+    card_dicts = [{"card_name": name} for name in canonical_names]
     seq_result = detect_named_sequence(card_dicts)
 
     if seq_result:
         card_ids = [c.position for c in sorted_cards]
-        card_names = [c.card_name for c in sorted_cards]
         interpretation = seq_result.get("interpretation", "")
         advice = seq_result.get("advice", "")
         full_interpretation = (
-            f"Sequência detectada: **{' → '.join(card_names)}**. "
+            f"Sequência detectada: **{' → '.join(canonical_names)}**. "
             f"{interpretation} {advice}"
         )
         patterns.append(CrossCardPattern(
@@ -964,19 +967,22 @@ def _detect_oppositions(cards: list[CardPosition]) -> list[CrossCardPattern]:
     if len(cards) < 2:
         return patterns
 
-    card_dicts = [{"card_name": c.card_name} for c in cards]
+    canonical_names = [_resolve_card_name(c.card_name) for c in cards]
     found_ids: set[str] = set()
 
-    for i in range(len(card_dicts)):
-        for j in range(i + 1, len(card_dicts)):
-            opp_result = detect_opposition([card_dicts[i], card_dicts[j]])
+    for i in range(len(cards)):
+        for j in range(i + 1, len(cards)):
+            opp_result = detect_opposition([
+                {"card_name": canonical_names[i]},
+                {"card_name": canonical_names[j]},
+            ])
             if opp_result and opp_result.get("id") not in found_ids:
                 found_ids.add(opp_result["id"])
                 opp_desc = opp_result.get("description", "")
                 opp_interp = opp_result.get("interpretation", "")
                 resolution = opp_result.get("resolution", "")
                 full_interpretation = (
-                    f"Oposição detectada: **{cards[i].card_name}** × **{cards[j].card_name}**. "
+                    f"Oposição detectada: **{canonical_names[i]}** × **{canonical_names[j]}**. "
                     f"{opp_desc} {opp_interp} {resolution}"
                 )
                 patterns.append(CrossCardPattern(
