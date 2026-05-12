@@ -11,7 +11,7 @@ from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
 from src.logging_utils import create_progress
-from src.history_db import HistoryDB
+from src.history_db import HistoryDB, HistoryDBError, SessionNotFoundError
 from src.exceptions import (
     ClarezaError,
     FileNotFoundClarezaError,
@@ -171,6 +171,29 @@ def main() -> None:
         help="Filtrar por tag ou tema específico",
     )
 
+    # subcommand: reflect
+    reflect_parser = subparsers.add_parser("reflect", help="Adicionar reflexão a uma sessão")
+    reflect_parser.add_argument(
+        "--session", "-s",
+        required=True,
+        help="ID da sessão para adicionar reflexão",
+    )
+    reflect_parser.add_argument(
+        "--text", "-x",
+        default=None,
+        help="Texto da reflexão/resposta",
+    )
+    reflect_parser.add_argument(
+        "--milestone", "-m",
+        default=None,
+        help="ID do milestone/prompt que originou a reflexão (opcional)",
+    )
+    reflect_parser.add_argument(
+        "--completed", "-c",
+        action="store_true",
+        help="Marcar milestone como concluído",
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -186,6 +209,8 @@ def main() -> None:
         run_analyze(args.input, args.format, args.output, args.template, verbose)
     elif args.command == "history":
         run_history(args.tag)
+    elif args.command == "reflect":
+        run_reflect(args.session, args.text, args.milestone, args.completed)
 
 
 def run_analyze(
@@ -428,6 +453,108 @@ def _save_report(path: str, content: str) -> None:
         logger.error("Falha ao salvar relatório em %s: %s", path, e)
         print(colored.error(f"✗ Erro: {ERROR_MESSAGES['output_write_error']}"), file=sys.stderr)
         raise
+
+
+def run_reflect(
+    session_id: str,
+    text: Optional[str],
+    milestone_id: Optional[str],
+    completed: bool,
+) -> None:
+    """Exibe prompt de milestone e salva reflexão em uma sessão.
+
+    Se --text for fornecido, salva a reflexão diretamente.
+    Se --text não for fornecido, exibe o prompt de milestone para o usuário
+    responder interativamente.
+
+    Args:
+        session_id: ID da sessão para adicionar reflexão.
+        text: Texto da reflexão/resposta do usuário (opcional para prompt).
+        milestone_id: ID do milestone/prompt que originou a reflexão (opcional).
+        completed: Se True, marca o milestone como concluído.
+    """
+    logger.info("Processando reflexão para sessão %s", session_id)
+
+    try:
+        db = HistoryDB()
+
+        # Carregar sessão para contexto do prompt
+        session = db.get_session(session_id)
+        if session is None:
+            raise SessionNotFoundError(session_id)
+
+        # Se texto já foi fornecido via CLI, salvar diretamente
+        if text:
+            _save_reflection(db, session_id, text, milestone_id, completed)
+            return
+
+        # Caso contrário, exibir prompt de milestone interativamente
+        from src.milestone_prompts import MilestonePromptGenerator
+
+        generator = MilestonePromptGenerator()
+        prompt = generator.generate_milestone_prompt(session=session)
+
+        # Exibir prompt
+        print(prompt)
+        print()
+
+        # Coletar resposta do usuário
+        user_response = input("Sua reflexão: ").strip()
+
+        if not user_response:
+            colored = _get_error_output()
+            print(colored.error("Reflexão não pode ser vazia. Operação cancelada."))
+            sys.exit(1)
+
+        _save_reflection(db, session_id, user_response, milestone_id, completed)
+
+    except SessionNotFoundError as e:
+        logger.error("Sessão não encontrada: %s", session_id)
+        colored = _get_error_output()
+        print(colored.error(f"✗ Erro: Sessão '{session_id}' não encontrada.\n"
+                          "Use 'clareza history' para ver sessões disponíveis."), file=sys.stderr)
+        sys.exit(2)
+    except HistoryDBError as e:
+        logger.error("Erro ao salvar reflexão: %s", e)
+        colored = _get_error_output()
+        print(colored.error(f"✗ Erro ao salvar reflexão: {e}"), file=sys.stderr)
+        sys.exit(1)
+    except (EOFError, KeyboardInterrupt):
+        logger.info("Operação cancelada pelo usuário")
+        colored = _get_error_output()
+        print(colored.error("\nOperação cancelada."))
+        sys.exit(130)
+
+
+def _save_reflection(
+    db: HistoryDB,
+    session_id: str,
+    text: str,
+    milestone_id: Optional[str],
+    completed: bool,
+) -> None:
+    """Salva uma reflexão na sessão.
+
+    Args:
+        db: Instância do banco de histórico.
+        session_id: ID da sessão.
+        text: Texto da reflexão.
+        milestone_id: ID do milestone (opcional).
+        completed: Se True, marca o milestone como concluído.
+    """
+    annotation = db.add_annotation(
+        session_id=session_id,
+        content=text,
+        milestone_id=milestone_id,
+        is_milestone_completed=completed,
+    )
+
+    colored = _get_error_output()
+    if annotation.is_milestone_completed:
+        print(colored.success(f"✓ Reflexão adicionada e milestone '{annotation.milestone_id}' concluído"))
+    else:
+        print(colored.success(f"✓ Reflexão adicionada à sessão {session_id}"))
+    logger.info("Reflexão %s adicionada à sessão %s", annotation.annotation_id, session_id)
 
 
 if __name__ == "__main__":
