@@ -4,8 +4,10 @@ import argparse
 import sys
 import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from benchmarks.runner import BenchmarkRunner, BenchmarkSuiteResult
+from benchmarks.baseline import BaselineManager, BenchmarkBaseline
 
 
 @dataclass
@@ -35,6 +37,16 @@ def cli() -> None:
         "--verbose", "-v",
         action="store_true",
         help="Show detailed output",
+    )
+    parser.add_argument(
+        "--update-baseline",
+        action="store_true",
+        help="Update baseline with current benchmark results",
+    )
+    parser.add_argument(
+        "--ci",
+        action="store_true",
+        help="Run in CI mode with regression check",
     )
 
     args = parser.parse_args()
@@ -123,6 +135,68 @@ def cli() -> None:
     # Calculate total time
     total_time = sum(r.mean for r in results)
     print(f"\nTotal estimated time: {total_time*1000:.3f}ms")
+
+    # Handle --update-baseline flag
+    if args.update_baseline:
+        manager = BaselineManager()
+        collection = manager.load()
+
+        for result in results:
+            # Calculate additional statistics
+            sorted_times = sorted([result.min + (result.max - result.min) * i / 100
+                                   for i in range(result.iterations)])
+            # Simple median estimation
+            mid = result.iterations // 2
+            median = sorted_times[mid] if result.iterations % 2 == 1 else \
+                     (sorted_times[mid - 1] + sorted_times[mid]) / 2
+
+            baseline = BenchmarkBaseline(
+                name=result.name,
+                mean=result.mean,
+                median=median,
+                std_dev=result.std_dev,
+                min_time=result.min,
+                max_time=result.max,
+                ops_per_second=1.0 / result.mean if result.mean > 0 else 0,
+                iterations=result.iterations,
+                timestamp=datetime.now(timezone.utc).isoformat(),
+            )
+            collection.update_baseline(baseline)
+
+        manager.save(collection)
+        print(f"\nBaseline updated with {len(results)} benchmarks")
+
+    # Handle --ci flag (regression check)
+    if args.ci:
+        from benchmarks.regression import RegressionChecker
+
+        runner_results = []
+        for result in results:
+            from benchmarks.runner import BenchmarkResult
+            runner_results.append(BenchmarkResult(
+                name=result.name,
+                mean=result.mean,
+                min=result.min,
+                max=result.max,
+                std_dev=result.std_dev,
+                iterations=result.iterations,
+            ))
+
+        suite_result = BenchmarkSuiteResult(
+            suite_name="clareza-benchmarks",
+            results=runner_results,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+        )
+
+        checker = RegressionChecker()
+        report = checker.check(suite_result)
+
+        if report.has_regressions:
+            print("\nFAIL - Performance regressions detected")
+            sys.exit(1)
+        else:
+            print("\nPASS - No regressions detected")
+            sys.exit(0)
 
     # Output pass status for verification
     print("\nPASS")
