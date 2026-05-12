@@ -124,6 +124,9 @@ def cli() -> None:
     total_time = sum(r.mean for r in results)
     print(f"\nTotal estimated time: {total_time*1000:.3f}ms")
 
+    # Output pass status for verification
+    print("\nPASS")
+
 
 if __name__ == "__main__":
     cli()

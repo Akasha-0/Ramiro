@@ -18,6 +18,12 @@ from src.exceptions import (
     ValidationClarezaError,
 )
 from benchmarks.regression import RegressionChecker
+from clareza.benchmark.cli import cli as benchmark_cli
+
+
+def benchmark() -> None:
+    """Entry point for 'clareza benchmark' CLI command."""
+    benchmark_cli()
 
 # ----------------------------------------------------------------------
 # Error messages — mensagens de erro em português com orientação
