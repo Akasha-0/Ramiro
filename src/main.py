@@ -366,7 +366,7 @@ def run_plugins(action: str, plugin_name: str | None, verbose: bool = False) -> 
         sys.exit(1)
 
     if action == "list":
-        list_plugins(manager)
+        run_plugins_list_with_manager(manager)
     elif action == "enable":
         if not plugin_name:
             colored = _get_error_output()
@@ -387,11 +387,37 @@ def run_plugins(action: str, plugin_name: str | None, verbose: bool = False) -> 
         info_plugin(manager, plugin_name)
 
 
-def list_plugins(manager: 'PluginManager') -> None:
-    """Lista todos os plugins disponíveis.
+def run_plugins_list(verbose: bool = False) -> None:
+    """Lista todos os plugins disponíveis do sistema.
+
+    Inicializa o gerenciador de plugins e exibe a lista de plugins carregados.
 
     Args:
-        manager: Instância do gerenciador de plugins.
+        verbose: Se True, ativa logging detalhado (DEBUG level).
+    """
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    from src.plugin_manager import PluginManager
+
+    try:
+        logger.info("Carregando plugins...")
+        manager = PluginManager()
+        manager.load_plugins()
+        logger.info("Plugins carregados: %d", manager.plugin_count)
+        run_plugins_list_with_manager(manager)
+    except Exception as e:
+        logger.error("Falha ao listar plugins: %s", e)
+        colored = _get_error_output()
+        print(colored.error("✗ Erro: Não foi possível listar os plugins."), file=sys.stderr)
+        sys.exit(1)
+
+
+def run_plugins_list_with_manager(manager: 'PluginManager') -> None:
+    """Lista todos os plugins disponíveis usando um gerenciador já inicializado.
+
+    Args:
+        manager: Instância do gerenciador de plugins já inicializado.
     """
     plugins = manager.get_plugins()
 
