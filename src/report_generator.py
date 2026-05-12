@@ -372,6 +372,44 @@ class ReportGenerator:
         return analysis.practical_plan
 
     # ------------------------------------------------------------------
+    # Plugin sections
+    # ------------------------------------------------------------------
+
+    def _format_plugin_sections(
+        self,
+        plugin_sections: list[dict[str, str]],
+    ) -> str:
+        """Formata seções extras geradas por plugins.
+
+        Args:
+            plugin_sections: Lista de dicionários com chaves 'title' e 'content'.
+
+        Returns:
+            String formatada com as seções de plugins ou string vazia se
+            include_plugin_sections estiver desativado ou a lista estiver vazia.
+        """
+        if not self.include_plugin_sections:
+            logger.debug("Seções de plugins desativadas, ignorando")
+            return ""
+
+        if not plugin_sections:
+            logger.debug("Nenhuma seção de plugin fornecida")
+            return ""
+
+        logger.debug("Formatando %d seções de plugins", len(plugin_sections))
+
+        lines: list[str] = []
+        for section in plugin_sections:
+            title = section.get("title", "Seção sem título")
+            content = section.get("content", "")
+            if title and content:
+                lines.append(f"## {title}\n")
+                lines.append(content)
+                lines.append("")
+
+        return "\n".join(lines).strip()
+
+    # ------------------------------------------------------------------
     # Utilitários de formatação
     # ------------------------------------------------------------------
 

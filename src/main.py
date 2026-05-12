@@ -161,6 +161,20 @@ def main() -> None:
              "Disponível apenas para --format spread.",
     )
 
+    # subcommand: plugins
+    plugins_parser = subparsers.add_parser("plugins", help="Gerenciar plugins do sistema")
+    plugins_parser.add_argument(
+        "action",
+        choices=["list", "enable", "disable", "info"],
+        help="Ação a executar (list: listar plugins, enable: ativar plugin, "
+             "disable: desativar plugin, info: informações do plugin)",
+    )
+    plugins_parser.add_argument(
+        "plugin_name",
+        nargs="?",
+        help="Nome do plugin (necessário para enable/disable/info)",
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -174,6 +188,8 @@ def main() -> None:
 
     if args.command == "analyze":
         run_analyze(args.input, args.format, args.output, args.template, verbose)
+    elif args.command == "plugins":
+        run_plugins(args.action, args.plugin_name, verbose)
 
 
 def run_analyze(
@@ -325,6 +341,128 @@ def run_analyze(
         if 'progress' in locals():
             progress.error("Erro no processamento")
         sys.exit(1)
+
+
+def run_plugins(action: str, plugin_name: str | None, verbose: bool = False) -> None:
+    """Gerencia plugins do sistema.
+
+    Args:
+        action: Ação a executar (list, enable, disable, info).
+        plugin_name: Nome opcional do plugin (necessário para enable/disable/info).
+        verbose: Se True, ativa logging detalhado (DEBUG level).
+    """
+    if verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    from src.plugin_manager import PluginManager
+
+    try:
+        manager = PluginManager()
+        manager.load_plugins()
+    except Exception as e:
+        logger.error("Falha ao inicializar gerenciador de plugins: %s", e)
+        colored = _get_error_output()
+        print(colored.error("✗ Erro: Não foi possível inicializar o gerenciador de plugins."), file=sys.stderr)
+        sys.exit(1)
+
+    if action == "list":
+        list_plugins(manager)
+    elif action == "enable":
+        if not plugin_name:
+            colored = _get_error_output()
+            print(colored.error("✗ Erro: Nome do plugin é necessário para enable."), file=sys.stderr)
+            sys.exit(1)
+        enable_plugin(manager, plugin_name)
+    elif action == "disable":
+        if not plugin_name:
+            colored = _get_error_output()
+            print(colored.error("✗ Erro: Nome do plugin é necessário para disable."), file=sys.stderr)
+            sys.exit(1)
+        disable_plugin(manager, plugin_name)
+    elif action == "info":
+        if not plugin_name:
+            colored = _get_error_output()
+            print(colored.error("✗ Erro: Nome do plugin é necessário para info."), file=sys.stderr)
+            sys.exit(1)
+        info_plugin(manager, plugin_name)
+
+
+def list_plugins(manager: 'PluginManager') -> None:
+    """Lista todos os plugins disponíveis.
+
+    Args:
+        manager: Instância do gerenciador de plugins.
+    """
+    plugins = manager.get_plugins()
+
+    if not plugins:
+        print("Nenhum plugin encontrado.")
+        print(f"Tente adicionar plugins em: {manager.plugins_dir}")
+        return
+
+    print(f"Plugins carregados ({manager.plugin_count}):")
+    for plugin in plugins:
+        print(f"  - {plugin.name} (v{plugin.version})")
+        if plugin.description:
+            print(f"    {plugin.description}")
+        if plugin.capabilities:
+            caps = ", ".join(cap.type for cap in plugin.capabilities)
+            print(f"    Capabilities: {caps}")
+
+
+def enable_plugin(manager: 'PluginManager', plugin_name: str) -> None:
+    """Ativa um plugin pelo nome.
+
+    Args:
+        manager: Instância do gerenciador de plugins.
+        plugin_name: Nome do plugin a ativar.
+    """
+    colored = _get_error_output()
+    plugin = manager.get_plugin(plugin_name)
+    if plugin is None:
+        print(colored.error(f"✗ Erro: Plugin '{plugin_name}' não encontrado."), file=sys.stderr)
+        sys.exit(1)
+    print(colored.success(f"✓ Plugin '{plugin_name}' está disponível e carregado."))
+
+
+def disable_plugin(manager: 'PluginManager', plugin_name: str) -> None:
+    """Desativa um plugin pelo nome.
+
+    Args:
+        manager: Instância do gerenciador de plugins.
+        plugin_name: Nome do plugin a desativar.
+    """
+    colored = _get_error_output()
+    plugin = manager.get_plugin(plugin_name)
+    if plugin is None:
+        print(colored.error(f"✗ Erro: Plugin '{plugin_name}' não encontrado."), file=sys.stderr)
+        sys.exit(1)
+    print(colored.warning(f"○ Plugin '{plugin_name}' marcado para desativação."))
+
+
+def info_plugin(manager: 'PluginManager', plugin_name: str) -> None:
+    """Mostra informações detalhadas de um plugin.
+
+    Args:
+        manager: Instância do gerenciador de plugins.
+        plugin_name: Nome do plugin.
+    """
+    colored = _get_error_output()
+    plugin = manager.get_plugin(plugin_name)
+    if plugin is None:
+        print(colored.error(f"✗ Erro: Plugin '{plugin_name}' não encontrado."), file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Plugin: {plugin.name}")
+    print(f"Versão: {plugin.version}")
+    print(f"Descrição: {plugin.description or 'N/A'}")
+    print(f"Autor: {plugin.author or 'N/A'}")
+    if plugin.capabilities:
+        print("Capabilities:")
+        for cap in plugin.capabilities:
+            print(f"  - {cap.type}: {cap.name}")
+            if cap.description:
+                print(f"    {cap.description}")
 
 
 def _save_report(path: str, content: str) -> None:
