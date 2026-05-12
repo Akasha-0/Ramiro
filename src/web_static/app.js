@@ -20,7 +20,7 @@
     // ------------------------------------------------------------------
 
     const elements = {
-        get inputText() { return document.getElementById('inputText'); },
+        get inputText() { return document.getElementById('content'); },
         get formatSelect() { return document.getElementById('formatSelect'); },
         get analyzeBtn() { return document.getElementById('analyzeBtn'); },
         get resultSection() { return document.getElementById('resultSection'); },
