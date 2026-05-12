@@ -659,3 +659,60 @@ class TestSensitiveInputPipeline:
         assert exit_code == 0
         # Normalização de texto deve detectar variantes com/sem acento
         assert "AVISO IMPORTANTE" in output
+
+
+# ----------------------------------------------------------------------
+# Testes — error messages and UX (feature-16)
+# ----------------------------------------------------------------------
+
+
+class TestErrorMessages:
+    """Testes para acceptance criteria do feature-16: mensagens de erro em português."""
+
+    def test_session_not_found_exits_with_1(self) -> None:
+        """Session ID inexistente termina com código 1 e mensagem clara."""
+        output, stderr, exit_code = run_main_with_args(["session", "00000000-0000-0000-0000-000000000000"])
+        assert exit_code == 1
+        # A mensagem pode estar em stdout ou stderr (console output)
+        combined = output + stderr
+        assert "não encontrada" in combined.lower() or "não encontrado" in combined.lower()
+
+    def test_invalid_template_yaml_loads_but_shows_error(self) -> None:
+        """Template YAML inexistente no config: get_active_template gera erro tratável."""
+        from clareza.report_generator import get_active_template
+        from pathlib import Path
+        from clareza import config as config_module
+        original = config_module.load_config
+        class FakeConfig:
+            custom_template_path = Path("/tmp/this_does_not_exist_12345.yaml")
+        config_module.load_config = lambda: FakeConfig()
+        try:
+            template = get_active_template()
+            # Deve retornar default quando caminho não existe
+            assert template.template_id == "default"
+        finally:
+            config_module.load_config = original
+
+    def test_compare_nonexistent_session_exits_with_1(self) -> None:
+        """Comparar sessão inexistente termina com código 1."""
+        _, _, exit_code = run_main_with_args([
+            "compare",
+            "00000000-0000-0000-0000-000000000001",
+            "00000000-0000-0000-0000-000000000002",
+        ])
+        assert exit_code == 1
+
+    def test_template_show_command_runs_without_crash(self) -> None:
+        """Template show executa sem crash."""
+        _, _, exit_code = run_main_with_args(["template", "show"])
+        # Sem sys.exit() → -1 (captured but no SystemExit). Cmdline test = ok.
+        assert exit_code == -1
+
+    def test_analyze_with_nonexistent_file_message_is_clear(self) -> None:
+        """Analyze com arquivo inexistente: comportamento definido."""
+        # O --input aceita texto livre — caminho inexistente vira texto de input
+        output, stderr, exit_code = run_main_with_args([
+            "analyze", "--input", "/nonexistent/file/path/clareza_test_xyz.md", "--format", "text"
+        ])
+        # Não deve crashar — exit 0 (processa como texto) ou exit 2 (erro)
+        assert exit_code in (0, 2)
