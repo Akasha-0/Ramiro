@@ -1,7 +1,7 @@
 /** Interface web — Clareza
  *
  * Módulo JavaScript para interação com a API de análise.
- * Gerencia form submission, requisições fetch e renderização de resultados.
+ * Gerencia form submission, requisições HTTP e renderização de resultados.
  */
 
 (function() {
