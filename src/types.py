@@ -145,6 +145,7 @@ class Session:
         raw_content: Conteúdo bruto original.
         analysis_result: Resultado da análise (opcional).
         unresolved_threads: Lista de IDs de threads não resolvidas desta sessão.
+        annotations: Lista de anotações/reflexões desta sessão.
     """
 
     session_id: str
@@ -153,6 +154,7 @@ class Session:
     raw_content: str
     analysis_result: Optional[AnalysisResult] = None
     unresolved_threads: list[str] = field(default_factory=list)
+    annotations: list["SessionAnnotation"] = field(default_factory=list)
 
 
 @dataclass
