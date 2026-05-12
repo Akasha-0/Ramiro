@@ -16,7 +16,15 @@ import tempfile
 
 import pytest
 
-from src.main import main, run_analyze
+from src.main import (
+    main,
+    run_analyze,
+    run_plugins,
+    run_plugins_list,
+    enable_plugin,
+    disable_plugin,
+    info_plugin,
+)
 
 
 # ----------------------------------------------------------------------
@@ -652,3 +660,219 @@ class TestSensitiveInputPipeline:
         assert exit_code == 0
         # Normalização de texto deve detectar variantes com/sem acento
         assert "AVISO IMPORTANTE" in output
+
+
+# ----------------------------------------------------------------------
+# Testes — run_plugins(): comando plugins via main()
+# ----------------------------------------------------------------------
+
+
+class TestPluginsMain:
+    """Testes de integração para o subcomando 'plugins' via main()."""
+
+    def test_plugins_list_action(self) -> None:
+        """plugins list exibe lista de plugins (ou mensagem de nenhum encontrado)."""
+        stdout, stderr, exit_code = run_main_with_args(["plugins", "list"])
+        assert exit_code == 0
+        # Output deve conter indicador de plugins ou mensagem de nenhum encontrado
+        output = stdout + stderr
+        assert "plugin" in output.lower() or "nenhum" in output.lower()
+
+    def test_plugins_list_verbose_flag(self) -> None:
+        """plugins list --verbose ativa logging detalhado."""
+        stdout, stderr, exit_code = run_main_with_args(["plugins", "list", "--verbose"])
+        assert exit_code == 0
+        output = stdout + stderr
+        # Com verbose, deve exibir informações de carregamento
+        assert "plugin" in output.lower() or "carregad" in output.lower()
+
+    def test_plugins_enable_without_name_exits_1(self) -> None:
+        """plugins enable sem nome de plugin termina com código 1."""
+        stdout, stderr, exit_code = run_main_with_args(["plugins", "enable"])
+        assert exit_code == 1
+        output = stdout + stderr
+        assert "nome" in output.lower() or "plugin" in output.lower()
+
+    def test_plugins_disable_without_name_exits_1(self) -> None:
+        """plugins disable sem nome de plugin termina com código 1."""
+        stdout, stderr, exit_code = run_main_with_args(["plugins", "disable"])
+        assert exit_code == 1
+        output = stdout + stderr
+        assert "nome" in output.lower() or "plugin" in output.lower()
+
+    def test_plugins_info_without_name_exits_1(self) -> None:
+        """plugins info sem nome de plugin termina com código 1."""
+        stdout, stderr, exit_code = run_main_with_args(["plugins", "info"])
+        assert exit_code == 1
+        output = stdout + stderr
+        assert "nome" in output.lower() or "plugin" in output.lower()
+
+    def test_plugins_enable_with_nonexistent_name(self) -> None:
+        """plugins enable com nome inexistente termina com código 1."""
+        stdout, stderr, exit_code = run_main_with_args(["plugins", "enable", "inexistente"])
+        assert exit_code == 1
+        output = stdout + stderr
+        assert "não encontrado" in output.lower() or "erro" in output.lower()
+
+    def test_plugins_disable_with_nonexistent_name(self) -> None:
+        """plugins disable com nome inexistente termina com código 1."""
+        stdout, stderr, exit_code = run_main_with_args(["plugins", "disable", "inexistente"])
+        assert exit_code == 1
+        output = stdout + stderr
+        assert "não encontrado" in output.lower() or "erro" in output.lower()
+
+    def test_plugins_info_with_nonexistent_name(self) -> None:
+        """plugins info com nome inexistente termina com código 1."""
+        stdout, stderr, exit_code = run_main_with_args(["plugins", "info", "inexistente"])
+        assert exit_code == 1
+        output = stdout + stderr
+        assert "não encontrado" in output.lower() or "erro" in output.lower()
+
+
+# ----------------------------------------------------------------------
+# Testes — run_plugins_list()
+# ----------------------------------------------------------------------
+
+
+class TestRunPluginsList:
+    """Testes para a função run_plugins_list()."""
+
+    def test_run_plugins_list_exits_0(self) -> None:
+        """run_plugins_list() termina com código 0."""
+        output, exit_code = capture_stdout(run_plugins_list)
+        assert exit_code == 0
+
+    def test_run_plugins_list_verbose(self) -> None:
+        """run_plugins_list(verbose=True) termina com código 0."""
+        output, exit_code = capture_stdout(run_plugins_list, True)
+        assert exit_code == 0
+
+    def test_run_plugins_list_output_contains_plugin_info(self) -> None:
+        """Output contém informações sobre plugins ou mensagem de nenhum encontrado."""
+        output, exit_code = capture_stdout(run_plugins_list)
+        assert exit_code == 0
+        # Deve conter texto sobre plugins
+        output_lower = output.lower()
+        assert "plugin" in output_lower or "nenhum" in output_lower
+
+
+# ----------------------------------------------------------------------
+# Testes — run_plugins()
+# ----------------------------------------------------------------------
+
+
+class TestRunPlugins:
+    """Testes para a função run_plugins()."""
+
+    def test_run_plugins_list_action(self) -> None:
+        """run_plugins('list', None) executa listagem."""
+        output, exit_code = capture_stdout(run_plugins, "list", None)
+        assert exit_code == 0
+        output_lower = output.lower()
+        assert "plugin" in output_lower or "nenhum" in output_lower
+
+    def test_run_plugins_list_with_verbose(self) -> None:
+        """run_plugins('list', None, verbose=True) executa com verbose."""
+        output, exit_code = capture_stdout(run_plugins, "list", None, True)
+        assert exit_code == 0
+
+    def test_run_plugins_enable_without_name_exits_1(self) -> None:
+        """run_plugins('enable', None) termina com código 1."""
+        output, exit_code = capture_stdout(run_plugins, "enable", None)
+        assert exit_code == 1
+        assert "necessário" in output.lower() or "nome" in output.lower()
+
+    def test_run_plugins_disable_without_name_exits_1(self) -> None:
+        """run_plugins('disable', None) termina com código 1."""
+        output, exit_code = capture_stdout(run_plugins, "disable", None)
+        assert exit_code == 1
+        assert "necessário" in output.lower() or "nome" in output.lower()
+
+    def test_run_plugins_info_without_name_exits_1(self) -> None:
+        """run_plugins('info', None) termina com código 1."""
+        output, exit_code = capture_stdout(run_plugins, "info", None)
+        assert exit_code == 1
+        assert "necessário" in output.lower() or "nome" in output.lower()
+
+    def test_run_plugins_enable_nonexistent_exits_1(self) -> None:
+        """run_plugins('enable', 'inexistente') termina com código 1."""
+        output, exit_code = capture_stdout(run_plugins, "enable", "inexistente")
+        assert exit_code == 1
+        assert "não encontrado" in output.lower() or "erro" in output.lower()
+
+    def test_run_plugins_disable_nonexistent_exits_1(self) -> None:
+        """run_plugins('disable', 'inexistente') termina com código 1."""
+        output, exit_code = capture_stdout(run_plugins, "disable", "inexistente")
+        assert exit_code == 1
+        assert "não encontrado" in output.lower() or "erro" in output.lower()
+
+    def test_run_plugins_info_nonexistent_exits_1(self) -> None:
+        """run_plugins('info', 'inexistente') termina com código 1."""
+        output, exit_code = capture_stdout(run_plugins, "info", "inexistente")
+        assert exit_code == 1
+        assert "não encontrado" in output.lower() or "erro" in output.lower()
+
+
+# ----------------------------------------------------------------------
+# Testes — Plugin management helpers
+# ----------------------------------------------------------------------
+
+
+class TestPluginManagementHelpers:
+    """Testes para as funções auxiliares de gerenciamento de plugins."""
+
+    def test_enable_plugin_with_manager(self) -> None:
+        """enable_plugin com PluginManager existente funciona."""
+        from src.plugin_manager import PluginManager
+
+        manager = PluginManager()
+        manager.load_plugins()
+        # Não deve dar erro mesmo sem plugins carregados
+        output, exit_code = capture_stdout(enable_plugin, manager, "test")
+        assert exit_code == 1  # Plugin não encontrado
+
+    def test_disable_plugin_with_manager(self) -> None:
+        """disable_plugin com PluginManager existente funciona."""
+        from src.plugin_manager import PluginManager
+
+        manager = PluginManager()
+        manager.load_plugins()
+        output, exit_code = capture_stdout(disable_plugin, manager, "test")
+        assert exit_code == 1  # Plugin não encontrado
+
+    def test_info_plugin_with_manager(self) -> None:
+        """info_plugin com PluginManager existente funciona."""
+        from src.plugin_manager import PluginManager
+
+        manager = PluginManager()
+        manager.load_plugins()
+        output, exit_code = capture_stdout(info_plugin, manager, "test")
+        assert exit_code == 1  # Plugin não encontrado
+
+
+# ----------------------------------------------------------------------
+# Testes — Edge cases plugins
+# ----------------------------------------------------------------------
+
+
+class TestPluginsEdgeCases:
+    """Testes de edge cases para o sistema de plugins."""
+
+    def test_plugins_help_flag(self) -> None:
+        """plugins --help exibe help do subcomando."""
+        _, _, exit_code = run_main_with_args(["plugins", "--help"])
+        assert exit_code == 0
+
+    def test_plugins_invalid_action(self) -> None:
+        """plugins com ação inválida termina com código 2."""
+        _, stderr, exit_code = run_main_with_args(["plugins", "invalid_action"])
+        assert exit_code == 2
+        assert "invalid choice" in stderr.lower()
+
+    def test_run_plugins_with_invalid_action(self) -> None:
+        """run_plugins com ação inválida não faz nada."""
+        # Ação inválida cai no final da função sem ação
+        # O código atual não trata ação inválida explicitamente
+        output, exit_code = capture_stdout(run_plugins, "invalid", None)
+        # Sem ação tomada, exit_code é None (retorna sem exit)
+        assert exit_code == -1
