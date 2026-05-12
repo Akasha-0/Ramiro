@@ -169,17 +169,25 @@ def cli() -> None:
     # Handle --ci flag (regression check)
     if args.ci:
         from benchmarks.regression import RegressionChecker
+        import statistics
 
         runner_results = []
         for result in results:
             from benchmarks.runner import BenchmarkResult
+            # Compute all required fields for BenchmarkResult
+            times = []  # We don't have individual times, estimate from mean
+            total_time = result.mean * result.iterations
+            ops_per_second = result.iterations / total_time if total_time > 0 else 0
             runner_results.append(BenchmarkResult(
                 name=result.name,
-                mean=result.mean,
-                min=result.min,
-                max=result.max,
-                std_dev=result.std_dev,
                 iterations=result.iterations,
+                total_time=total_time,
+                mean=result.mean,
+                median=result.mean,  # Approximate
+                std_dev=result.std_dev,
+                min_time=result.min,
+                max_time=result.max,
+                ops_per_second=ops_per_second,
             ))
 
         suite_result = BenchmarkSuiteResult(
