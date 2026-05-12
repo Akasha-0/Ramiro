@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clareza — Análise Simbólico-Estratégica</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header class="header">
+        <h1>Clareza</h1>
+        <p class="tagline">Sistema de Análise Simbólico-Estratégica</p>
+    </header>
+
+    <main class="container">
+        <section class="input-section">
+            <h2>Analisar Entrada</h2>
+
+            <div class="form-group">
+                <label for="inputText">Texto ou Símbolos</label>
+                <textarea
+                    id="inputText"
+                    rows="4"
+                    placeholder="Digite sua pergunta, símbolo ou lista de símbolos separados por vírgula..."
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="formatSelect">Formato</label>
+                <select id="formatSelect">
+                    <option value="text">Texto Livre</option>
+                    <option value="spread">Tiragem (CSV)</option>
+                    <option value="symbols">Símbolos</option>
+                </select>
+            </div>
+
+            <button id="analyzeBtn" class="btn-primary">Analisar</button>
+        </section>
+
+        <section class="result-section" id="resultSection">
+            <h2>Relatório</h2>
+            <div id="reportOutput" class="report-content"></div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>Sistema de Clareza Simbólico-Estratégica v0.0.1</p>
+        <p class="disclaimer">Use como ferramenta de reflexão, não como previsão determinista.</p>
+    </footer>
+
+    <script src="/app.js"></script>
+</body>
+</html>
