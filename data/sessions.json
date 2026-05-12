@@ -1,0 +1,61 @@
+{
+  "31206751-e1ef-4a64-b334-8c954f615083": {
+    "session_id": "31206751-e1ef-4a64-b334-8c954f615083",
+    "timestamp": "2026-05-12T19:16:38.340144",
+    "input_format": "symbols",
+    "raw_content": "casa, estrela, lua",
+    "unresolved_threads": [],
+    "tags": [
+      null
+    ],
+    "analysis_result": {
+      "diagnosis": "**Simbologia central: A Casa**\n\nRepresenta o ambiente doméstico, a família e a segurança material. Indica estabilidade ou a necessidade de fortalecimento das bases pessoais.\n\nÁrea de destaque: *família*\n\n**Nuance secundária**: A presença de *A Estrela* adiciona a perspectiva de espiritual — Símbolo de esperança, luz interior e orientação. Indica que há um caminho claro a seguir e que a sit...",
+      "themes": [
+        "espiritual",
+        "família"
+      ],
+      "risks": [],
+      "decisions": [
+        "📋 Múltiplos símbolos detectados — uma análise mais aprofundada das relações entre as cartas trará mais clareza."
+      ],
+      "practical_plan": "**Foco principal (A Casa)**: Cuide do seu ambiente interno antes de buscar expansão externas. O lar é alicerce de tudo.\n\n**Atenção ao tema espiritual**: Ações relacionadas a crescimento pessoal, autoconhecimento e propósito\n\n**Próximos passos**:\n**Ações sugeridas**:\n- [LONGO PRAZO] Dedique 15 minutos diariamente à reflexão sobre família\n- [LONGO PRAZO] Estude mais sobre Representa o ambiente doméstico, a família e a seg através de fontes confiáveis",
+      "card_interpretations": null,
+      "symbolic_mappings": {
+        "kw:casa": "A Casa",
+        "kw:estrela": "A Estrela",
+        "kw:lua": "A Lua"
+      }
+    }
+  },
+  "71d8428d-bef0-4096-8258-af117fbb99fb": {
+    "session_id": "71d8428d-bef0-4096-8258-af117fbb99fb",
+    "timestamp": "2026-05-12T19:17:22.807885",
+    "input_format": "symbols",
+    "raw_content": "cruz, morte, cegonha",
+    "unresolved_threads": [],
+    "tags": [
+      null
+    ],
+    "analysis_result": {
+      "diagnosis": "**Simbologia central: A Cruz**\n\nRepresenta sofrimento, provação ou peso emocional. Indica um período difícil que está sendo enfrentado ou precisa ser enfrentado.\n\nÁrea de destaque: *espiritual*\n\n**Nuance secundária**: A presença de *A Cruz de São André* adiciona a perspectiva de trabalho — Representa encruzilhada e escolha difícil entre dois caminhos. Indica momento de decisão importante ...",
+      "themes": [
+        "espiritual",
+        "trabalho",
+        "família"
+      ],
+      "risks": [
+        "⚠️ Risco emocional detectado — momento propício para processar perdas e encerrar ciclos."
+      ],
+      "decisions": [
+        "📋 Múltiplos símbolos detectados — uma análise mais aprofundada das relações entre as cartas trará mais clareza."
+      ],
+      "practical_plan": "**Foco principal (A Cruz)**: O período difícil é temporário. Peça apoio se precisar — ninguém carrega a cruz sozinho para sempre.\n\n**Atenção ao tema espiritual**: Ações relacionadas a crescimento pessoal, autoconhecimento e propósito\n\n**Cuidados necessários**:\n- momento propício para processar perdas e encerrar ciclos.\n\n**Próximos passos**:\n**Ações sugeridas**:\n- [LONGO PRAZO] Dedique 15 minutos diariamente à reflexão sobre espiritual\n- [LONGO PRAZO] Estude mais sobre Representa sofrimento, provação ou peso emocional. através de fontes confiáveis\n- [LONGO PRAZO] Agende uma conversa com quem está envolvido sobre Representa sofrimento, provação ou peso emocional.",
+      "card_interpretations": null,
+      "symbolic_mappings": {
+        "kw:cruz": "A Cruz",
+        "kw:morte": "O Caixão",
+        "kw:cegonha": "A Cegonha"
+      }
+    }
+  }
+}

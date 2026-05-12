@@ -181,6 +181,11 @@ def main() -> None:
              "A sessão será armazenada para visualização futura do arco narrativo.",
     )
     analyze_parser.add_argument(
+        "--save-session",
+        action="store_true",
+        help="Salvar esta sessão no histórico para consulta posterior.",
+    )
+    analyze_parser.add_argument(
         "--report-format", "-r",
         choices=["default", "compact", "verbose", "json"],
         default="default",
@@ -211,6 +216,38 @@ def main() -> None:
         help="Formato de saída (text, chart)",
     )
 
+    # subcommand: history
+    history_parser = subparsers.add_parser("history", help="Listar sessões salvas no histórico")
+    history_parser.add_argument(
+        "--tag", "-t",
+        default=None,
+        help="Filtrar por tag (ex: carreira, relacionamento)",
+    )
+    history_parser.add_argument(
+        "--limit", "-l",
+        type=int,
+        default=20,
+        help="Número máximo de sessões a exibir (padrão: 20)",
+    )
+
+    # subcommand: session
+    session_parser = subparsers.add_parser("session", help="Recuperar uma sessão pelo ID")
+    session_parser.add_argument(
+        "session_id",
+        help="ID da sessão a recuperar",
+    )
+
+    # subcommand: compare
+    compare_parser = subparsers.add_parser("compare", help="Comparar duas sessões")
+    compare_parser.add_argument(
+        "session_id_1",
+        help="ID da primeira sessão",
+    )
+    compare_parser.add_argument(
+        "session_id_2",
+        help="ID da segunda sessão",
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -223,9 +260,157 @@ def main() -> None:
     verbose = getattr(args, 'verbose', False) or getattr(args, 'v', False)
 
     if args.command == "analyze":
-        run_analyze(args.input, args.format, args.output, args.template, verbose, args.tag, args.report_format)
+        run_analyze(args.input, args.format, args.output, args.template, verbose, args.tag, args.report_format, args.save_session)
     elif args.command == "arc":
         run_arc(args.sessions, args.output, args.format, verbose, args.tag)
+    elif args.command == "history":
+        run_history(args.tag, args.limit)
+    elif args.command == "session":
+        run_session(args.session_id)
+    elif args.command == "compare":
+        run_compare(args.session_id_1, args.session_id_2)
+
+
+def run_history(tag: str | None, limit: int) -> None:
+    """Lista sessões salvas no histórico."""
+    store = SessionStore()
+    if tag:
+        sessions = store.get_sessions_by_tag(tag)
+    else:
+        sessions = store.list_sessions()
+
+    sessions = sessions[-limit:]  # most recent
+
+    if not sessions:
+        print("Nenhuma sessão encontrada.")
+        return
+
+    print(f"## Histórico de Sessões")
+    print(f"Total: {len(sessions)} sessão(ões)")
+    if tag:
+        print(f"Tag: {tag}")
+    print()
+    print("| # | Data | Formato | Tags | ID |")
+    print("|---|------|---------|------|----|")
+    for i, s in enumerate(sessions, 1):
+        date = s.timestamp[:19].replace("T", " ")
+        tags_str = ", ".join(t for t in s.tags if t) if s.tags else "—"
+        print(f"| {i} | {date} | {s.input_format} | {tags_str} | `{s.session_id[:8]}` |")
+
+
+def run_session(session_id: str) -> None:
+    """Recupera e exibe uma sessão pelo ID."""
+    store = SessionStore()
+    session = store.get_session(session_id)
+
+    if not session:
+        print(f"Erro: Sessão '{session_id}' não encontrada.")
+        sys.exit(1)
+
+    print(f"## Sessão {session_id[:8]}")
+    print(f"**Data:** {session.timestamp[:19].replace('T', ' ')}")
+    print(f"**Formato:** {session.input_format}")
+    print(f"**Tags:** {', '.join(t for t in session.tags if t) if session.tags else '—'}")
+    print()
+    print("### Input Original")
+    print(session.raw_content)
+    print()
+
+    if session.analysis_result:
+        ar = session.analysis_result
+        print("### Diagnóstico")
+        print(ar.diagnosis)
+        print()
+        print("### Temas")
+        print(", ".join(ar.themes))
+        print()
+        print("### Riscos")
+        for r in ar.risks:
+            print(f"- {r}")
+        print()
+        print("### Padrões Cruzados")
+        for p in ar.cross_card_patterns:
+            print(f"- **[{p.pattern_type}]** ({p.strength}): {p.interpretation[:100]}...")
+        print()
+        print("### Plano Prático")
+        print(ar.practical_plan)
+    else:
+        print("_(Análise não disponível)_")
+
+
+def run_compare(session_id_1: str, session_id_2: str) -> None:
+    """Compara duas sessões e gera relatório de diferenças."""
+    store = SessionStore()
+    s1 = store.get_session(session_id_1)
+    s2 = store.get_session(session_id_2)
+
+    if not s1:
+        print(f"Erro: Sessão '{session_id_1}' não encontrada.")
+        sys.exit(1)
+    if not s2:
+        print(f"Erro: Sessão '{session_id_2}' não encontrada.")
+        sys.exit(1)
+
+    print(f"## Comparação de Sessões")
+    print()
+    print(f"| | **Sessão {session_id_1[:8]}** | **Sessão {session_id_2[:8]}** |")
+    print(f"|---|---|---|")
+    print(f"| **Data** | {s1.timestamp[:19].replace('T',' ')} | {s2.timestamp[:19].replace('T',' ')} |")
+    print(f"| **Formato** | {s1.input_format} | {s2.input_format} |")
+    print(f"| **Tags** | {', '.join(t for t in s1.tags if t) if s1.tags else '—'} | {', '.join(t for t in s2.tags if t) if s2.tags else '—'} |")
+    print()
+
+    ar1, ar2 = s1.analysis_result, s2.analysis_result
+
+    if ar1 and ar2:
+        # Temas
+        themes1, themes2 = set(ar1.themes), set(ar2.themes)
+        common_themes = themes1 & themes2
+        new_in_2 = themes2 - themes1
+        dropped_from_1 = themes1 - themes2
+        print("### Temas")
+        if common_themes:
+            print(f"**Mantidos:** {', '.join(common_themes)}")
+        if new_in_2:
+            print(f"**Novos:** {', '.join(new_in_2)}")
+        if dropped_from_1:
+            print(f"**Abandonados:** {', '.join(dropped_from_1)}")
+        print()
+
+        # Riscos
+        risks1, risks2 = set(ar1.risks), set(ar2.risks)
+        print("### Riscos")
+        if risks1 != risks2:
+            added = risks2 - risks1
+            removed = risks1 - risks2
+            if added:
+                print(f"**Adicionados:** {', '.join(added)}")
+            if removed:
+                print(f"**Removidos:** {', '.join(removed)}")
+        else:
+            print("_(Sem mudança)_")
+        print()
+
+        # Padrões
+        patterns1 = {p.pattern_type for p in ar1.cross_card_patterns}
+        patterns2 = {p.pattern_type for p in ar2.cross_card_patterns}
+        print("### Padrões Cruzados")
+        print(f"**Antes:** {', '.join(sorted(patterns1)) or 'nenhum'}")
+        print(f"**Depois:** {', '.join(sorted(patterns2)) or 'nenhum'}")
+        print()
+
+        # Cross-session insight
+        print("### Insight Entre Sessões")
+        date1 = s1.timestamp[:10]
+        date2 = s2.timestamp[:10]
+        print(
+            f"Entre {date1} e {date2}, "
+            f"{'os temas se mantiveram estáveis' if not new_in_2 and not dropped_from_1 else 'houve evolução nos temas'}. "
+            f"{'O cenário de riscos permanece similar.' if risks1 == risks2 else 'O cenário de riscos mudou.'} "
+            f"Foram detectados {len(ar2.cross_card_patterns)} padrões na sessão mais recente."
+        )
+    else:
+        print("_(Análise completa não disponível para comparação)_")
 
 
 def run_analyze(
@@ -236,6 +421,7 @@ def run_analyze(
     verbose: bool = False,
     tag: str | None = None,
     report_format: str = "default",
+    save_session: bool = False,
 ) -> None:
     """Executa o pipeline completo de análise.
 
@@ -248,6 +434,7 @@ def run_analyze(
         template: Template de tiragem predefinido (apenas para format="spread").
         verbose: Se True, ativa logging detalhado (DEBUG level).
         tag: Tag opcional para categorizar a sessão.
+        save_session: Se True, salva a sessão no histórico.
     """
     # Configure verbose logging if requested
     if verbose:
@@ -311,8 +498,8 @@ def run_analyze(
                 validated.disclaimer_flags,
             )
 
-        # Fase 5: Salvar sessão se tag foi especificada
-        if tag:
+        # Fase 5: Salvar sessão se --save-session foi especificado
+        if save_session:
             logger.info("Salvando sessão com tag: %s", tag)
             store = SessionStore()
             session = store.create_session(
