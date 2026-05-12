@@ -58,6 +58,12 @@ ERROR_MESSAGES = {
         "Verifique se você tem permissão de escrita no diretório.\n"
         "Dica: Tente usar um caminho absoluto ou um diretório diferente."
     ),
+    "plugin_load_error": (
+        "Falha ao carregar plugins do sistema.\n"
+        "O sistema continuará funcionando, mas funcionalidades de plugin "
+        "estarão indisponíveis.\n"
+        "Use 'clareza plugins list' para verificar o estado dos plugins."
+    ),
 }
 
 # ----------------------------------------------------------------------
@@ -213,6 +219,20 @@ def run_analyze(
     # Configure verbose logging if requested
     if verbose:
         logging.getLogger().setLevel(logging.DEBUG)
+
+    # Load plugins on startup
+    plugin_manager = None
+    try:
+        from src.plugin_manager import PluginManager
+        plugin_manager = PluginManager()
+        plugin_manager.load_plugins()
+        if plugin_manager.plugin_count > 0:
+            logger.info("Plugins carregados: %d", plugin_manager.plugin_count)
+        else:
+            logger.debug("Nenhum plugin encontrado no diretório padrão")
+    except Exception as e:
+        logger.warning("Falha ao carregar plugins: %s", e)
+        # Continuar sem plugins - o sistema funciona mesmo assim
 
     # Validação: --template só é válido com --format spread
     if template is not None and format != "spread":
