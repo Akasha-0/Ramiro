@@ -726,6 +726,65 @@ class HistoryDB:
             if a.is_milestone_completed
         ]
 
+    def add_annotation(
+        self,
+        session_id: str,
+        content: str,
+        milestone_id: Optional[str] = None,
+        theme_tags: Optional[list[str]] = None,
+        linked_thread_ids: Optional[list[str]] = None,
+        is_milestone_completed: bool = False,
+    ) -> SessionAnnotation:
+        """Adiciona uma anotação/reflexão a uma sessão.
+
+        Args:
+            session_id: ID da sessão à qual adicionar a anotação.
+            content: Texto da reflexão/resposta do usuário.
+            milestone_id: ID do milestone/prompt que originou a reflexão (opcional).
+            theme_tags: Tags de temas identificados na reflexão (opcional).
+            linked_thread_ids: IDs das threads narrativas relacionadas (opcional).
+            is_milestone_completed: Indica se o milestone foi marcado como concluído.
+
+        Returns:
+            SessionAnnotation criada e salva.
+
+        Raises:
+            SessionNotFoundError: Se a sessão não existir.
+            HistoryDBError: Se houver erro ao salvar.
+        """
+        # Verificar se a sessão existe
+        session = self.get_session(session_id)
+        if session is None:
+            logger.warning("Tentativa de anotar sessão inexistente: %s", session_id)
+            raise SessionNotFoundError(session_id)
+
+        # Carregar todas as anotações existentes
+        all_annotations = self.load_annotations()
+
+        # Criar nova anotação
+        from .types import SessionAnnotation
+
+        timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        annotation_id = f"ann-{session_id}-{len(all_annotations) + 1}-{timestamp}"
+
+        new_annotation = SessionAnnotation(
+            annotation_id=annotation_id,
+            session_id=session_id,
+            milestone_id=milestone_id or "",
+            content=content,
+            timestamp=timestamp,
+            theme_tags=theme_tags or [],
+            linked_thread_ids=linked_thread_ids or [],
+            is_milestone_completed=is_milestone_completed,
+        )
+
+        # Adicionar à lista e salvar
+        all_annotations.append(new_annotation)
+        self.save_annotations(all_annotations)
+
+        logger.info("Anotação adicionada à sessão %s: %s", session_id, annotation_id)
+        return new_annotation
+
     # ----------------------------------------------------------------------
     # Utilitários
     # ----------------------------------------------------------------------
