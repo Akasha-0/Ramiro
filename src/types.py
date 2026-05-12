@@ -145,7 +145,6 @@ class Session:
         raw_content: Conteúdo bruto original.
         analysis_result: Resultado da análise (opcional).
         unresolved_threads: Lista de IDs de threads não resolvidas desta sessão.
-        tags: Lista de tags para categorização (ex: "carreira", "relacionamento").
     """
 
     session_id: str
@@ -154,7 +153,6 @@ class Session:
     raw_content: str
     analysis_result: Optional[AnalysisResult] = None
     unresolved_threads: list[str] = field(default_factory=list)
-    tags: list[str] = field(default_factory=list)
 
 
 @dataclass

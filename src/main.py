@@ -9,8 +9,6 @@ from src.input_processor import InputProcessor, ParseError
 from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
-from src.session_store import SessionStore
-from src.arc_generator import ArcGenerator
 from src.logging_utils import create_progress
 from src.exceptions import (
     ClarezaError,
@@ -162,36 +160,6 @@ def main() -> None:
         help="Template de tiragem predefinido (3-card, celtic-cross). "
              "Disponível apenas para --format spread.",
     )
-    analyze_parser.add_argument(
-        "--tag", "-g",
-        default=None,
-        help="Tag para categorizar a sessão (ex: carreira, relacionamento). "
-             "A sessão será armazenada para visualização futura do arco narrativo.",
-    )
-
-    # subcommand: arc
-    arc_parser = subparsers.add_parser("arc", help="Visualizar arco narrativo entre sessões")
-    arc_parser.add_argument(
-        "--sessions", "-s",
-        default=None,
-        help="Lista de caminhos de arquivos de relatório separados por vírgula",
-    )
-    arc_parser.add_argument(
-        "--tag", "-t",
-        default=None,
-        help="Tag para filtrar sessões (ex: carreira, relacionamento)",
-    )
-    arc_parser.add_argument(
-        "--output", "-o",
-        default=None,
-        help="Caminho do arquivo .md para salvar a visualização",
-    )
-    arc_parser.add_argument(
-        "--format", "-f",
-        choices=["text", "chart"],
-        default="text",
-        help="Formato de saída (text, chart)",
-    )
 
     args = parser.parse_args()
 
@@ -205,9 +173,7 @@ def main() -> None:
     verbose = getattr(args, 'verbose', False) or getattr(args, 'v', False)
 
     if args.command == "analyze":
-        run_analyze(args.input, args.format, args.output, args.template, verbose, args.tag)
-    elif args.command == "arc":
-        run_arc(args.sessions, args.output, args.format, verbose, args.tag)
+        run_analyze(args.input, args.format, args.output, args.template, verbose)
 
 
 def run_analyze(
@@ -216,7 +182,6 @@ def run_analyze(
     output_path: str | None,
     template: str | None,
     verbose: bool = False,
-    tag: str | None = None,
 ) -> None:
     """Executa o pipeline completo de análise.
 
@@ -228,7 +193,6 @@ def run_analyze(
         output_path: Caminho opcional para salvar o relatório em .md.
         template: Template de tiragem predefinido (apenas para format="spread").
         verbose: Se True, ativa logging detalhado (DEBUG level).
-        tag: Tag opcional para categorizar a sessão.
     """
     # Configure verbose logging if requested
     if verbose:
@@ -292,29 +256,7 @@ def run_analyze(
                 validated.disclaimer_flags,
             )
 
-        # Fase 5: Salvar sessão se tag foi especificada
-        if tag:
-            logger.info("Salvando sessão com tag: %s", tag)
-            store = SessionStore()
-            session = store.create_session(
-                raw_content=raw_input,
-                input_format=format,
-            )
-            # Atualizar sessão com análise e tags
-            from src.types import Session as SessionType
-            updated_session = SessionType(
-                session_id=session.session_id,
-                timestamp=session.timestamp,
-                input_format=session.input_format,
-                raw_content=session.raw_content,
-                analysis_result=analysis_result,
-                unresolved_threads=[],
-                tags=[tag],
-            )
-            store.save_session(updated_session)
-            logger.info("Sessão '%s' salva com tag '%s'", session.session_id[:8], tag)
-
-        # Fase 6: Output
+        # Fase 5: Output
         colored = _get_error_output()
         if output_path:
             _save_report(output_path, validated.content)
@@ -383,92 +325,6 @@ def run_analyze(
         if 'progress' in locals():
             progress.error("Erro no processamento")
         sys.exit(1)
-
-
-def run_arc(
-    sessions: str | None,
-    output_path: str | None,
-    format: str,
-    verbose: bool = False,
-    tag: str | None = None,
-) -> None:
-    """Exibe o arco narrativo entre sessões de análise.
-
-    Args:
-        sessions: Lista separada por vírgula de caminhos de arquivos de relatório.
-        output_path: Caminho opcional para salvar a visualização em .md.
-        format: Formato de saída ("text" ou "chart").
-        verbose: Se True, ativa logging detalhado (DEBUG level).
-        tag: Tag para filtrar sessões do storage.
-    """
-    # Configure verbose logging if requested
-    if verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    colored = _get_error_output()
-
-    # Carregar sessões do storage se tag foi especificada
-    if tag:
-        logger.info("Filtrando sessões por tag: %s", tag)
-        store = SessionStore()
-        tagged_sessions = store.get_sessions_by_tag(tag)
-
-        if not tagged_sessions:
-            empty_msg = (
-                f"# Arco Narrativo — Tag: {tag}\n\n"
-                f"*Nenhuma sessão encontrada com a tag '{tag}'.\n"
-                "Continue suas reflexões para construir um arco narrativo ao longo do tempo.*\n\n"
-                "--- generated by Sistema de Clareza Simbólico-Estratégica v0.0.1.*"
-            )
-            if output_path:
-                _save_report(output_path, empty_msg)
-                print(colored.success(f"✓ Arco salvo em: {output_path}"), file=sys.stderr)
-            else:
-                print(empty_msg)
-            return
-
-        # Gerar arco usando ArcGenerator
-        arc_gen = ArcGenerator()
-        arc_content = arc_gen.generate(tagged_sessions, arc_name=f"Tag: {tag}")
-
-        if output_path:
-            _save_report(output_path, arc_content)
-            print(colored.success(f"✓ Arco salvo em: {output_path}"), file=sys.stderr)
-        else:
-            print(arc_content)
-        return
-
-    # Fallback: usar arquivos de relatório se --sessions foi especificado
-    if not sessions:
-        print(
-            colored.error("Erro: --sessions ou --tag é obrigatório para o comando arc."),
-            file=sys.stderr,
-        )
-        sys.exit(2)
-
-    # Parse session paths
-    session_paths = [s.strip() for s in sessions.split(",") if s.strip()]
-
-    if len(session_paths) < 2:
-        print(
-            colored.error("Erro: Mínimo de 2 sessões necessárias para visualizar o arco narrativo."),
-            file=sys.stderr,
-        )
-        sys.exit(2)
-
-    logger.info("Processando %d sessões para visualização do arco narrativo", len(session_paths))
-
-    # Placeholder - actual implementation will be in arc_visualizer.py
-    if format == "chart":
-        output_content = f"## Arco Narrativo\n\nVisualização em formato chart para {len(session_paths)} sessões."
-    else:
-        output_content = f"## Arco Narrativo\n\nAnálise textual do arco entre {len(session_paths)} sessões."
-
-    if output_path:
-        _save_report(output_path, output_content)
-        print(colored.success(f"✓ Visualização salva em: {output_path}"), file=sys.stderr)
-    else:
-        print(output_content)
 
 
 def _save_report(path: str, content: str) -> None:

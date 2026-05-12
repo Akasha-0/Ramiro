@@ -1,0 +1,1 @@
+"""Performance benchmarks for Sistema de Clareza Simbólico-Estratégica."""
