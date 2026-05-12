@@ -7,6 +7,8 @@ Endpoints:
     GET /: Página principal com interface web.
     GET /health: Health check do servidor.
     POST /api/analyze: Endpoint para processar análise.
+    GET /api/history: Recupera histórico de análises.
+    POST /api/history: Adiciona entrada ao histórico.
 
 Recebe parâmetros via JSON e retorna relatório em Markdown.
 """
@@ -171,10 +173,14 @@ class ClarezaRequestHandler(SimpleHTTPRequestHandler):
         """Trata requisições GET.
 
         Rota /health retorna status OK.
+        Rota /api/history retorna histórico de análises.
         Outras rotas servem arquivos estáticos.
         """
         if self.path == "/health":
             self._send_json_response(200, {"status": "ok"})
+            return
+        if self.path == "/api/history":
+            self._handle_history_get()
             return
         super().do_GET()
 
@@ -190,9 +196,13 @@ class ClarezaRequestHandler(SimpleHTTPRequestHandler):
         """Trata requisições POST.
 
         Rota /api/analyze processa análise e retorna relatório.
+        Rota /api/history adiciona entrada ao histórico.
         """
         if self.path == "/api/analyze":
             self._handle_analyze()
+            return
+        if self.path == "/api/history":
+            self._handle_history_post()
             return
         self._send_error_response(404, "Endpoint não encontrado")
 
@@ -235,6 +245,45 @@ class ClarezaRequestHandler(SimpleHTTPRequestHandler):
             logger.exception("Erro inesperado durante análise via web")
             self._send_error_response(500, "Erro inesperado", str(e))
 
+    def _handle_history_get(self) -> None:
+        """Retorna o histórico de análises."""
+        try:
+            entries = _history_storage.get_all()
+            self._send_json_response(200, {"history": entries})
+        except Exception as e:
+            logger.exception("Erro ao recuperar histórico")
+            self._send_error_response(500, "Erro ao recuperar histórico", str(e))
+
+    def _handle_history_post(self) -> None:
+        """Adiciona uma entrada ao histórico."""
+        body = self._read_json_body()
+        if body is None:
+            self._send_error_response(400, "Corpo da requisição inválido")
+            return
+
+        input_text = body.get("input")
+        format_text = body.get("format", "text")
+        report = body.get("report")
+
+        if not input_text or not isinstance(input_text, str):
+            self._send_error_response(400, "Parâmetro 'input' é obrigatório")
+            return
+
+        if not report or not isinstance(report, str):
+            self._send_error_response(400, "Parâmetro 'report' é obrigatório")
+            return
+
+        try:
+            entry = _history_storage.add_entry({
+                "input": input_text,
+                "format": format_text,
+                "report": report,
+            })
+            self._send_json_response(201, {"entry": entry})
+        except Exception as e:
+            logger.exception("Erro ao adicionar ao histórico")
+            self._send_error_response(500, "Erro ao adicionar ao histórico", str(e))
+
     # ------------------------------------------------------------------
     # Logging
     # ------------------------------------------------------------------
@@ -247,6 +296,66 @@ class ClarezaRequestHandler(SimpleHTTPRequestHandler):
             args: Argumentos para o formato.
         """
         logger.info("%s %s", self.address_string(), format % args)
+
+
+# ----------------------------------------------------------------------
+# Armazenamento de histórico
+# ----------------------------------------------------------------------
+
+
+class SessionStorage:
+    """Armazenamento em memória para histórico de análises.
+
+    Mantém uma lista de entradas de histórico na memória do servidor.
+    Cada entrada contém a análise e metadados.
+
+    Attributes:
+        _sessions: Lista de entradas de histórico.
+    """
+
+    def __init__(self) -> None:
+        self._sessions: list[dict[str, object]] = []
+        logger.debug("SessionStorage inicializado")
+
+    def add_entry(self, entry: dict[str, object]) -> dict[str, object]:
+        """Adiciona uma entrada ao histórico.
+
+        Args:
+            entry: Dicionário com 'input', 'format', 'report' e opcionalmente 'timestamp'.
+
+        Returns:
+            A entrada adicionada com 'id' atribuído.
+        """
+        import time
+        session_id = len(self._sessions) + 1
+        full_entry: dict[str, object] = {
+            "id": session_id,
+            "timestamp": time.time(),
+        }
+        full_entry.update(entry)
+        self._sessions.append(full_entry)
+        logger.debug("Entrada adicionada ao histórico: id=%d", session_id)
+        return full_entry
+
+    def get_all(self) -> list[dict[str, object]]:
+        """Retorna todas as entradas do histórico.
+
+        Returns:
+            Lista de entradas ordenadas por timestamp (mais recente primeiro).
+        """
+        result = sorted(self._sessions, key=lambda e: e.get("timestamp", 0), reverse=True)
+        logger.debug("Recuperados %d entradas do histórico", len(result))
+        return result
+
+    def clear(self) -> None:
+        """Limpa todo o histórico."""
+        count = len(self._sessions)
+        self._sessions.clear()
+        logger.debug("Histórico limpo: %d entradas removidas", count)
+
+
+# Instância global de armazenamento
+_history_storage = SessionStorage()
 
 
 # ----------------------------------------------------------------------
