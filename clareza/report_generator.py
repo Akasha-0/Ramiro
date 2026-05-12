@@ -14,9 +14,10 @@ Recebe AnalysisResult (types.py) e retorna string com relatório em Markdown.
 import json
 import logging
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
-from clareza.types import AnalysisResult, CrossCardPattern, ReportTemplate
+from clareza.types import AnalysisResult, CrossCardPattern, ReportTemplate, TemplateSection, TemplateClarezaError
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +114,56 @@ VERBOSE_TEMPLATE = """# Relatório Detalhado de Análise — {timestamp}
 ---
 *Relatório gerado por Sistema de Clareza Simbólico-Estratégica v0.0.1 — use como ferramenta de reflexão, não como previsão determinista.*
 """
+
+
+# ----------------------------------------------------------------------
+# Template loading and display
+# ----------------------------------------------------------------------
+
+
+def get_active_template() -> ReportTemplate:
+    """Retorna o template de relatório atualmente ativo.
+
+    Se config.custom_template_path estiver definido, carrega do YAML.
+    Caso contrário, retorna o template built-in default.
+
+    Returns:
+        ReportTemplate com o template ativo.
+
+    Raises:
+        TemplateClarezaError: Se o arquivo YAML do template for inválido.
+    """
+    from clareza.config import load_config
+    from clareza.template_engine import TemplateEngine
+
+    config = load_config()
+    if config.custom_template_path and config.custom_template_path.exists():
+        engine = TemplateEngine()
+        try:
+            template = engine.load_template(config.custom_template_path)
+            logger.info("Template customizado carregado: %s", config.custom_template_path)
+            return template
+        except Exception as e:
+            raise TemplateClarezaError(
+                f"Erro ao carregar template customizado: {e}",
+                template_name=str(config.custom_template_path),
+                available=[],
+            )
+    else:
+        # Return built-in default template
+        return ReportTemplate(
+            template_id="default",
+            name="Modelo Padrão",
+            description="Template padrão de 5 seções do Sistema Clareza.",
+            version="1.0",
+            sections=[
+                TemplateSection(id="diagnosis", title="Diagnóstico", order=1, content_template="", required=True),
+                TemplateSection(id="symbolic_interpretation", title="Interpretação Simbólica", order=2, content_template="", required=True),
+                TemplateSection(id="risks", title="Riscos Identificados", order=3, content_template="", required=False),
+                TemplateSection(id="decisions", title="Caminhos de Decisão", order=4, content_template="", required=False),
+                TemplateSection(id="practical_plan", title="Plano Prático", order=5, content_template="", required=True),
+            ],
+        )
 
 
 # ----------------------------------------------------------------------

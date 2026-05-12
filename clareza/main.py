@@ -248,6 +248,12 @@ def main() -> None:
         help="ID da segunda sessão",
     )
 
+    # subcommand: template
+    template_parser = subparsers.add_parser("template", help="Gerenciar templates de relatório")
+    template_sub = template_parser.add_subparsers(dest="template_action", help="Ação de template")
+
+    show_parser = template_sub.add_parser("show", help="Exibir o template ativo")
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -269,6 +275,12 @@ def main() -> None:
         run_session(args.session_id)
     elif args.command == "compare":
         run_compare(args.session_id_1, args.session_id_2)
+    elif args.command == "template":
+        if args.template_action == "show":
+            run_template_show()
+        else:
+            template_parser.print_help()
+            sys.exit(1)
 
 
 def run_history(tag: str | None, limit: int) -> None:
@@ -411,6 +423,27 @@ def run_compare(session_id_1: str, session_id_2: str) -> None:
         )
     else:
         print("_(Análise completa não disponível para comparação)_")
+
+
+def run_template_show() -> None:
+    """Exibe o template de relatório atualmente ativo."""
+    from clareza.report_generator import get_active_template
+
+    template = get_active_template()
+
+    print(f"# Template: {template.name}")
+    print(f"**ID:** {template.template_id}")
+    print(f"**Versão:** {template.version}")
+    if template.description:
+        print(f"**Descrição:** {template.description}")
+    print()
+    print("## Seções")
+    for section in template.sections:
+        print(f"- **{section.order}. {section.title}**")
+        print(f"  ID: `{section.id}`")
+        print(f"  Required: `{section.required}`")
+        if section.placeholder:
+            print(f"  Placeholder: {section.placeholder}")
 
 
 def run_analyze(

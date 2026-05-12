@@ -40,6 +40,7 @@ class ClarezaConfig:
         session_history_dir: Diretório para histórico de sessões.
         auto_save_sessions: Se True, salva sessões automaticamente.
         quiet_mode: Se True, reduz output verbose.
+        custom_template_path: Caminho para template YAML customizado do relatório.
     """
 
     default_output_dir: Path = field(default_factory=lambda: Path.cwd())
@@ -48,6 +49,7 @@ class ClarezaConfig:
     session_history_dir: Path = field(default_factory=lambda: DEFAULT_DATA_DIR / "sessions")
     auto_save_sessions: bool = False
     quiet_mode: bool = False
+    custom_template_path: Optional[Path] = None
 
 
 # Configuração padrão global (singleton em memória)
@@ -155,6 +157,13 @@ def _load_env_overrides() -> dict:
     if env_quiet:
         overrides["quiet_mode"] = env_quiet.lower() in ("1", "true", "yes")
 
+    # CLAREZA_TEMPLATE
+    env_template = os.environ.get("CLAREZA_TEMPLATE")
+    if env_template:
+        parsed = _parse_path(env_template)
+        if parsed is not None:
+            overrides["custom_template_path"] = parsed
+
     if overrides:
         logger.debug("Overrides de ambiente aplicados: %s", list(overrides.keys()))
 
@@ -212,6 +221,11 @@ def load_config() -> ClarezaConfig:
 
     if "quiet_mode" in config_data:
         kwargs["quiet_mode"] = bool(config_data["quiet_mode"])
+
+    if "custom_template_path" in config_data:
+        parsed = _parse_path(config_data["custom_template_path"])
+        if parsed is not None:
+            kwargs["custom_template_path"] = parsed
 
     # Aplicar overrides de ambiente (maior precedência)
     kwargs.update(env_overrides)

@@ -231,7 +231,7 @@ class SessionStore:
         """
         matching = [
             session for session in self._sessions.values()
-            if tag.lower() in [t.lower() for t in session.tags]
+            if tag.lower() in [t.lower() for t in session.tags if t]
         ]
         matching.sort(key=lambda s: s.timestamp)
         logger.debug("Sessões com tag '%s': %d", tag, len(matching))

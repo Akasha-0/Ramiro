@@ -15,7 +15,7 @@ import logging
 import re
 from typing import Optional
 
-from clareza.types import AnalysisResult, ReportTemplate, TemplateSection
+from clareza.types import AnalysisResult, CrossCardPattern, ReportTemplate, TemplateSection
 
 logger = logging.getLogger(__name__)
 
@@ -451,3 +451,59 @@ class TemplateEngine:
             String com campos substituídos.
         """
         return _substitute_template(template_str, kwargs)
+
+    def load_template(self, path: "Path | str") -> ReportTemplate:
+        """Carrega um template de relatório a partir de arquivo YAML.
+
+        Args:
+            path: Caminho para o arquivo YAML do template.
+
+        Returns:
+            ReportTemplate populado com os dados do YAML.
+
+        Raises:
+            TemplateClarezaError: Se o YAML for inválido ou não puder ser parseado.
+        """
+        import yaml
+        from pathlib import Path
+        from clareza.types import TemplateSection
+
+        path = Path(path)
+        if not path.exists():
+            raise TemplateClarezaError(
+                f"Arquivo de template não encontrado: {path}",
+                template_name=str(path),
+                available=[],
+            )
+
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+        except yaml.YAMLError as e:
+            raise TemplateClarezaError(
+                f"YAML inválido (linha {e.problem_mark.line if e.problem_mark else '?'}): {e.problem}",
+                template_name=str(path),
+                available=[],
+            )
+
+        sections: list[TemplateSection] = []
+        for sec_data in data.get("sections", []):
+            sections.append(TemplateSection(
+                id=sec_data.get("id", ""),
+                title=sec_data.get("title", ""),
+                order=sec_data.get("order", 0),
+                content_template=sec_data.get("content_template", ""),
+                enabled=sec_data.get("enabled", True),
+                required=sec_data.get("required", False),
+                placeholder=sec_data.get("placeholder"),
+            ))
+        sections.sort(key=lambda s: s.order)
+
+        return ReportTemplate(
+            template_id=data.get("template_id", path.stem),
+            name=data.get("name", "Custom"),
+            description=data.get("description"),
+            sections=sections,
+            version=data.get("version", "1.0"),
+            metadata=data.get("metadata", {}),
+        )

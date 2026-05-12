@@ -9,6 +9,27 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 
+class TemplateClarezaError(Exception):
+    """Erro de template de relatório.
+
+    Attributes:
+        message: Descrição legível do erro.
+        template_name: Nome do template que falhou (opcional).
+        available: Lista de templates disponíveis (opcional).
+    """
+
+    def __init__(
+        self,
+        message: str,
+        template_name: Optional[str] = None,
+        available: Optional[list[str]] = None,
+    ) -> None:
+        self.message = message
+        self.template_name = template_name
+        self.available = available or []
+        super().__init__(message)
+
+
 @dataclass
 class CardPosition:
     """Representa uma carta do Baralho Cigano em uma posição específica.
