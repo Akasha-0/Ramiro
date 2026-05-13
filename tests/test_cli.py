@@ -82,6 +82,14 @@ class _StringIO:
     def getvalue(self) -> str:
         return "".join(self._buffer)
 
+    def isatty(self) -> bool:
+        """Retorna False para simular non-TTY stream."""
+        return False
+
+    def flush(self) -> None:
+        """No-op flush method."""
+        pass
+
 
 # ----------------------------------------------------------------------
 # Helpers — mock de sys.argv para main()
@@ -150,7 +158,7 @@ class TestRunAnalyzeText:
     def test_text_input_returns_markdown_report(self) -> None:
         """Input text gera relatório Markdown."""
         output, exit_code = capture_stdout(
-            run_analyze, "Tenho dúvida sobre trabalho e dinheiro", "text", None
+            run_analyze, "Tenho dúvida sobre trabalho e dinheiro", "text", None, None
         )
         assert exit_code == 0
         assert "# Relatório de Análise" in output
@@ -163,7 +171,7 @@ class TestRunAnalyzeText:
     def test_text_input_includes_diagnosis(self) -> None:
         """Diagnóstico aparece no output."""
         output, exit_code = capture_stdout(
-            run_analyze, "minha dúvida sobre trabalho", "text", None
+            run_analyze, "minha dúvida sobre trabalho", "text", None, None
         )
         assert exit_code == 0
         assert "## Diagnóstico" in output
@@ -171,7 +179,7 @@ class TestRunAnalyzeText:
     def test_text_input_includes_disclaimer_footer(self) -> None:
         """Rodapé com disclaimer ético está presente."""
         output, exit_code = capture_stdout(
-            run_analyze, "texto qualquer de teste", "text", None
+            run_analyze, "texto qualquer de teste", "text", None, None
         )
         assert exit_code == 0
         assert "ferramenta de reflexão" in output
@@ -180,7 +188,7 @@ class TestRunAnalyzeText:
     def test_text_input_themes_in_output(self) -> None:
         """Temas detectados aparecem no relatório."""
         output, exit_code = capture_stdout(
-            run_analyze, "trabalho e dinheiro são minhas preocupações", "text", None
+            run_analyze, "trabalho e dinheiro são minhas preocupações", "text", None, None
         )
         assert exit_code == 0
         # Interpretação Simbólica contém seção de temas
@@ -189,7 +197,7 @@ class TestRunAnalyzeText:
     def test_text_unicode_input(self) -> None:
         """Input com acentos é processado corretamente."""
         output, exit_code = capture_stdout(
-            run_analyze, "relação coração família saúde", "text", None
+            run_analyze, "relação coração família saúde", "text", None, None
         )
         assert exit_code == 0
         assert "# Relatório de Análise" in output
@@ -204,7 +212,7 @@ class TestRunAnalyzeSpread:
     def test_spread_input_with_valid_csv(self) -> None:
         """Input spread (CSV) gera relatório com Interpretação das Cartas."""
         csv_input = "1,Cruz\n2,Estrela\n3,Casa"
-        output, exit_code = capture_stdout(run_analyze, csv_input, "spread", None)
+        output, exit_code = capture_stdout(run_analyze, csv_input, "spread", None, None)
         assert exit_code == 0
         assert "# Relatório de Análise" in output
         assert "## Interpretação Simbólica" in output
@@ -212,21 +220,21 @@ class TestRunAnalyzeSpread:
     def test_spread_input_contains_card_names(self) -> None:
         """Nomes das cartas aparecem no relatório."""
         csv_input = "1,Cruz\n2,Estrela"
-        output, exit_code = capture_stdout(run_analyze, csv_input, "spread", None)
+        output, exit_code = capture_stdout(run_analyze, csv_input, "spread", None, None)
         assert exit_code == 0
         assert "Cruz" in output
         assert "Estrela" in output
 
     def test_spread_empty_csv_exits_with_code_2(self) -> None:
         """CSV vazio causa ParseError e sai com código 2."""
-        output, exit_code = capture_stdout(run_analyze, "", "spread", None)
+        output, exit_code = capture_stdout(run_analyze, "", "spread", None, None)
         assert exit_code == 2
         assert "Erro:" in output
 
     def test_spread_csv_invalid_line_exits_with_code_2(self) -> None:
         """Linha CSV inválida causa ParseError e sai com código 2."""
         csv_input = "1,Cruz\ndois,Estrela"
-        output, exit_code = capture_stdout(run_analyze, csv_input, "spread", None)
+        output, exit_code = capture_stdout(run_analyze, csv_input, "spread", None, None)
         assert exit_code == 2
         assert "Erro:" in output
 
@@ -240,7 +248,7 @@ class TestRunAnalyzeSymbols:
     def test_symbols_input_generates_report(self) -> None:
         """Input symbols (lista separada por vírgula) gera relatório."""
         output, exit_code = capture_stdout(
-            run_analyze, "casa,estrela,café", "symbols", None
+            run_analyze, "casa,estrela,café", "symbols", None, None
         )
         assert exit_code == 0
         assert "# Relatório de Análise" in output
@@ -249,7 +257,7 @@ class TestRunAnalyzeSymbols:
     def test_symbols_normalizes_input(self) -> None:
         """Símbolos são normalizados para minúsculas."""
         output, exit_code = capture_stdout(
-            run_analyze, "CASA,Estrela,CAFÉ", "symbols", None
+            run_analyze, "CASA,Estrela,CAFÉ", "symbols", None, None
         )
         assert exit_code == 0
         # O relatório deve conter os símbolos mapeados
@@ -257,7 +265,7 @@ class TestRunAnalyzeSymbols:
 
     def test_symbols_empty_input(self) -> None:
         """Lista vazia de símbolos gera relatório com fallback."""
-        output, exit_code = capture_stdout(run_analyze, "", "symbols", None)
+        output, exit_code = capture_stdout(run_analyze, "", "symbols", None, None)
         # symbols vazio pode usar fallback, não deve dar parse error
         assert exit_code == 0
         assert "# Relatório de Análise" in output
@@ -278,7 +286,7 @@ class TestRunAnalyzeFileOutput:
 
         try:
             output, exit_code = capture_stdout(
-                run_analyze, "dúvida sobre trabalho", "text", temp_path
+                run_analyze, "dúvida sobre trabalho", "text", temp_path, None
             )
             assert exit_code == 0
             # stdout contém mensagem de confirmação
@@ -300,7 +308,7 @@ class TestRunAnalyzeFileOutput:
 
         try:
             capture_stdout(
-                run_analyze, "1,Cruz\n2,Estrela", "spread", temp_path
+                run_analyze, "1,Cruz\n2,Estrela", "spread", temp_path, None
             )
             with open(temp_path, encoding="utf-8") as f_read:
                 content = f_read.read()
@@ -317,7 +325,7 @@ class TestRunAnalyzeFileOutput:
         """Caminho de arquivo em diretório inexistente causa erro."""
         nonexistent_path = "/tmp/clareza_nonexistent_dir_12345/report.md"
         output, exit_code = capture_stdout(
-            run_analyze, "texto de teste", "text", nonexistent_path
+            run_analyze, "texto de teste", "text", nonexistent_path, None
         )
         assert exit_code == 1
         assert "Erro interno" in output
@@ -332,21 +340,21 @@ class TestRunAnalyzeErrorHandling:
     def test_unknown_format_raises_value_error_exits_2(self) -> None:
         """Formato desconhecido levanta ValueError e sai com código 2."""
         output, exit_code = capture_stdout(
-            run_analyze, "texto qualquer", "yaml", None
+            run_analyze, "texto qualquer", "yaml", None, None
         )
         assert exit_code == 2
         assert "Erro:" in output
 
     def test_empty_format_string(self) -> None:
         """Formato vazio levanta ValueError."""
-        output, exit_code = capture_stdout(run_analyze, "texto", "", None)
+        output, exit_code = capture_stdout(run_analyze, "texto", "", None, None)
         assert exit_code == 2
         assert "Erro:" in output
 
     def test_parse_error_exits_2(self) -> None:
         """ParseError do input_processor resulta em saída código 2."""
         # CSV inválido: posição zero
-        output, exit_code = capture_stdout(run_analyze, "0,Cruz", "spread", None)
+        output, exit_code = capture_stdout(run_analyze, "0,Cruz", "spread", None, None)
         assert exit_code == 2
         assert "Erro:" in output
 
@@ -356,7 +364,7 @@ class TestRunAnalyzeErrorHandling:
         # Não há como facilmente forçar isso sem mock — testamos que o fluxo
         # normal não raise UnexpectedException
         output, exit_code = capture_stdout(
-            run_analyze, "texto normal", "text", None
+            run_analyze, "texto normal", "text", None, None
         )
         # fluxo normal deve sair com 0, não com 1
         assert exit_code == 0
@@ -371,21 +379,21 @@ class TestRunAnalyzeEdgeCases:
     def test_very_long_text_input(self) -> None:
         """Texto muito longo é truncado pelo processor sem erro."""
         long_text = "trabalho " * 1000  # muito acima do default max_length
-        output, exit_code = capture_stdout(run_analyze, long_text, "text", None)
+        output, exit_code = capture_stdout(run_analyze, long_text, "text", None, None)
         assert exit_code == 0
         assert "# Relatório de Análise" in output
 
     def test_special_characters_in_input(self) -> None:
         """Caracteres especiais não quebram o pipeline."""
         special = "trabalho@#123!%$&*()"
-        output, exit_code = capture_stdout(run_analyze, special, "text", None)
+        output, exit_code = capture_stdout(run_analyze, special, "text", None, None)
         assert exit_code == 0
         assert "# Relatório de Análise" in output
 
     def test_spread_with_header(self) -> None:
         """CSV com cabeçalho é processado corretamente."""
         csv_with_header = "pos,carta\n1,Cruz\n2,Estrela"
-        output, exit_code = capture_stdout(run_analyze, csv_with_header, "spread", None)
+        output, exit_code = capture_stdout(run_analyze, csv_with_header, "spread", None, None)
         assert exit_code == 0
         assert "Cruz" in output
         assert "Estrela" in output
@@ -400,7 +408,7 @@ class TestRunAnalyzeEdgeCases:
                 raw_input = "casa"
             else:
                 raw_input = "trabalho"
-            output, exit_code = capture_stdout(run_analyze, raw_input, fmt, None)
+            output, exit_code = capture_stdout(run_analyze, raw_input, fmt, None, None)
             assert exit_code == 0, f"Formato {fmt} falhou"
             assert "# Relatório de Análise" in output
             assert "## Diagnóstico" in output
@@ -409,7 +417,7 @@ class TestRunAnalyzeEdgeCases:
     def test_all_five_sections_present(self) -> None:
         """Relatório contém todas as 5 seções."""
         output, exit_code = capture_stdout(
-            run_analyze, "dúvida sobre trabalho e família", "text", None
+            run_analyze, "dúvida sobre trabalho e família", "text", None, None
         )
         assert exit_code == 0
         sections = [
@@ -425,7 +433,7 @@ class TestRunAnalyzeEdgeCases:
     def test_report_contains_disclaimer(self) -> None:
         """Rodapé contém disclaimer ético."""
         output, exit_code = capture_stdout(
-            run_analyze, "texto qualquer", "text", None
+            run_analyze, "texto qualquer", "text", None, None
         )
         assert exit_code == 0
         assert "ferramenta de reflexão" in output
@@ -476,7 +484,7 @@ class TestNoDebugPrints:
     def test_no_print_debug_in_output(self) -> None:
         """Output não contém prints de debug."""
         output, exit_code = capture_stdout(
-            run_analyze, "texto de teste", "text", None
+            run_analyze, "texto de teste", "text", None, None
         )
         assert exit_code == 0
         # Nenhuma linha de log deve aparecer no stdout de produção
@@ -502,7 +510,7 @@ class TestSensitiveInputPipeline:
     def test_sensitive_input_includes_header_disclaimer(self) -> None:
         """Input com tema sensível inclui header disclaimer."""
         output, exit_code = capture_stdout(
-            run_analyze, "estou com depressão e problemas financeiros", "text", None
+            run_analyze, "estou com depressão e problemas financeiros", "text", None, None
         )
         assert exit_code == 0
         # Header disclaimer deve aparecer no início do relatório
@@ -512,7 +520,7 @@ class TestSensitiveInputPipeline:
     def test_sensitive_input_contains_cvvexplanation(self) -> None:
         """Disclaimer inclui informação do CVV."""
         output, exit_code = capture_stdout(
-            run_analyze, "tenho pensamentos de morte", "text", None
+            run_analyze, "tenho pensamentos de morte", "text", None, None
         )
         assert exit_code == 0
         # Disclaimer deve mencionar canais de ajuda
@@ -521,7 +529,7 @@ class TestSensitiveInputPipeline:
     def test_sensitive_input_suicide_ideation(self) -> None:
         """Input com ideação suicida gera relatório com disclaimer."""
         output, exit_code = capture_stdout(
-            run_analyze, "estou pensando em suicide", "text", None
+            run_analyze, "estou pensando em suicide", "text", None, None
         )
         assert exit_code == 0
         # Relatório deve ter disclaimer de cabeçalho
@@ -531,7 +539,7 @@ class TestSensitiveInputPipeline:
     def test_sensitive_input_physical_health(self) -> None:
         """Input sobre saúde física inclui disclaimer."""
         output, exit_code = capture_stdout(
-            run_analyze, "fui diagnosticado com cancer", "text", None
+            run_analyze, "fui diagnosticado com cancer", "text", None, None
         )
         assert exit_code == 0
         # Disclaimer deve estar presente
@@ -541,7 +549,7 @@ class TestSensitiveInputPipeline:
     def test_sensitive_input_financial_risk(self) -> None:
         """Input sobre risco financeiro inclui disclaimer."""
         output, exit_code = capture_stdout(
-            run_analyze, "estou em falência e não tenho dinheiro", "text", None
+            run_analyze, "estou em falência e não tenho dinheiro", "text", None, None
         )
         assert exit_code == 0
         # Header disclaimer deve estar presente
@@ -550,7 +558,7 @@ class TestSensitiveInputPipeline:
     def test_sensitive_input_relationship_crisis(self) -> None:
         """Input sobre crise relacional inclui disclaimer."""
         output, exit_code = capture_stdout(
-            run_analyze, "minha relação é tóxica e estou em divórcio", "text", None
+            run_analyze, "minha relação é tóxica e estou em divórcio", "text", None, None
         )
         assert exit_code == 0
         # Disclaimer presente
@@ -560,7 +568,7 @@ class TestSensitiveInputPipeline:
     def test_sensitive_input_self_harm(self) -> None:
         """Input sobre automutilação inclui disclaimer proeminente."""
         output, exit_code = capture_stdout(
-            run_analyze, "estou me automutilando e cortando", "text", None
+            run_analyze, "estou me automutilando e cortando", "text", None, None
         )
         assert exit_code == 0
         # Disclaimer com emergência deve estar presente
@@ -569,7 +577,7 @@ class TestSensitiveInputPipeline:
     def test_sensitive_input_report_structure_intact(self) -> None:
         """Input sensível ainda gera estrutura completa de relatório."""
         output, exit_code = capture_stdout(
-            run_analyze, "estou com ansiedade e problemas", "text", None
+            run_analyze, "estou com ansiedade e problemas", "text", None, None
         )
         assert exit_code == 0
         # Todas as 5 seções devem estar presentes mesmo com input sensível
@@ -584,7 +592,7 @@ class TestSensitiveInputPipeline:
         """Input spread com tema sensível inclui disclaimer."""
         csv_input = "1,Cruz\n2,Estrela"
         output, exit_code = capture_stdout(
-            run_analyze, csv_input, "spread", "estou com depressão"
+            run_analyze, csv_input, "spread", None, "estou com depressão"
         )
         # Spread não usa texto diretamente, mas verificação de estrutura
         assert exit_code == 0
@@ -595,6 +603,7 @@ class TestSensitiveInputPipeline:
             run_analyze,
             "depressão, suicídio, falência e violência doméstica",
             "text",
+            None,
             None,
         )
         assert exit_code == 0
@@ -616,6 +625,7 @@ class TestSensitiveInputPipeline:
                 "estou com depressão",
                 "text",
                 temp_path,
+                None,
             )
             assert exit_code == 0
             # Arquivo foi escrito com disclaimer
@@ -629,7 +639,7 @@ class TestSensitiveInputPipeline:
     def test_non_sensitive_input_also_has_disclaimer(self) -> None:
         """Input normal também inclui disclaimer (header injection é sempre applied)."""
         output, exit_code = capture_stdout(
-            run_analyze, "trabalho e dinheiro", "text", None
+            run_analyze, "trabalho e dinheiro", "text", None, None
         )
         assert exit_code == 0
         # Header disclaimer é sempre injetado
@@ -640,14 +650,14 @@ class TestSensitiveInputPipeline:
         """Detecção de input sensível é case-insensitive."""
         # Maiúsculas
         output1, exit_code1 = capture_stdout(
-            run_analyze, "DEPRESSÃO E SUICÍDIO", "text", None
+            run_analyze, "DEPRESSÃO E SUICÍDIO", "text", None, None
         )
         assert exit_code1 == 0
         assert "AVISO IMPORTANTE" in output1
 
         # Misto
         output2, exit_code2 = capture_stdout(
-            run_analyze, "DePresSÃo e SuIcIdIo", "text", None
+            run_analyze, "DePresSÃo e SuIcIdIo", "text", None, None
         )
         assert exit_code2 == 0
         assert "AVISO IMPORTANTE" in output2
@@ -655,7 +665,7 @@ class TestSensitiveInputPipeline:
     def test_sensitive_input_unicode_normalized(self) -> None:
         """Input sensível com acentos é detectado corretamente."""
         output, exit_code = capture_stdout(
-            run_analyze, "estou com depressao acentuada", "text", None
+            run_analyze, "estou com depressao acentuada", "text", None, None
         )
         assert exit_code == 0
         # Normalização de texto deve detectar variantes com/sem acento
