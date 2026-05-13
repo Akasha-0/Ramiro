@@ -480,6 +480,82 @@ def get_symbol_by_name(name: str) -> Optional[CiganoSymbol]:
     return None
 
 
+def get_similar_card_names(input_name: str, n: int = 5) -> list[str]:
+    """Retorna os nomes de cartas mais similares ao input fornecido.
+
+    Utiliza o algoritmo SequenceMatcher do módulo difflib para encontrar
+    correspondências fuzzy por similaridade. Útil para sugerir correções
+    quando uma carta não é encontrada exatamente.
+
+    Suporta correspondência sem prefixo (e.g., 'Cruz' encontra 'A Cruz').
+
+    Args:
+        input_name: Nome ou fragmento de nome a ser buscado.
+        n: Número máximo de resultados a retornar (padrão: 5).
+
+    Returns:
+        Lista ordenada de nomes de cartas (mais similares primeiro).
+        Inclui correspondências exatas e partials.
+    """
+    import difflib
+
+    if not input_name:
+        return []
+
+    normalized = input_name.lower().strip()
+    all_names: list[str] = [s.name for s in _CIGANO_DECK]
+
+    # Primeiro: correspondências exatas (case-insensitive)
+    exact_matches = [
+        name for name in all_names
+        if name.lower() == normalized
+    ]
+
+    # Segundo: correspondências exatas sem prefixo 'A ' ou 'O '
+    # (para backward compatibility: 'Cruz' encontra 'A Cruz')
+    prefix_stripped = [name.removeprefix("A ").removeprefix("O ").lower() for name in all_names]
+    stripped_to_original: dict[str, str] = {
+        prefix_stripped[i]: all_names[i]
+        for i in range(len(all_names))
+    }
+    if normalized not in prefix_stripped:
+        stripped_normalized = normalized.removeprefix("a ").removeprefix("o ")
+        if stripped_normalized in prefix_stripped:
+            exact_matches.append(stripped_to_original[stripped_normalized])
+
+    # Terceiro: correspondências parciais (contidas)
+    partial_matches = [
+        name for name in all_names
+        if name.lower() not in [m.lower() for m in exact_matches]
+        and (normalized in name.lower() or name.lower() in normalized)
+    ]
+
+    # Quarto: similaridade fuzzy via difflib
+    fuzzy_matches: list[tuple[str, float]] = []
+    for name in all_names:
+        name_lower = name.lower()
+        if name_lower in [m.lower() for m in exact_matches + partial_matches]:
+            continue
+        ratio = difflib.SequenceMatcher(None, normalized, name_lower).ratio()
+        fuzzy_matches.append((name, ratio))
+
+    # Ordena por similaridade decrescente e pega os top n
+    fuzzy_matches.sort(key=lambda x: x[1], reverse=True)
+    fuzzy_names = [name for name, _ in fuzzy_matches[:n]]
+
+    # Combina: exactas + parciais + fuzzy (até n resultados)
+    result: list[str] = exact_matches[:n]
+    remaining = n - len(result)
+
+    if remaining > 0:
+        result.extend(partial_matches[:remaining])
+        remaining = n - len(result)
+    if remaining > 0:
+        result.extend(fuzzy_names[:remaining])
+
+    return result[:n]
+
+
 def match_keyword(keyword: str) -> list[CiganoSymbol]:
     """Retorna os símbolos que correspondem a uma palavra-chave.
 

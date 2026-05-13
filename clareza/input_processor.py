@@ -295,6 +295,34 @@ class InputProcessor:
                     recovery="Informe o nome da carta após a posição. Exemplo: 1,estrela",
                 )
 
+            # Validar se a carta existe no catálogo (com backward compat para prefixos 'A ' e 'O ')
+            from clareza.symbols import get_symbol_by_name as _get_by_name, get_similar_card_names as _get_similar, get_all_symbols as _get_all
+
+            resolved_name = None
+            for name_to_try in [card_name, f"A {card_name}", f"O {card_name}"]:
+                symbol = _get_by_name(name_to_try)
+                if symbol is not None:
+                    resolved_name = symbol.name
+                    break
+
+            if resolved_name is None:
+                similar = _get_similar(card_name, n=3)
+                details = f"'{card_name}' não encontrada no catálogo do Baralho Cigano"
+                if similar:
+                    cards_list = ", ".join(similar)
+                    recovery = f"Cartão desconhecido: '{card_name}'. Cards válidos: {cards_list}"
+                else:
+                    all_card_names = [s.name for s in _get_all()]
+                    all_names_str = ", ".join(all_card_names[:10]) + "..."
+                    recovery = f"Cartão desconhecido: '{card_name}'. Cards válidos: {all_names_str}"
+                raise ParseError(
+                    "Cartão desconhecido",
+                    line=line_no,
+                    details=details,
+                    recovery=recovery,
+                )
+
+            card_name = resolved_name
             cards.append(CardPosition(position=position, card_name=card_name))
 
         if not cards:

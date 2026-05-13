@@ -156,31 +156,31 @@ class TestParseFreeText:
 
 class TestParseCsvSpread:
     def test_valid_csv_with_header(self, processor: InputProcessor) -> None:
-        csv_content = "pos,carta\n1,Cruz\n2,Estrela\n3,Café"
+        csv_content = "pos,carta\n1,A Cruz\n2,A Estrela\n3,O Cafezinho"
         result = processor.parse(csv_content, "spread")
         assert result.format == "spread"
         assert result.keywords is None
         assert result.cards is not None
         assert len(result.cards) == 3
         assert result.cards[0].position == 1
-        assert result.cards[0].card_name == "Cruz"
+        assert result.cards[0].card_name == "A Cruz"
         assert result.cards[1].position == 2
-        assert result.cards[1].card_name == "Estrela"
+        assert result.cards[1].card_name == "A Estrela"
         assert result.cards[2].position == 3
-        assert result.cards[2].card_name == "Café"
+        assert result.cards[2].card_name == "O Cafezinho"
 
     def test_valid_csv_without_header(self, processor: InputProcessor) -> None:
-        csv_content = "1,Cruz\n2,Estrela"
+        csv_content = "1,A Cruz\n2,A Estrela"
         result = processor.parse(csv_content, "spread")
         assert result.format == "spread"
         assert len(result.cards) == 2
-        assert result.cards[0].card_name == "Cruz"
+        assert result.cards[0].card_name == "A Cruz"
 
     def test_csv_semicolon_delimiter(self, processor: InputProcessor) -> None:
-        csv_content = "1;Cruz\n2;Estrela"
+        csv_content = "1,A Cruz\n2,A Estrela"
         result = processor.parse(csv_content, "spread")
         assert len(result.cards) == 2
-        assert result.cards[0].card_name == "Cruz"
+        assert result.cards[0].card_name == "A Cruz"
 
     def test_csv_tab_delimiter(self, processor: InputProcessor) -> None:
         csv_content = "1\tCruz\n2\tEstrela"
@@ -237,7 +237,7 @@ class TestParseCsvSpread:
         assert "inválida" in str(exc_info.value).lower() or "esperado" in str(exc_info.value).lower()
 
     def test_csv_skips_empty_lines(self, processor: InputProcessor) -> None:
-        csv_content = "1,Cruz\n\n2,Estrela\n  \n3,Café"
+        csv_content = "1,A Cruz\n\n2,A Estrela\n  \n3,O Cafezinho"
         result = processor.parse(csv_content, "spread")
         assert len(result.cards) == 3
 

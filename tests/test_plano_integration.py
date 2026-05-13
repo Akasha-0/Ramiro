@@ -381,15 +381,17 @@ class TestPipelineEdgeCases:
         assert isinstance(result, AnalysisResult)
         assert len(result.diagnosis) > 0
 
-    def test_unknown_cards_fallback(self, processor: InputProcessor, engine: AnalysisEngine) -> None:
-        """Cartas desconhecidas geram fallback válido."""
-        content = "1,CartaInexistente\n2,OutraInvalida"
-        input_data = processor.parse(content, "spread")
-        result = engine.analyze(input_data)
+    def test_unknown_cards_fallback(self, processor: InputProcessor) -> None:
+        """Cartas desconhecidas geram ParseError com sugestões."""
+        from clareza.input_processor import ParseError
 
-        # Should handle gracefully
-        assert isinstance(result, AnalysisResult)
-        assert result.card_interpretations is not None
+        content = "1,CartaInexistente\n2,OutraInvalida"
+        with pytest.raises(ParseError) as exc_info:
+            processor.parse(content, "spread")
+
+        # O erro deve conter sugestões de cartas similares
+        error_msg = str(exc_info.value)
+        assert "CartaInexistente" in error_msg
 
     def test_unicode_preserved_in_pipeline(
         self, processor: InputProcessor, engine: AnalysisEngine, report_generator: ReportGenerator
@@ -509,7 +511,7 @@ class TestSymbolIntegration:
 
     def test_multiple_symbols_analyzed(self, processor: InputProcessor, engine: AnalysisEngine) -> None:
         """Múltiplos símbolos são analisados corretamente."""
-        content = "1,Cruz\n2,Estrela\n3,Casa\n4,Moeda"
+        content = "1,A Cruz\n2,A Estrela\n3,A Casa\n4,O Anel"
         input_data = processor.parse(content, "spread")
         result = engine.analyze(input_data)
 
