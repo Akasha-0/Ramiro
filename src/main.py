@@ -219,7 +219,18 @@ def main() -> None:
     elif args.command == "check":
         run_check(args.threshold, args.verbose)
     elif args.command == "web":
-        run_server(host=args.host, port=args.port)
+        run_web(args.host, args.port)
+
+
+def run_web(host: str = "localhost", port: int = 8080) -> None:
+    """Inicia o servidor web com interface gráfica.
+
+    Args:
+        host: Endereço do host para bind (default: localhost).
+        port: Porta do servidor (default: 8080).
+    """
+    logger.info("Iniciando servidor web em %s:%d", host, port)
+    run_server(host=host, port=port)
 
 
 def run_check(threshold: float | None, verbose: bool = False) -> None:
