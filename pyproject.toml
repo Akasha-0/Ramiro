@@ -36,7 +36,6 @@ dev = [
 
 [project.scripts]
 clareza = "src.main:main"
-clareza.benchmark = "src.main:benchmark"
 
 [project.urls]
 Homepage = "https://github.com/clareza/clareza-core"
