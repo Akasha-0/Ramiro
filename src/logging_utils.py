@@ -76,8 +76,9 @@ def should_use_colors() -> bool:
     if os.environ.get("TERM") == "dumb":
         return False
 
-    # Verificar se stdout é um terminal
-    if not sys.stdout.isatty():
+    # Verificar se stdout é um terminal (safe check for mocked stdout in tests)
+    stdout_is_tty = getattr(sys.stdout, 'isatty', lambda: False)()
+    if not stdout_is_tty:
         return False
 
     return True

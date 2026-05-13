@@ -333,7 +333,7 @@ def run_analyze(
     raw_input: str,
     format: str,
     output_path: str | None,
-    template: str | None,
+    template: str | None = None,
     verbose: bool = False,
 ) -> None:
     """Executa o pipeline completo de análise.

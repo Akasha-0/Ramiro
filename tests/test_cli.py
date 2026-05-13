@@ -71,6 +71,10 @@ class _StringIO:
         self._buffer.append(text)
         return len(text)
 
+    def flush(self) -> None:
+        """No-op flush for compatibility with sys.stdout."""
+        pass
+
     def getvalue(self) -> str:
         return "".join(self._buffer)
 
