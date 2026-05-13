@@ -142,6 +142,11 @@ def main() -> None:
         action="store_true",
         help="Ativa output detalhado de debug",
     )
+    parser.add_argument(
+        "--show-config",
+        action="store_true",
+        help="Exibe a configuração efetiva atual (defaults + overrides do usuário)",
+    )
     subparsers = parser.add_subparsers(dest="command", help="Comandos disponíveis")
 
     # subcommand: analyze
@@ -204,6 +209,20 @@ def main() -> None:
     )
 
     args = parser.parse_args()
+
+    # Handle --show-config global flag
+    if getattr(args, 'show_config', False):
+        from src.config import load_config
+        config = load_config()
+        print("## Configuração Efetiva do Clareza")
+        print()
+        print(f"default_output_dir: {config.default_output_dir}")
+        print(f"default_report_format: {config.default_report_format}")
+        print(f"default_language: {config.default_language}")
+        print(f"session_history_dir: {config.session_history_dir}")
+        print(f"auto_save_sessions: {config.auto_save_sessions}")
+        print(f"quiet_mode: {config.quiet_mode}")
+        sys.exit(0)
 
     if args.command is None:
         parser.print_help()
