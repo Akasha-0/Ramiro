@@ -115,6 +115,31 @@ select:focus {
     cursor: not-allowed;
 }
 
+.btn-secondary {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-bg);
+}
+
+.btn-secondary.btn-danger {
+    color: var(--color-error);
+    border-color: var(--color-error);
+}
+
+.btn-secondary.btn-danger:hover {
+    background-color: #fdf2f2;
+}
+
 .report-content {
     padding: 1rem;
     background-color: var(--color-bg);
@@ -145,4 +170,105 @@ select:focus {
 .footer .disclaimer {
     margin-top: 0.5rem;
     font-style: italic;
+}
+
+.history-section {
+    background-color: var(--color-surface);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.history-header h2 {
+    margin-bottom: 0;
+}
+
+.history-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.history-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.history-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--color-text-muted);
+}
+
+.history-item {
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.history-item:hover {
+    background-color: var(--color-bg);
+}
+
+.history-item:last-child {
+    margin-bottom: 0;
+}
+
+.history-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.history-item-input {
+    font-weight: 500;
+    color: var(--color-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
+}
+
+.history-item-meta {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    display: flex;
+    gap: 0.75rem;
+}
+
+.history-item-preview {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.history-item-detail {
+    display: none;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background-color: var(--color-bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+    white-space: pre-wrap;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.history-item-detail.visible {
+    display: block;
 }

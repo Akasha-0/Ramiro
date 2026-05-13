@@ -13,6 +13,7 @@
 
     const state = {
         isLoading: false,
+        history: [],
     };
 
     // ------------------------------------------------------------------
@@ -25,6 +26,10 @@
         get analyzeBtn() { return document.getElementById('analyzeBtn'); },
         get resultSection() { return document.getElementById('resultSection'); },
         get reportOutput() { return document.getElementById('reportOutput'); },
+        get historySection() { return document.getElementById('historySection'); },
+        get historyList() { return document.getElementById('historyList'); },
+        get refreshHistoryBtn() { return document.getElementById('refreshHistoryBtn'); },
+        get clearHistoryBtn() { return document.getElementById('clearHistoryBtn'); },
     };
 
     // ------------------------------------------------------------------
@@ -76,6 +81,147 @@
         elements.resultSection.hidden = false;
         elements.reportOutput.className = 'report-content success';
         elements.reportOutput.textContent = report;
+    }
+
+    /**
+     * Formata timestamp para exibição legível.
+     * @param {number} timestamp - Timestamp Unix.
+     * @returns {string} Data formatada.
+     */
+    function formatTimestamp(timestamp) {
+        const date = new Date(timestamp * 1000);
+        return date.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    }
+
+    /**
+     * Salva entrada no histórico do servidor.
+     * @param {Object} data - Dados da entrada.
+     * @returns {Promise<Object>} Promessa com a entrada salva.
+     */
+    async function saveToHistory(data) {
+        const response = await fetch('/api/history', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Erro desconhecido');
+        }
+
+        return result.entry;
+    }
+
+    /**
+     * Carrega histórico do servidor.
+     * @returns {Promise<Array>} Lista de entradas do histórico.
+     */
+    async function loadHistory() {
+        const response = await fetch('/api/history');
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Erro desconhecido');
+        }
+
+        return data.history;
+    }
+
+    /**
+     * Renderiza um item de histórico na lista.
+     * @param {Object} entry - Entrada do histórico.
+     * @returns {HTMLElement} Elemento do item.
+     */
+    function renderHistoryItem(entry) {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.dataset.id = entry.id;
+
+        const header = document.createElement('div');
+        header.className = 'history-item-header';
+
+        const inputText = document.createElement('span');
+        inputText.className = 'history-item-input';
+        inputText.textContent = entry.input;
+
+        const meta = document.createElement('span');
+        meta.className = 'history-item-meta';
+        meta.innerHTML = '<span>' + entry.format + '</span><span>' + formatTimestamp(entry.timestamp) + '</span>';
+
+        header.appendChild(inputText);
+        header.appendChild(meta);
+
+        const preview = document.createElement('div');
+        preview.className = 'history-item-preview';
+        preview.textContent = entry.report.substring(0, 100) + (entry.report.length > 100 ? '...' : '');
+
+        const detail = document.createElement('div');
+        detail.className = 'history-item-detail';
+        detail.textContent = entry.report;
+
+        item.appendChild(header);
+        item.appendChild(preview);
+        item.appendChild(detail);
+
+        item.addEventListener('click', function() {
+            detail.classList.toggle('visible');
+        });
+
+        return item;
+    }
+
+    /**
+     * Renderiza a lista de histórico.
+     */
+    function renderHistory() {
+        elements.historyList.innerHTML = '';
+
+        if (state.history.length === 0) {
+            elements.historyList.innerHTML = '<div class="history-empty">Nenhum histórico disponível</div>';
+            return;
+        }
+
+        state.history.forEach(function(entry) {
+            elements.historyList.appendChild(renderHistoryItem(entry));
+        });
+    }
+
+    /**
+     * Carrega e exibe o histórico.
+     */
+    async function refreshHistory() {
+        try {
+            state.history = await loadHistory();
+            renderHistory();
+        } catch (err) {
+            console.error('Erro ao carregar histórico:', err.message);
+        }
+    }
+
+    /**
+     * Salva análise atual no histórico.
+     * @param {string} input - Entrada.
+     * @param {string} format - Formato.
+     * @param {string} report - Relatório.
+     */
+    async function addToHistory(input, format, report) {
+        try {
+            await saveToHistory({ input: input, format: format, report: report });
+            await refreshHistory();
+        } catch (err) {
+            console.error('Erro ao salvar no histórico:', err.message);
+        }
     }
 
     // ------------------------------------------------------------------
@@ -130,6 +276,7 @@
         try {
             const report = await analyze(formData.input, formData.format);
             showReport(report);
+            addToHistory(formData.input, formData.format, report);
         } catch (err) {
             showError('Falha na análise', err.message);
         } finally {
@@ -152,6 +299,15 @@
                 handleAnalyze(event);
             }
         });
+
+        elements.refreshHistoryBtn.addEventListener('click', refreshHistory);
+
+        elements.clearHistoryBtn.addEventListener('click', function() {
+            state.history = [];
+            renderHistory();
+        });
+
+        refreshHistory();
     }
 
     if (document.readyState === 'loading') {
