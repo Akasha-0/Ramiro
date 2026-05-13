@@ -12,6 +12,7 @@ from clareza.report_generator import ReportGenerator
 from clareza.session_store import SessionStore
 from clareza.arc_generator import ArcGenerator
 from clareza.logging_utils import create_progress
+from clareza.plugin_manager import PluginManager
 from clareza.exceptions import (
     ClarezaError,
     FileNotFoundClarezaError,
@@ -191,6 +192,11 @@ def main() -> None:
         default="default",
         help="Formato do relatório de saída (default, compact, verbose, json)",
     )
+    analyze_parser.add_argument(
+        "--llm",
+        action="store_true",
+        help="Ativa interpretação narrativa enriquecida via LLM para padrões cruzados.",
+    )
 
     # subcommand: arc
     arc_parser = subparsers.add_parser("arc", help="Visualizar arco narrativo entre sessões")
@@ -254,6 +260,9 @@ def main() -> None:
 
     show_parser = template_sub.add_parser("show", help="Exibir o template ativo")
 
+    # subcommand: plugins
+    plugins_parser = subparsers.add_parser("plugins", help="Gerenciar plugins de extensão")
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -266,7 +275,7 @@ def main() -> None:
     verbose = getattr(args, 'verbose', False) or getattr(args, 'v', False)
 
     if args.command == "analyze":
-        run_analyze(args.input, args.format, args.output, args.template, verbose, args.tag, args.report_format, args.save_session)
+        run_analyze(args.input, args.format, args.output, args.template, verbose, args.tag, args.report_format, args.save_session, args.llm)
     elif args.command == "arc":
         run_arc(args.sessions, args.output, args.format, verbose, args.tag)
     elif args.command == "history":
@@ -281,6 +290,8 @@ def main() -> None:
         else:
             template_parser.print_help()
             sys.exit(1)
+    elif args.command == "plugins":
+        run_plugins_list()
 
 
 def run_history(tag: str | None, limit: int) -> None:
@@ -455,6 +466,7 @@ def run_analyze(
     tag: str | None = None,
     report_format: str = "default",
     save_session: bool = False,
+    use_llm: bool = False,
 ) -> None:
     """Executa o pipeline completo de análise.
 
@@ -504,7 +516,7 @@ def run_analyze(
         progress = create_progress(description="Analisando símbolos")
         progress.start()
         engine = AnalysisEngine()
-        analysis_result = engine.analyze(structured)
+        analysis_result = engine.analyze(structured, use_llm=use_llm)
         progress.complete("Análise simbólica concluída")
         logger.info(
             "Análise concluída: %d temas, %d riscos, %d decisões",
@@ -751,6 +763,36 @@ def _save_report(path: str, content: str) -> None:
         logger.error("Falha ao salvar relatório em %s: %s", path, e)
         print(colored.error(f"✗ Erro: {ERROR_MESSAGES['output_write_error']}"), file=sys.stderr)
         raise
+
+
+def run_plugins_list() -> None:
+    """Lista plugins carregados e suas capacidades."""
+    manager = PluginManager()
+    manager.load_plugins()
+
+    plugins = manager.get_plugins()
+
+    if not plugins:
+        print("Nenhum plugin carregado.")
+        print(f"Diretório de plugins: {manager.plugins_dir}")
+        print("Para adicionar plugins, crie arquivos .py neste diretório.")
+        return
+
+    print(f"Plugins carregados ({manager.plugin_count}):")
+    print()
+
+    for plugin_def in plugins:
+        print(f"  📦 {plugin_def.name} (v{plugin_def.version})")
+        if plugin_def.description:
+            print(f"     {plugin_def.description}")
+        if plugin_def.author:
+            print(f"     Autor: {plugin_def.author}")
+        if plugin_def.capabilities:
+            caps = ", ".join(f"[{cap.type}] {cap.name}" for cap in plugin_def.capabilities)
+            print(f"     Capabilities: {caps}")
+        if plugin_def.cards:
+            print(f"     Cartas: {len(plugin_def.cards)} baralho customizado")
+        print()
 
 
 if __name__ == "__main__":
