@@ -26,6 +26,11 @@
         get analyzeBtn() { return document.getElementById('analyzeBtn'); },
         get resultSection() { return document.getElementById('resultSection'); },
         get reportOutput() { return document.getElementById('reportOutput'); },
+        get diagnostico() { return document.getElementById('diagnostico'); },
+        get diagnosticoInterpretacao() { return document.getElementById('diagnostico-interpretacao'); },
+        get diagnosticoRiscos() { return document.getElementById('diagnostico-riscos'); },
+        get diagnosticoDecisoes() { return document.getElementById('diagnostico-decisoes'); },
+        get diagnosticoPlano() { return document.getElementById('diagnostico-plano'); },
         get historySection() { return document.getElementById('historySection'); },
         get historyList() { return document.getElementById('historyList'); },
         get refreshHistoryBtn() { return document.getElementById('refreshHistoryBtn'); },
@@ -74,13 +79,100 @@
     }
 
     /**
+     * Parse markdown and extract section content.
+     * @param {string} markdown - Markdown report.
+     * @returns {Object} Sections content.
+     */
+    function parseReportSections(markdown) {
+        const sections = {
+            diagnostico: '',
+            interpretacao: '',
+            riscos: '',
+            decisoes: '',
+            plano: ''
+        };
+
+        if (!markdown) return sections;
+
+        const lines = markdown.split('\n');
+        let currentSection = null;
+        let currentContent = [];
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+
+            // Match section headers (## Header)
+            const sectionMatch = line.match(/^##\s+(.+)$/);
+            if (sectionMatch) {
+                // Save previous section
+                if (currentSection && currentContent.length > 0) {
+                    sections[currentSection] = currentContent.join('\n').trim();
+                }
+
+                const header = sectionMatch[1].toLowerCase();
+
+                if (header.includes('diagn') || header.includes('diagnóstico')) {
+                    currentSection = 'diagnostico';
+                } else if (header.includes('interpreta') || header.includes('simb')) {
+                    currentSection = 'interpretacao';
+                } else if (header.includes('risco')) {
+                    currentSection = 'riscos';
+                } else if (header.includes('decis') || header.includes('caminho')) {
+                    currentSection = 'decisoes';
+                } else if (header.includes('padrão')) {
+                    // Skip cross patterns section
+                    currentSection = null;
+                } else if (header.includes('plano') || header.includes('prático')) {
+                    currentSection = 'plano';
+                } else {
+                    currentSection = null;
+                }
+
+                currentContent = [];
+                continue;
+            }
+
+            // Collect content for current section
+            if (currentSection) {
+                currentContent.push(line);
+            }
+        }
+
+        // Save last section
+        if (currentSection && currentContent.length > 0) {
+            sections[currentSection] = currentContent.join('\n').trim();
+        }
+
+        return sections;
+    }
+
+    /**
+     * Esconde mensagem de erro no resultado.
+     */
+    function clearError() {
+        elements.resultSection.hidden = false;
+        elements.reportOutput.className = 'report-content';
+        elements.reportOutput.textContent = '';
+    }
+
+    /**
      * Exibe o relatório no resultado.
      * @param {string} report - Conteúdo do relatório em Markdown.
      */
     function showReport(report) {
         elements.resultSection.hidden = false;
-        elements.reportOutput.className = 'report-content success';
+
+        // Also set full report in hidden element for history
         elements.reportOutput.textContent = report;
+
+        // Parse and display sections
+        const sections = parseReportSections(report);
+
+        elements.diagnostico.textContent = sections.diagnostico || 'Nenhum diagnóstico disponível.';
+        elements.diagnosticoInterpretacao.textContent = sections.interpretacao || 'Nenhuma interpretação disponível.';
+        elements.diagnosticoRiscos.textContent = sections.riscos || 'Nenhum risco identificado.';
+        elements.diagnosticoDecisoes.textContent = sections.decisoes || 'Nenhum caminho de decisão identificado.';
+        elements.diagnosticoPlano.textContent = sections.plano || 'Nenhum plano prático disponível.';
     }
 
     /**

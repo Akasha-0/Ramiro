@@ -160,6 +160,39 @@ select:focus {
     color: var(--color-text);
 }
 
+.report-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.report-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.report-section h3 {
+    color: var(--color-accent);
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.section-content {
+    padding: 1rem;
+    background-color: var(--color-surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+    white-space: pre-wrap;
+    font-size: 0.9rem;
+    line-height: 1.8;
+    min-height: 2rem;
+}
+
+.section-label {
+    display: none;
+}
+
 .footer {
     text-align: center;
     padding: 2rem 1rem;
