@@ -10,6 +10,7 @@ from src.analysis_engine import AnalysisEngine
 from src.boundaries import apply_guardrails
 from src.report_generator import ReportGenerator
 from src.logging_utils import create_progress
+from src.web_server import run_server
 from src.exceptions import (
     ClarezaError,
     FileNotFoundClarezaError,
@@ -185,6 +186,23 @@ def main() -> None:
         help="Mostrar detalhes de cada benchmark",
     )
 
+    # subcommand: web (start web server)
+    web_parser = subparsers.add_parser(
+        "web",
+        help="Iniciar servidor web local com interface gráfica",
+    )
+    web_parser.add_argument(
+        "--host",
+        default="localhost",
+        help="Endereço host (default: localhost)",
+    )
+    web_parser.add_argument(
+        "--port", "-p",
+        type=int,
+        default=8080,
+        help="Porta (default: 8080)",
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -200,6 +218,8 @@ def main() -> None:
         run_analyze(args.input, args.format, args.output, args.template, verbose)
     elif args.command == "check":
         run_check(args.threshold, args.verbose)
+    elif args.command == "web":
+        run_server(host=args.host, port=args.port)
 
 
 def run_check(threshold: float | None, verbose: bool = False) -> None:
