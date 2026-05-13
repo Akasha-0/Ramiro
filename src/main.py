@@ -19,7 +19,7 @@ from src.exceptions import (
     ValidationClarezaError,
 )
 from benchmarks.regression import RegressionChecker
-from clareza.benchmark.cli import cli as benchmark_cli
+from src.clareza.benchmark.cli import cli as benchmark_cli
 
 
 def benchmark() -> None:
