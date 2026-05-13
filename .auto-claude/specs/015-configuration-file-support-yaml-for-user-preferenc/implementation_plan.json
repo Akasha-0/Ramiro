@@ -237,8 +237,7 @@
             "expected": "passed"
           },
           "status": "completed",
-          "notes": "All 1101 tests passed. pyyaml dependency was installed in venv.",
-          "updated_at": "2026-05-13T00:06:57.139509+00:00"
+          "notes": "All 1101 tests passed in 1.94s. Using .venv/bin/python for pytest execution."
         }
       ]
     }
@@ -338,9 +337,9 @@
   "executionPhase": "complete",
   "status": "human_review",
   "planStatus": "review",
-  "updated_at": "2026-05-13T00:06:57.455Z",
-  "recoveryNote": "Task recovered from stuck state at 2026-05-13T00:05:55.978Z",
-  "last_updated": "2026-05-13T00:06:57.139535+00:00",
+  "updated_at": "2026-05-13T01:10:17.743Z",
+  "recoveryNote": "Task recovered from stuck state at 2026-05-13T01:06:48.804Z",
+  "last_updated": "2026-05-10T16:02:51.800711+00:00",
   "reviewReason": "completed",
   "xstateState": "human_review"
 }
