@@ -672,6 +672,152 @@ class TestAnalyzeEndpoint:
         body = json.loads(response["body"].decode("utf-8"))
         assert "AVISO IMPORTANTE" in body["report"]
 
+    def test_analyze_unicode_input(self) -> None:
+        """POST /api/analyze com acentos é processado corretamente."""
+        wfile = make_request(
+            ClarezaRequestHandler,
+            "/api/analyze",
+            "POST",
+            {"input": "relação coração família saúde", "format": "text"},
+        )
+        response = parse_http_response(wfile.getvalue())
+
+        assert response["status"] == 200
+        body = json.loads(response["body"].decode("utf-8"))
+        assert "report" in body
+        assert "# Relatório de Análise" in body["report"]
+
+    def test_analyze_spread_contains_card_names(self) -> None:
+        """POST /api/analyze com spread contém nomes das cartas."""
+        # Cria mock com relatório que inclui nomes das cartas
+        spread_mock_report = """# Relatório de Análise
+
+---
+
+## Diagnóstico
+
+Tiragem Cigano: Cruz (posição 1), Estrela (posição 2).
+
+## Interpretação Simbólica
+
+Análise das cartas Cruz e Estrela.
+
+## Riscos Identificados
+
+Riscos identificados.
+
+## Caminhos de Decisão
+
+Caminhos de decisão.
+
+## Plano Prático
+
+Plano prático.
+
+---
+
+*Este relatório é uma ferramenta de reflexão e não constitui previsão determinista.*"""
+
+        handler = _create_mock_handler(
+            ClarezaRequestHandler,
+            "/api/analyze",
+            "POST",
+            json.dumps({"input": "1,Cruz\n2,Estrela", "format": "spread"}).encode(),
+        )
+        handler._run_analysis = MagicMock(return_value=spread_mock_report)
+        handler.do_POST()
+
+        response = parse_http_response(handler.wfile.getvalue())
+
+        assert response["status"] == 200
+        body = json.loads(response["body"].decode("utf-8"))
+        assert "Cruz" in body["report"]
+        assert "Estrela" in body["report"]
+
+    def test_analyze_symbols_normalizes_input(self) -> None:
+        """POST /api/analyze com symbols normaliza para minúsculas."""
+        wfile = make_request(
+            ClarezaRequestHandler,
+            "/api/analyze",
+            "POST",
+            {"input": "CASA,Estrela,CAFÉ", "format": "symbols"},
+        )
+        response = parse_http_response(wfile.getvalue())
+
+        assert response["status"] == 200
+        body = json.loads(response["body"].decode("utf-8"))
+        assert "report" in body
+        assert "# Relatório de Análise" in body["report"]
+
+    def test_analyze_very_long_text(self) -> None:
+        """POST /api/analyze com texto muito longo é truncado sem erro."""
+        long_text = "trabalho " * 1000  # muito acima do default
+        wfile = make_request(
+            ClarezaRequestHandler,
+            "/api/analyze",
+            "POST",
+            {"input": long_text, "format": "text"},
+        )
+        response = parse_http_response(wfile.getvalue())
+
+        assert response["status"] == 200
+        body = json.loads(response["body"].decode("utf-8"))
+        assert "# Relatório de Análise" in body["report"]
+
+    def test_analyze_special_characters(self) -> None:
+        """POST /api/analyze com caracteres especiais não quebra o pipeline."""
+        special = "trabalho@#123!%$&*()"
+        wfile = make_request(
+            ClarezaRequestHandler,
+            "/api/analyze",
+            "POST",
+            {"input": special, "format": "text"},
+        )
+        response = parse_http_response(wfile.getvalue())
+
+        assert response["status"] == 200
+        body = json.loads(response["body"].decode("utf-8"))
+        assert "# Relatório de Análise" in body["report"]
+
+    def test_analyze_spread_with_header(self) -> None:
+        """POST /api/analyze com CSV com cabeçalho é processado."""
+        csv_with_header = "pos,carta\n1,Cruz\n2,Estrela"
+        wfile = make_request(
+            ClarezaRequestHandler,
+            "/api/analyze",
+            "POST",
+            {"input": csv_with_header, "format": "spread"},
+        )
+        response = parse_http_response(wfile.getvalue())
+
+        assert response["status"] == 200
+        body = json.loads(response["body"].decode("utf-8"))
+        assert "report" in body
+
+    def test_analyze_multiple_formats_consistent(self) -> None:
+        """POST /api/analyze diferentes formatos produzem estrutura consistente."""
+        formats = ["text", "spread", "symbols"]
+        for fmt in formats:
+            if fmt == "spread":
+                raw_input = "1,Cruz"
+            elif fmt == "symbols":
+                raw_input = "casa"
+            else:
+                raw_input = "trabalho"
+            wfile = make_request(
+                ClarezaRequestHandler,
+                "/api/analyze",
+                "POST",
+                {"input": raw_input, "format": fmt},
+            )
+            response = parse_http_response(wfile.getvalue())
+
+            assert response["status"] == 200, f"Formato {fmt} falhou"
+            body = json.loads(response["body"].decode("utf-8"))
+            assert "# Relatório de Análise" in body["report"]
+            assert "## Diagnóstico" in body["report"]
+            assert "## Plano Prático" in body["report"]
+
 
 class TestHistoryEndpoint:
     """Testes para GET/POST /api/history."""
